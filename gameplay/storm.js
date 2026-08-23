@@ -60,7 +60,9 @@
                 if (this.timer <= 3 && !this._notified && this.timer > 0) {
                     this._notified = true;
                     try {
-                        if (window.UI) window.UI.showToast('⚡ Наближається NEON STORM!', 'warn');
+                        if (window.UI && window.I18n) {
+                            window.UI.showToast('⚡ ' + window.I18n.t('storm.warning'), 'warn');
+                        }
                     } catch (e) {}
                 }
                 if (this.timer <= 0 && this.timer > -100) {

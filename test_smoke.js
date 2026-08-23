@@ -206,6 +206,10 @@ check('state.hints існує за замовчуванням', !!W.State.data.h
 ['cause.laser', 'hint.shield', 'pause.keys', 'btn.help', 'settings.gravityGuide', 'gameover.cause', 'help.controlsList'].forEach(function (k) {
     check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
 });
+check('досягнень у конфігу = 17 (вкл. серії дня)', W.Config.ACHIEVEMENTS.length === 17);
+['btn.share', 'share.text', 'storm.warning', 'ach.streak_7.name'].forEach(function (k) {
+    check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
+});
 
 // ---- 3d. CloudStorage без конфігурації ----
 console.log('\n[3d] CloudStorage (без NGR_CLOUD_CONFIG):');

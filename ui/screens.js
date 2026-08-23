@@ -316,6 +316,7 @@
             '</div>' +
             '<div class="btn-grid">' +
             '<button id="btn-retry" class="btn primary" data-i18n="btn.retry">↻ Повторити</button>' +
+            '<button id="btn-share" class="btn" data-i18n="btn.share">📤 Поділитися</button>' +
             '<button id="btn-gameover-levels" class="btn hidden" data-i18n="btn.levels">☰ Рівні</button>' +
             '<button id="btn-gameover-menu" class="btn" data-i18n="btn.menu">У меню</button>' +
             '</div>' +
@@ -433,6 +434,28 @@
         UI.safeBind(UI.$('#btn-retry'), 'click', function () {
             _clickSound();
             try { if (window.Game) window.Game.retryCurrent(); } catch (e) {}
+        });
+        // QOL: поделиться результатом (Web Share на мобильных, буфер обмена на ПК)
+        UI.safeBind(UI.$('#btn-share'), 'click', function () {
+            _clickSound();
+            try {
+                const score = window.UI.$('#go-score');
+                const text = _t('share.text', 'Мій результат у Neon Gravity Runner: {score}!').replace('{score}', score ? score.textContent : '0') +
+                    ' ' + location.origin + location.pathname;
+                if (navigator.share) {
+                    navigator.share({ title: 'Neon Gravity Runner', text: text }).catch(function () {});
+                } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function () {
+                        window.UI.showToast(_t('share.copied', 'Результат скопійовано!'), 'success');
+                    }, function () {
+                        window.UI.showToast(_t('share.fail', 'Не вдалося поділитися'), 'error');
+                    });
+                } else {
+                    window.prompt(_t('share.copied', 'Результат:'), text);
+                }
+            } catch (e) {
+                _log('error', 'share', e.message);
+            }
         });
         UI.safeBind(UI.$('#btn-gameover-levels'), 'click', function () {
             _clickSound();

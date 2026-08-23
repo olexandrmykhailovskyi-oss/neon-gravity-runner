@@ -77,6 +77,8 @@
             { id: 'first_storm',  name: 'Пережити бурю',     desc: 'Пережити перший Neon Storm',  check: function (s) { return s.stormsSurvived >= 1; } },
             { id: 'ghost_master', name: 'Привид',            desc: '5 разів пройти крізь стіни',  check: function (s) { return s.ghostPasses >= 5; } },
             { id: 'marathon',     name: 'Марафон',           desc: 'Протриматися 2 хвилини',      check: function (s) { return s.longestGame >= 120; } },
+            { id: 'streak_3',     name: 'Серія 3',           desc: 'Виклик дня 3 дні підряд',     check: function (s) { return s.dailyStreak >= 3; } },
+            { id: 'streak_7',     name: 'Тижнева серія',     desc: 'Виклик дня 7 днів підряд',    check: function (s) { return s.dailyStreak >= 7; } },
             {
                 id: 'level_5',
                 name: 'Рубіж 5',

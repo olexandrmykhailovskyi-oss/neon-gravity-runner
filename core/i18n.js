@@ -202,6 +202,10 @@
             'ach.ghost_master.desc': '5 разів пройти крізь стіни',
             'ach.marathon.name': 'Марафон',
             'ach.marathon.desc': 'Протриматися 2 хвилини',
+            'ach.streak_3.name': 'Серія 3',
+            'ach.streak_3.desc': 'Виклик дня 3 дні підряд',
+            'ach.streak_7.name': 'Тижнева серія',
+            'ach.streak_7.desc': 'Виклик дня 7 днів підряд',
             'ach.level_5.name': 'Рубіж 5',
             'ach.level_5.desc': 'Пройти 5 рівень кампанії',
             'ach.level_10.name': 'Рубіж 10',
@@ -254,6 +258,13 @@
             'float.ghost': 'ПРИВИД!',
             'float.storm': 'ШТОРМ!',
             'float.gravity': 'ГРАВІТАЦІЯ!',
+            'storm.warning': 'Наближається NEON STORM!',
+
+            // Поділитися результатом
+            'btn.share': '📤 Поділитися',
+            'share.text': 'Мій результат у Neon Gravity Runner: {score}!',
+            'share.copied': 'Результат скопійовано!',
+            'share.fail': 'Не вдалося поділитися',
 
             // Boot / помилки
             'boot.init': 'Ініціалізація…',
@@ -477,6 +488,10 @@
             'ach.ghost_master.desc': '5 раз пройти сквозь стены',
             'ach.marathon.name': 'Марафон',
             'ach.marathon.desc': 'Продержаться 2 минуты',
+            'ach.streak_3.name': 'Серия 3',
+            'ach.streak_3.desc': 'Ежедневный вызов 3 дня подряд',
+            'ach.streak_7.name': 'Недельная серия',
+            'ach.streak_7.desc': 'Ежедневный вызов 7 дней подряд',
             'ach.level_5.name': 'Рубеж 5',
             'ach.level_5.desc': 'Пройти 5 уровень кампании',
             'ach.level_10.name': 'Рубеж 10',
@@ -529,6 +544,13 @@
             'float.ghost': 'ПРИЗРАК!',
             'float.storm': 'ШТОРМ!',
             'float.gravity': 'ГРАВИТАЦИЯ!',
+            'storm.warning': 'Приближается NEON STORM!',
+
+            // Поделиться результатом
+            'btn.share': '📤 Поделиться',
+            'share.text': 'Мой результат в Neon Gravity Runner: {score}!',
+            'share.copied': 'Результат скопирован!',
+            'share.fail': 'Не удалось поделиться',
 
             // Boot / ошибки
             'boot.init': 'Инициализация…',
@@ -752,6 +774,10 @@
             'ach.ghost_master.desc': 'Pass through walls 5 times',
             'ach.marathon.name': 'Marathon',
             'ach.marathon.desc': 'Last 2 minutes',
+            'ach.streak_3.name': 'Streak 3',
+            'ach.streak_3.desc': 'Daily challenge 3 days in a row',
+            'ach.streak_7.name': 'Week Streak',
+            'ach.streak_7.desc': 'Daily challenge 7 days in a row',
             'ach.level_5.name': 'Milestone 5',
             'ach.level_5.desc': 'Complete campaign level 5',
             'ach.level_10.name': 'Milestone 10',
@@ -804,6 +830,13 @@
             'float.ghost': 'GHOST!',
             'float.storm': 'STORM!',
             'float.gravity': 'GRAVITY!',
+            'storm.warning': 'NEON STORM approaching!',
+
+            // Share result
+            'btn.share': '📤 Share',
+            'share.text': 'My Neon Gravity Runner score: {score}!',
+            'share.copied': 'Score copied!',
+            'share.fail': 'Could not share',
 
             // Boot / errors
             'boot.init': 'Initializing…',

@@ -1,0 +1,26 @@
+{
+    "name": "Neon Gravity Runner",
+    "short_name": "NGR",
+    "description": "Неон-аркада з перемиканням гравітації: 15 рівнів кампанії, зірки, бонуси та Neon Storm.",
+    "lang": "uk",
+    "start_url": ".",
+    "scope": ".",
+    "display": "standalone",
+    "orientation": "landscape",
+    "theme_color": "#05010f",
+    "background_color": "#05010f",
+    "icons": [
+        {
+            "src": "icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "maskable"
+        }
+    ]
+}

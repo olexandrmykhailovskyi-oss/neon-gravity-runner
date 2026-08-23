@@ -1,0 +1,9 @@
+{
+    "name": "neon-gravity-runner",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Neon Gravity Runner — неонова аркада з перемиканням гравітації (vanilla JS, Canvas 2D)",
+    "scripts": {
+        "test": "node test_smoke.js"
+    }
+}

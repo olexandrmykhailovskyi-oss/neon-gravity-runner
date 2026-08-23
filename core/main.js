@@ -41,6 +41,16 @@
         } catch (x) {}
     });
 
+    // PWA: реєстрація Service Worker (офлайн-режим). Тільки https/localhost.
+    window.addEventListener('load', function () {
+        try {
+            if ('serviceWorker' in navigator &&
+                (location.protocol === 'https:' || location.hostname === 'localhost')) {
+                navigator.serviceWorker.register('sw.js').catch(function () {});
+            }
+        } catch (e) {}
+    });
+
     window.addEventListener('load', function () {
         try {
             if (window.Boot) {
