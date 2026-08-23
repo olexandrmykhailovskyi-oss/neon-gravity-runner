@@ -152,7 +152,8 @@
     }
 
     function startNextLevel() {
-        if (_currentLevel && _currentLevel.id < 15) {
+        const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+        if (_currentLevel && _currentLevel.id < maxLvl) {
             startCampaignLevel(_currentLevel.id + 1);
         } else {
             goMenu();

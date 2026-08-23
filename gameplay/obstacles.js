@@ -191,6 +191,71 @@
             build: function (x, area, rng) {
                 return [{ type: 'moving', dx: 0 }, { type: 'moving', dx: 380 }];
             }
+        },
+        {
+            id: 'spike_laser',
+            types: ['spikes', 'laser'],
+            build: function (x, area, rng) {
+                // Шипи знизу + лазер зверху — прохід тільки через центр
+                const out = [];
+                const sp = window.Obstacle.create('spikes', x, area, { onFloor: true });
+                if (sp) out.push({ obs: sp, dx: 0 });
+                out.push({ type: 'laser', dx: 220 });
+                return out;
+            }
+        },
+        {
+            id: 'gravity_maze',
+            types: ['gravity_zone', 'wall'],
+            build: function (x, area, rng) {
+                // Стіна → воронка (перевертає гравітацію) → стіна з іншого боку
+                const out = [];
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true });
+                if (w1) out.push({ obs: w1, dx: 0 });
+                out.push({ type: 'gravity_zone', dx: 200 });
+                const w2 = window.Obstacle.create('wall', x + 420, area, { fromTop: false });
+                if (w2) out.push({ obs: w2, dx: 420 });
+                return out;
+            }
+        },
+        {
+            id: 'pulsar_gate',
+            types: ['gate', 'pulsar'],
+            build: function (x, area, rng) {
+                // Ворота, а одразу за виходом — пульсар
+                return [{ type: 'gate', dx: 0 }, { type: 'pulsar', dx: 280 }];
+            }
+        },
+        {
+            id: 'laser_corridor',
+            types: ['laser', 'moving_laser'],
+            build: function (x, area, rng) {
+                // Стационарний лазер + рухомий попереду
+                return [{ type: 'laser', dx: 0 }, { type: 'moving_laser', dx: 340 }];
+            }
+        },
+        {
+            id: 'zigzag_walls',
+            types: ['wall'],
+            build: function (x, area, rng) {
+                // Зигзаг із трьох стін: верх → низ → верх
+                const out = [];
+                const sides = [true, false, true];
+                for (let i = 0; i < sides.length; i++) {
+                    const w = window.Obstacle.create('wall', x + i * 250, area, { fromTop: sides[i] });
+                    if (w) out.push({ obs: w, dx: i * 250 });
+                }
+                return out;
+            }
+        },
+        {
+            id: 'chaos_mix',
+            types: ['wall', 'spikes', 'pulsar'],
+            build: function (x, area, rng) {
+                // Мікс: стіна → шипи → пульсар
+                const out = [{ type: 'wall', dx: 0 }, { type: 'spikes', dx: 220 }, { type: 'pulsar', dx: 440 }];
+                return out;
+            }
         }
     ];
 

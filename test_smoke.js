@@ -207,7 +207,11 @@ check('state.hints існує за замовчуванням', !!W.State.data.h
     check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
 });
 check('досягнень у конфігу = 17 (вкл. серії дня)', W.Config.ACHIEVEMENTS.length === 17);
-['btn.share', 'share.text', 'storm.warning', 'ach.streak_7.name'].forEach(function (k) {
+check('рівнів кампанії = 25, MAX_LEVEL/MAX_STARS синхронізовані',
+    W.Config.LEVELS.length === 25 && W.Config.MAX_LEVEL === 25 && W.Config.MAX_STARS === 75);
+check('рівень 25 має всі 8 типів перешкод', W.Config.LEVELS[24].obstacles.length === 8);
+check('state: зірки рівня 25 існують у дефолтах', W.State.data.campaign.stars[25] === 0);
+['btn.share', 'share.text', 'storm.warning', 'ach.streak_7.name', 'level.25'].forEach(function (k) {
     check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
 });
 

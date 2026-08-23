@@ -83,7 +83,7 @@
             '<h1 id="menu-title">Neon Gravity Runner</h1>' +
             '<div class="menu-stats-row">' +
             '<span>🏆 <span id="menu-best-label">Рекорд</span>: <b id="menu-best">0</b></span>' +
-            '<span>⭐ <span id="menu-stars-label">Зірки</span>: <b id="menu-stars">0/45</b></span>' +
+            '<span>⭐ <span id="menu-stars-label">Зірки</span>: <b id="menu-stars">0/' + ((window.Config && window.Config.MAX_STARS) || 45) + '</b></span>' +
             '<span>🎮 <span id="menu-games-label">Ігор</span>: <b id="menu-games">0</b></span>' +
             '</div>' +
             '<div class="btn-grid main-menu-grid">' +
@@ -363,8 +363,9 @@
         UI.safeBind(UI.$('#btn-continue'), 'click', function () {
             _clickSound();
             try {
+                const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
                 const c = window.State.data.campaign || {};
-                const target = Math.min(15, Math.max(1, c.maxLevel || 1));
+                const target = Math.min(maxLvl, Math.max(1, c.maxLevel || 1));
                 buildLevelsGrid();
                 if (window.Game) window.Game.startCampaignLevel(target);
             } catch (e) {}
@@ -912,6 +913,8 @@
     function updateMenuStats() {
         try {
             const s = window.State.getStats();
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+            const maxStars = (window.Config && window.Config.MAX_STARS) || (maxLvl * 3);
             window.UI.setText('#menu-best', window.Utils.formatNumber(s.bestScore || 0));
             window.UI.setText('#menu-games', s.totalGames || 0);
 
@@ -919,16 +922,17 @@
             let totalStars = 0;
             const c = window.State.data.campaign;
             if (c && c.stars) {
-                for (let k = 1; k <= 15; k++) {
+                for (let k = 1; k <= maxLvl; k++) {
                     totalStars += (c.stars[k] || 0);
                 }
             }
-            window.UI.setText('#menu-stars', totalStars + '/45');
+            window.UI.setText('#menu-stars', totalStars + '/' + maxStars);
 
             // Кнопка «Продовжити кампанію» — лише коли є прогрес
             const contBtn = window.UI.$('#btn-continue');
             if (contBtn) {
-                const nextLvl = Math.min(15, Math.max(1, (c && c.maxLevel) || 1));
+                const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+                const nextLvl = Math.min(maxLvl, Math.max(1, (c && c.maxLevel) || 1));
                 const showIt = nextLvl > 1;
                 contBtn.classList.toggle('hidden', !showIt);
                 if (showIt) {
@@ -1023,9 +1027,10 @@
             if (req3El) req3El.classList.toggle('ok', shieldOk);
 
             // Кнопка "Наступний рівень"
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
             const nextBtn = window.UI.$('#btn-vic-next');
             if (nextBtn) {
-                nextBtn.classList.toggle('hidden', lvl.id >= 15);
+                nextBtn.classList.toggle('hidden', lvl.id >= maxLvl);
             }
 
             window.UI.showScreen('victory');
@@ -1176,15 +1181,17 @@
         try {
             const s = window.State.getStats();
             const U = window.Utils;
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+            const maxStars = (window.Config && window.Config.MAX_STARS) || (maxLvl * 3);
             let totalStars = 0;
             const c = window.State.data.campaign;
             if (c && c.stars) {
-                for (let k = 1; k <= 15; k++) totalStars += (c.stars[k] || 0);
+                for (let k = 1; k <= maxLvl; k++) totalStars += (c.stars[k] || 0);
             }
 
             const rows = [
                 [_t('stats.bestScore', '🏆 Найкращий рахунок'), U.formatNumber(s.bestScore || 0)],
-                [_t('stats.campaignStars', '⭐ Зірок у кампанії'), totalStars + ' / 45'],
+                [_t('stats.campaignStars', '⭐ Зірок у кампанії'), totalStars + ' / ' + maxStars],
                 [_t('stats.dailyStreak', '🔥 Серія викликів дня'), (s.dailyStreak || 0) + ' 🔥'],
                 [_t('stats.bestCombo', '🔥 Найкраще комбо'), s.bestCombo || 0],
                 [_t('stats.totalGames', '🎮 Всього ігор'), s.totalGames || 0],

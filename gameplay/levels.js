@@ -96,10 +96,11 @@
             }
 
             // Розблоковуємо наступний рівень
-            if (numId >= (c.maxLevel || 1) && numId < 15) {
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+            if (numId >= (c.maxLevel || 1) && numId < maxLvl) {
                 c.maxLevel = numId + 1;
             }
-            c.selected = Math.min(15, numId + 1);
+            c.selected = Math.min(maxLvl, numId + 1);
 
             window.State.save();
 

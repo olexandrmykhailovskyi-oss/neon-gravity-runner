@@ -28,11 +28,13 @@
             },
             campaign: {
                 maxLevel: 1,
-                stars: {
-                    1: 0, 2: 0, 3: 0, 4: 0, 5: 0,
-                    6: 0, 7: 0, 8: 0, 9: 0, 10: 0,
-                    11: 0, 12: 0, 13: 0, 14: 0, 15: 0
-                },
+                stars: (function () {
+                    // Config завантажується пізніше за state — на старті фоллбек 25
+                    const maxL = (typeof window !== 'undefined' && window.Config && window.Config.MAX_LEVEL) || 25;
+                    const s = {};
+                    for (let k = 1; k <= maxL; k++) s[k] = 0;
+                    return s;
+                })(),
                 selected: 1
             },
             stats: {
@@ -305,10 +307,11 @@
             if (typeof incoming !== 'object' || !incoming.settings || !incoming.stats) return false;
 
             // Захоплюємо ЛОКАЛЬНІ значення до злиття — вони не мають зникнути
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 25;
             const prevStars = {};
             const prevC = data.campaign || {};
             if (prevC.stars) {
-                for (let k = 1; k <= 15; k++) prevStars[k] = prevC.stars[k] || 0;
+                for (let k = 1; k <= maxLvl; k++) prevStars[k] = prevC.stars[k] || 0;
             }
             const prevMaxLevel = prevC.maxLevel || 1;
             const MAXIMA = [
@@ -328,7 +331,7 @@
             // Зірки, maxLevel, статистика, досягнення — тільки вгору/об'єднання
             const c = data.campaign;
             const incC = incoming.campaign || {};
-            for (let k = 1; k <= 15; k++) {
+            for (let k = 1; k <= maxLvl; k++) {
                 c.stars[k] = Math.max((incC.stars && incC.stars[k]) || 0, prevStars[k] || 0);
             }
             c.maxLevel = Math.max(typeof incC.maxLevel === 'number' ? incC.maxLevel : 1, prevMaxLevel);

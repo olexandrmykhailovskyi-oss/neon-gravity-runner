@@ -294,6 +294,117 @@
                 storm: 'boss', // бос-шторм з moving_laser
                 theme: 5,
                 starScore: 2000
+            },
+            {
+                id: 16,
+                name: 'Подвійний пульсар',
+                duration: 65,
+                speedMult: 1.35,
+                obstacles: ['wall', 'moving', 'pulsar', 'gravity_zone'],
+                density: 1.4,
+                storm: false,
+                theme: 4,
+                starScore: 2100
+            },
+            {
+                id: 17,
+                name: 'Лазерний шторм',
+                duration: 65,
+                speedMult: 1.35,
+                obstacles: ['laser', 'moving_laser', 'wall', 'gate'],
+                density: 1.5,
+                storm: true,
+                theme: 2,
+                starScore: 2200
+            },
+            {
+                id: 18,
+                name: 'Танець руху',
+                duration: 65,
+                speedMult: 1.40,
+                obstacles: ['moving', 'moving_laser', 'gate', 'wall'],
+                density: 1.45,
+                storm: false,
+                theme: 1,
+                starScore: 2300
+            },
+            {
+                id: 19,
+                name: 'Гравітаційна воронка',
+                duration: 70,
+                speedMult: 1.40,
+                obstacles: ['gravity_zone', 'wall', 'spikes', 'gate'],
+                density: 1.4,
+                storm: false,
+                theme: 4,
+                starScore: 2400
+            },
+            {
+                id: 20,
+                name: 'Вогняний рубіж',
+                duration: 70,
+                speedMult: 1.40,
+                obstacles: ['wall', 'spikes', 'laser', 'pulsar'],
+                density: 1.5,
+                storm: true,
+                theme: 3,
+                starScore: 2500
+            },
+            {
+                id: 21,
+                name: 'Нескінченні ворота',
+                duration: 70,
+                speedMult: 1.45,
+                obstacles: ['gate', 'laser', 'moving', 'wall'],
+                density: 1.5,
+                storm: false,
+                theme: 0,
+                starScore: 2600
+            },
+            {
+                id: 22,
+                name: 'Електрична сітка',
+                duration: 75,
+                speedMult: 1.45,
+                obstacles: ['laser', 'moving_laser', 'spikes', 'wall'],
+                density: 1.55,
+                storm: false,
+                theme: 2,
+                starScore: 2700
+            },
+            {
+                id: 23,
+                name: 'Матричний хаос',
+                duration: 75,
+                speedMult: 1.45,
+                obstacles: ['wall', 'gate', 'moving', 'spikes', 'laser', 'moving_laser', 'gravity_zone', 'pulsar'],
+                density: 1.5,
+                storm: false,
+                theme: 2,
+                starScore: 2800
+            },
+            {
+                id: 24,
+                name: 'Ядро бурі',
+                duration: 80,
+                speedMult: 1.50,
+                obstacles: ['wall', 'gate', 'moving', 'spikes', 'laser', 'moving_laser', 'gravity_zone', 'pulsar'],
+                density: 1.45,
+                storm: 'double',
+                theme: 5,
+                starScore: 2900
+            },
+            {
+                id: 25,
+                name: 'Остання межа',
+                duration: 90,
+                speedMult: 1.55,
+                speedGrowthMax: 1.70,
+                obstacles: ['wall', 'gate', 'moving', 'spikes', 'laser', 'moving_laser', 'gravity_zone', 'pulsar'],
+                density: 1.6,
+                storm: 'boss',
+                theme: 0,
+                starScore: 3200
             }
         ],
 
@@ -328,6 +439,10 @@
             SHAKE_DECAY: 0.92
         }
     };
+
+    // Кількість рівнів кампанії — єдине джерело правди замість хардкоду «15»
+    Config.MAX_LEVEL = Config.LEVELS.length;
+    Config.MAX_STARS = Config.MAX_LEVEL * 3;
 
     function deepFreeze(obj) {
         Object.freeze(obj);
