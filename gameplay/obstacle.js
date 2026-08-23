@@ -20,6 +20,49 @@
         return 'obs_' + _uidCounter;
     }
 
+    // Квадратичне передбачення часу підльоту гравця: швидкість росте (SPEED_GROWTH),
+    // тому лінійна формула d/v стріляє із запізненням — лазер «вогонь у пустоту».
+    // Розв'язуємо d = v*t + g*t²/2 відносно t.
+    function _predictTravel(x, a, speed) {
+        const d = Math.max(0, x - a.width * 0.22);
+        const v = Math.max(60, speed);
+        let g = 0;
+        try {
+            if (window.Config && window.Config.GAME) g = window.Config.GAME.SPEED_GROWTH || 0;
+        } catch (e) {}
+        if (g <= 0) return d / v;
+        const disc = v * v + 2 * g * d;
+        if (disc <= 0) return d / v;
+        return (-v + Math.sqrt(disc)) / g;
+    }
+
+    // Розумна фаза лазера: частина синхронізується з підльотом (стріле «в дотик»),
+    // частина отримує випадкову фазу — інакше всі лазери стріляють однаково механічно.
+    function _applyLaserPhase(base, x, a, speed, alwaysSync) {
+        const travel = (typeof speed === 'number' && speed > 60) ? _predictTravel(x, a, speed) : 0;
+        const doSync = travel > 0 && (alwaysSync === true || Math.random() < 0.6);
+
+        if (doSync) {
+            if (travel > 1.3) {
+                base.warning = Math.max(0.2, Math.min(1.4, travel - 0.4));
+            } else if (travel > 0.5) {
+                base.warning = 0.5;
+            } else {
+                base.phase = 'cooldown';
+                base.cooldown = Math.max(0.3, 1.0 - travel);
+            }
+        } else if (travel > 0) {
+            const r = Math.random();
+            if (r < 0.35) {
+                // вже відстріляв — гравець пройде вільно
+                base.phase = 'cooldown';
+                base.cooldown = 0.3 + Math.random() * 0.8;
+            } else {
+                base.warning = 0.2 + Math.random() * 1.2;
+            }
+        }
+    }
+
     function _log(level, msg, data) {
         try { if (window.Logger) window.Logger[level]('[Obstacle] ' + msg, data); } catch (e) {}
     }
@@ -99,18 +142,9 @@
                 base.phase = 'warning';
                 base.active = false;
                 base.color = '#ff3860';
-                // Синхронізація першого спрацювання з моментом підльоту гравця —
-                // лазер стріляє тоді, коли гравець його досягає, а не моргає в пустоту
+                // Розумна фаза першого спрацювання (квадратичне передбачення + варіативність)
                 if (typeof p.speed === 'number' && p.speed > 60) {
-                    const travel = (x - a.width * 0.22) / p.speed;
-                    if (travel > 1.3) {
-                        base.warning = Math.max(0.2, Math.min(1.4, travel - 0.4));
-                    } else if (travel > 0.5) {
-                        base.warning = 0.5;
-                    } else {
-                        base.phase = 'cooldown';
-                        base.cooldown = Math.max(0.3, 1.0 - travel);
-                    }
+                    _applyLaserPhase(base, x, a, p.speed, false);
                 }
                 break;
 
@@ -552,6 +586,7 @@
         getRects: getRects,
         hitTest: hitTest,
         nearMissDist: nearMissDist,
+        applyLaserPhase: _applyLaserPhase,
         draw: draw
     };
 })();

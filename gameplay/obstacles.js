@@ -217,19 +217,11 @@
                 }
                 if (!obs) continue;
 
-                // Синхронізація лазерів у структурі з підльотом гравця (з урахуванням dx)
-                if ((obs.type === 'laser') && typeof speed === 'number' && speed > 60) {
-                    const travel = (obs.x - area.width * 0.22) / speed;
-                    obs.phase = 'warning';
-                    obs.active = false;
-                    if (travel > 1.3) {
-                        obs.warning = Math.max(0.2, Math.min(1.6, travel - 0.4));
-                    } else if (travel > 0.5) {
-                        obs.warning = 0.5;
-                    } else {
-                        obs.phase = 'cooldown';
-                        obs.cooldown = Math.max(0.3, 1.0 - travel);
-                    }
+                // Розумна фаза лазерів у структурі: перший у лінії — гарантовано
+                // синхронізований з підльотом, решта — з випадковою фазою (менш механічно)
+                if (obs.type === 'laser' && typeof speed === 'number' && speed > 60) {
+                    const alwaysSync = pat.id === 'laser_line' && i === 0;
+                    window.Obstacle.applyLaserPhase(obs, obs.x, area, speed, alwaysSync);
                 }
 
                 list.push(obs);
