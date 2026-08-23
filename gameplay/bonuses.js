@@ -59,13 +59,13 @@
 
             const x = area.width + 60;
             const BONUS_R = 16;       // максимальний радіус бонуса (14) + запас
-            const SAFE_MARGIN = 30;   // відступ від перешкод
+            const SAFE_MARGIN = 70;   // QOL: щедрий відступ — бонус не повинен «прилипати» до перешкод
 
             // Геометрії перешкод у зоні спавну (ураховує gates, рухомі блоки, пульсари)
             let blockers = { rects: [], circles: [] };
             try {
                 if (window.Obstacles && typeof window.Obstacles.getBlockers === 'function') {
-                    blockers = window.Obstacles.getBlockers(x - 320, x + 160);
+                    blockers = window.Obstacles.getBlockers(x - 480, x + 260);
                 }
             } catch (e) {}
 

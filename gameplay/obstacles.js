@@ -56,34 +56,11 @@
         // Спавн
         spawnDistance += spd * dt;
         if (spawnDistance >= nextSpawnAt) {
-            _spawn(a);
-
-            let MIN_GAP = 460;
-            let MAX_GAP = 850;
-            try {
-                if (window.Config && window.Config.SPAWN) {
-                    MIN_GAP = window.Config.SPAWN.MIN_GAP || 460;
-                    MAX_GAP = window.Config.SPAWN.MAX_GAP || 850;
-                }
-            } catch (e) {}
-
-            // Множник складності
-            let gapDiffMult = 1.0;
-            try {
-                if (window.State && typeof window.State.getDifficultyMultipliers === 'function') {
-                    gapDiffMult = window.State.getDifficultyMultipliers().gap;
-                }
-            } catch (e) {}
-
-            // Коригуємо проміжки за густиною та складністю
-            const minG = Math.max(220, (MIN_GAP - difficulty * 35) * gapDiffMult / _densityMult);
-            const maxG = Math.max(minG + 60, (MAX_GAP - difficulty * 50) * gapDiffMult / _densityMult);
-
-            nextSpawnAt = spawnDistance + minG + _rng() * (maxG - minG);
+            _spawn(a, spd);
         }
     }
 
-    function _spawn(area) {
+    function _spawn(area, speed) {
         try {
             let types = [];
             if (_allowedTypes) {
@@ -96,15 +73,175 @@
                 if (difficulty > 0.65) types.push('moving_laser');
             }
 
-            const type = types[Math.floor(_rng() * types.length)] || 'wall';
             const x = area.width + 80;
-            const obs = window.Obstacle.create(type, x, area, {});
-            if (obs) {
-                list.push(obs);
-                totalSpawned++;
+
+            // QOL: структури — рідше поодинокі блоки, частіше осмислені комбінації
+            const patternChance = Math.min(0.34, 0.14 + _densityMult * 0.08);
+            let patternWidth = 0;
+            if (types.length > 1 && _rng() < patternChance) {
+                patternWidth = _spawnPattern(x, area, types, speed);
             }
+
+            if (patternWidth <= 0) {
+                const type = types[Math.floor(_rng() * types.length)] || 'wall';
+                const obs = window.Obstacle.create(type, x, area, {});
+                if (obs) {
+                    list.push(obs);
+                    totalSpawned++;
+                }
+            }
+
+            // Наступний спавн — після ширини структури, щоб не перекривати її
+            _scheduleNext(area, speed, patternWidth);
         } catch (e) {
             _log('error', '_spawn помилка', e.message);
+        }
+    }
+
+    // Ширина структури враховується у наступному інтервалі спавну
+    function _scheduleNext(area, speed, extraWidth) {
+        let MIN_GAP = 460;
+        let MAX_GAP = 850;
+        try {
+            if (window.Config && window.Config.SPAWN) {
+                MIN_GAP = window.Config.SPAWN.MIN_GAP || 460;
+                MAX_GAP = window.Config.SPAWN.MAX_GAP || 850;
+            }
+        } catch (e) {}
+
+        let gapDiffMult = 1.0;
+        try {
+            if (window.State && typeof window.State.getDifficultyMultipliers === 'function') {
+                gapDiffMult = window.State.getDifficultyMultipliers().gap;
+            }
+        } catch (e) {}
+
+        const minG = Math.max(220, (MIN_GAP - difficulty * 35) * gapDiffMult / _densityMult);
+        const maxG = Math.max(minG + 60, (MAX_GAP - difficulty * 50) * gapDiffMult / _densityMult);
+
+        nextSpawnAt = spawnDistance + (extraWidth || 0) + minG + _rng() * (maxG - minG);
+    }
+
+    // ---- Патерни-структури ----
+    const PATTERNS = [
+        {
+            id: 'gate_corridor',
+            types: ['gate'],
+            build: function (x, area, rng) {
+                const out = [{ type: 'gate', dx: 0 }];
+                out.push({ type: 'gate', dx: 340 });
+                return out;
+            }
+        },
+        {
+            id: 'laser_line',
+            types: ['laser'],
+            build: function (x, area, rng) {
+                const gap = 300;
+                return [
+                    { type: 'laser', dx: 0 },
+                    { type: 'laser', dx: gap },
+                    { type: 'laser', dx: gap * 2 }
+                ];
+            }
+        },
+        {
+            id: 'spike_teeth',
+            types: ['spikes'],
+            build: function (x, area, rng) {
+                const out = [];
+                for (let i = 0; i < 3; i++) {
+                    const floor = i % 2 === 0;
+                    const obs = window.Obstacle.create('spikes', x + i * 160, area, { onFloor: floor });
+                    if (obs) out.push({ obs: obs, dx: i * 160 });
+                }
+                return out;
+            }
+        },
+        {
+            id: 'wall_stair',
+            types: ['wall'],
+            build: function (x, area, rng) {
+                const out = [];
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true });
+                if (w1) out.push({ obs: w1, dx: 0 });
+                const w2 = window.Obstacle.create('wall', x + 280, area, { fromTop: false });
+                if (w2) out.push({ obs: w2, dx: 280 });
+                return out;
+            }
+        },
+        {
+            id: 'gate_laser',
+            types: ['gate', 'laser'],
+            build: function (x, area, rng) {
+                const out = [{ type: 'gate', dx: 0 }, { type: 'laser', dx: 300 }];
+                return out;
+            }
+        },
+        {
+            id: 'pulsar_pair',
+            types: ['pulsar'],
+            build: function (x, area, rng) {
+                return [{ type: 'pulsar', dx: 0 }, { type: 'pulsar', dx: 280 }];
+            }
+        },
+        {
+            id: 'moving_gauntlet',
+            types: ['moving'],
+            build: function (x, area, rng) {
+                return [{ type: 'moving', dx: 0 }, { type: 'moving', dx: 380 }];
+            }
+        }
+    ];
+
+    function _spawnPattern(x, area, allowedTypes, speed) {
+        try {
+            const candidates = PATTERNS.filter(function (p) {
+                return p.types.every(function (t) { return allowedTypes.indexOf(t) !== -1; });
+            });
+            if (candidates.length === 0) return 0;
+
+            const pat = candidates[Math.floor(_rng() * candidates.length)];
+            const items = pat.build(x, area, _rng);
+            let width = 0;
+            let spawned = 0;
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                let obs;
+                if (item.obs) {
+                    obs = item.obs;
+                    obs.x = x + item.dx;
+                } else {
+                    obs = window.Obstacle.create(item.type, x + item.dx, area, {});
+                }
+                if (!obs) continue;
+
+                // Синхронізація лазерів у структурі з підльотом гравця (з урахуванням dx)
+                if ((obs.type === 'laser') && typeof speed === 'number' && speed > 60) {
+                    const travel = (obs.x - area.width * 0.22) / speed;
+                    obs.phase = 'warning';
+                    obs.active = false;
+                    if (travel > 1.3) {
+                        obs.warning = Math.max(0.2, Math.min(1.6, travel - 0.4));
+                    } else if (travel > 0.5) {
+                        obs.warning = 0.5;
+                    } else {
+                        obs.phase = 'cooldown';
+                        obs.cooldown = Math.max(0.3, 1.0 - travel);
+                    }
+                }
+
+                list.push(obs);
+                spawned++;
+                width = Math.max(width, item.dx + (obs.w || 40));
+            }
+
+            if (spawned > 0) totalSpawned += spawned;
+            return spawned > 0 ? width : 0;
+        } catch (e) {
+            _log('error', '_spawnPattern помилка', e.message);
+            return 0;
         }
     }
 

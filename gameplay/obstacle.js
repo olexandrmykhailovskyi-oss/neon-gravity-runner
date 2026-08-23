@@ -45,7 +45,7 @@
         switch (type) {
             case 'wall':
                 base.w = p.w || 40;
-                const fromTop = Math.random() < 0.5;
+                const fromTop = typeof p.fromTop === 'boolean' ? p.fromTop : (Math.random() < 0.5);
                 const wallH = p.h || (a.bottom - a.top) * (0.35 + Math.random() * 0.25);
                 if (fromTop) {
                     base.y = a.top;
@@ -80,21 +80,38 @@
             case 'spikes':
                 base.w = p.w || 60;
                 base.h = p.h || 40;
-                const onFloor = Math.random() < 0.5;
+                const onFloor = typeof p.onFloor === 'boolean' ? p.onFloor : (Math.random() < 0.5);
                 base.onFloor = onFloor;
                 base.y = onFloor ? (a.bottom - base.h) : a.top;
                 break;
 
             case 'laser':
-                base.w = 8;
-                base.h = a.bottom - a.top;
-                base.y = a.top;
-                base.warning = 0.6;
-                base.activeTime = 0.4;
-                base.cooldown = 0.8;
+                base.w = 10;
+                // UX: частковий лазер — завжди є прохід зверху/знизу, треба лише встигнути
+                // на правильну сторону. Повний лазер неможливо оминути — тому він й «бескорисний».
+                const laserH = (a.bottom - a.top) * (0.52 + Math.random() * 0.16);
+                const laserFromTop = Math.random() < 0.5;
+                base.h = laserH;
+                base.y = laserFromTop ? a.top : (a.bottom - laserH);
+                base.warning = 0.5;
+                base.activeTime = 0.8;
+                base.cooldown = 0.7;
                 base.phase = 'warning';
                 base.active = false;
                 base.color = '#ff3860';
+                // Синхронізація першого спрацювання з моментом підльоту гравця —
+                // лазер стріляє тоді, коли гравець його досягає, а не моргає в пустоту
+                if (typeof p.speed === 'number' && p.speed > 60) {
+                    const travel = (x - a.width * 0.22) / p.speed;
+                    if (travel > 1.3) {
+                        base.warning = Math.max(0.2, Math.min(1.4, travel - 0.4));
+                    } else if (travel > 0.5) {
+                        base.warning = 0.5;
+                    } else {
+                        base.phase = 'cooldown';
+                        base.cooldown = Math.max(0.3, 1.0 - travel);
+                    }
+                }
                 break;
 
             case 'moving_laser':
@@ -102,7 +119,7 @@
                 base.h = a.bottom - a.top;
                 base.y = a.top;
                 base.warning = 0.4;
-                base.activeTime = 0.35;
+                base.activeTime = 0.6;
                 base.cooldown = 0.5;
                 base.phase = 'warning';
                 base.active = false;

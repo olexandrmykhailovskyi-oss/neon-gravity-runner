@@ -9,8 +9,8 @@
     const Config = {
         GAME: {
             BASE_SPEED: 250,        // пікселів/сек на старті (P1)
-            SPEED_GROWTH: 2.5,      // приріст за секунду (P1)
-            MAX_SPEED: 700,         // максимальна швидкість (P1)
+            SPEED_GROWTH: 2.9,      // приріст за секунду (P1) — швидша динаміка
+            MAX_SPEED: 760,         // максимальна швидкість (P1)
             GRAVITY: 1900,          // прискорення гравітації (P1)
             FLIP_IMPULSE: 420,      // імпульс стрибка при зміні гравітації (P1)
             MAX_VY: 700,            // обмеження вертикальної швидкості (P1)
@@ -179,7 +179,7 @@
                 duration: 40,
                 speedMult: 0.95,
                 obstacles: ['wall', 'spikes', 'gate', 'laser'],
-                density: 1.0,
+                density: 1.35,
                 storm: false,
                 theme: 2,
                 starScore: 550

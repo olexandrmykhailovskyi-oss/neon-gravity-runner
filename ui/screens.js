@@ -17,6 +17,23 @@
         try { if (window.AudioSys) window.AudioSys.playClick(); } catch (e) {}
     }
 
+    // QOL: скопировать текст в буфер с тостом (фоллбэк для кнопки «Поделиться» на ПК)
+    function _copyShare(text) {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    window.UI.showToast(_t('share.copied', 'Результат скопійовано!'), 'success');
+                }, function () {
+                    window.UI.showToast(_t('share.fail', 'Не вдалося поділитися'), 'error');
+                });
+            } else {
+                window.prompt(_t('share.copied', 'Результат:'), text);
+            }
+        } catch (e) {
+            _log('error', '_copyShare', e.message);
+        }
+    }
+
     // Переклад з fallback: якщо ключа немає в словнику, повертаємо запасний текст
     function _t(key, fallback) {
         try {
@@ -435,23 +452,22 @@
             _clickSound();
             try { if (window.Game) window.Game.retryCurrent(); } catch (e) {}
         });
-        // QOL: поделиться результатом (Web Share на мобильных, буфер обмена на ПК)
+        // QOL: поделиться результатом (Web Share только на мобильных; на ПК — сразу в буфер обмена,
+        // потому что десктопные приложения вроде Unigram не умеют принимать текст из системного шаринга)
         UI.safeBind(UI.$('#btn-share'), 'click', function () {
             _clickSound();
             try {
                 const score = window.UI.$('#go-score');
                 const text = _t('share.text', 'Мій результат у Neon Gravity Runner: {score}!').replace('{score}', score ? score.textContent : '0') +
                     ' ' + location.origin + location.pathname;
-                if (navigator.share) {
-                    navigator.share({ title: 'Neon Gravity Runner', text: text }).catch(function () {});
-                } else if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(function () {
-                        window.UI.showToast(_t('share.copied', 'Результат скопійовано!'), 'success');
-                    }, function () {
-                        window.UI.showToast(_t('share.fail', 'Не вдалося поділитися'), 'error');
+                const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                if (navigator.share && isTouch) {
+                    navigator.share({ title: 'Neon Gravity Runner', text: text }).catch(function (err) {
+                        // AbortError — пользователь сам закрыл окно; остальное — фоллбэк в буфер обмена
+                        if (err && err.name !== 'AbortError') _copyShare(text);
                     });
                 } else {
-                    window.prompt(_t('share.copied', 'Результат:'), text);
+                    _copyShare(text);
                 }
             } catch (e) {
                 _log('error', 'share', e.message);
