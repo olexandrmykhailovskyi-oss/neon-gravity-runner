@@ -216,6 +216,17 @@
         if (!obs || !player) return false;
         if (player.ghost > 0 || player.phase > 0) return false;
 
+        // QOL: снисходительный хитбокс — визуальный круг игрока чуть больше смертельного
+        let forgive = 0.82;
+        try {
+            if (window.Config && window.Config.GAME && typeof window.Config.GAME.HITBOX_FORGIVE === 'number') {
+                forgive = window.Config.GAME.HITBOX_FORGIVE;
+            }
+        } catch (e) {}
+        const soft = forgive > 0 && forgive < 1
+            ? { x: player.x, y: player.y, radius: player.radius * forgive }
+            : player;
+
         // 1. Гравітаційна зона (не вбиває, інвертує гравітацію)
         if (obs.type === 'gravity_zone') {
             if (obs.triggered) return false;
@@ -241,13 +252,13 @@
             return false; // Не завдає смертельної шкоди
         }
 
-        // 2. Пульсар (коло з динамічним радіусом)
+        // 2. Пульсар (коло з динамічним радіусом) — м'який хітбокс
         if (obs.type === 'pulsar') {
             try {
                 if (window.Collision && window.Collision.circles) {
                     return window.Collision.circles(
                         { x: obs.x, y: obs.y, radius: obs.radius },
-                        player
+                        soft
                     );
                 }
             } catch (e) {}
@@ -259,11 +270,11 @@
             if (!obs.active) return false;
         }
 
-        // 4. Прямокутні перешкоди
+        // 4. Прямокутні перешкоди — м'який хітбокс
         const rects = getRects(obs);
         for (let i = 0; i < rects.length; i++) {
             try {
-                if (window.Collision && window.Collision.circleRect(player, rects[i])) {
+                if (window.Collision && window.Collision.circleRect(soft, rects[i])) {
                     return true;
                 }
             } catch (e) {}

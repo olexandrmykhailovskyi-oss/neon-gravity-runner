@@ -34,6 +34,8 @@
     let _recordBeaten = false;
     // QOL: Wake Lock — не даємо екрану мобільного згаснути під час гри
     let _wakeLock = null;
+    // QOL: тип перешкоди, в яку врізалися (для екрана Game Over)
+    let _deathCause = null;
 
     function _log(level, msg, data) {
         try { if (window.Logger) window.Logger[level]('[Game] ' + msg, data); } catch (e) {}
@@ -297,6 +299,7 @@
             // QOL: фіксуємо рекорд на старті — для HUD і моменту «новий рекорд»
             try { _bestAtRunStart = window.State.getStats('bestScore') || 0; } catch (e) { _bestAtRunStart = 0; }
             _recordBeaten = false;
+            _deathCause = null;
 
             _state = 'playing';
 
@@ -335,6 +338,17 @@
         if (_state !== 'playing') return;
         _state = 'paused';
         _releaseWakeLock();
+        // QOL: пауза показує режим, рахунок і час
+        try {
+            if (window.Screens && typeof window.Screens.updatePauseInfo === 'function') {
+                window.Screens.updatePauseInfo({
+                    mode: _mode,
+                    level: _currentLevel,
+                    score: window.Scoring.score(),
+                    elapsed: _elapsed
+                });
+            }
+        } catch (e) {}
         window.UI.showScreen('pause');
     }
 
@@ -456,6 +470,8 @@
             try { hitObs = window.Obstacles.hit(window.Player); } catch (e) {}
         }
         if (hitObs) {
+            // QOL: запам'ятовуємо, у що врізалися — покажемо на екрані Game Over
+            _deathCause = hitObs.type || null;
             const result = window.Player.hit();
             if (result.wasGhost) {
                 _ghostThisRun++;
@@ -540,6 +556,7 @@
                 window.HUD.update({
                     score: window.Scoring.score(),
                     combo: window.Scoring.combo(),
+                    comboRemaining: window.Scoring.comboRemaining(),
                     best: _bestAtRunStart,
                     shield: window.Player.shield,
                     magnet: window.Player.magnet > 0,
@@ -568,6 +585,7 @@
             if (_state === 'playing' || _state === 'paused' || _state === 'gameover' || _state === 'victory') {
                 try { if (window.Obstacles) window.Obstacles.draw(_ctx); } catch (e) {}
                 try { if (window.Bonuses) window.Bonuses.draw(_ctx); } catch (e) {}
+                try { _drawGravityGuide(_ctx); } catch (e) {}
                 try { if (window.Particles) window.Particles.draw(); } catch (e) {}
                 if (window.Player.alive || _state === 'paused' || _state === 'victory') {
                     try { window.Player.draw(_ctx); } catch (e) {}
@@ -585,6 +603,26 @@
         } catch (e) {
             _handleLoopError(e);
         }
+    }
+
+    // QOL: пунктирна лінія гравітації — показує, куди затягне гравця
+    function _drawGravityGuide(ctx) {
+        try {
+            if (_state !== 'playing' && _state !== 'paused') return;
+            if (window.State && window.State.getSetting('gravityGuide') === false) return;
+            if (!window.Player || !window.Player.alive) return;
+            const g = window.Player.gravityDir || 1;
+            const targetY = g === 1 ? _bounds.bottom - 8 : _bounds.top + 8;
+            ctx.save();
+            ctx.strokeStyle = g === 1 ? 'rgba(0,229,255,0.30)' : 'rgba(255,43,214,0.30)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 10]);
+            ctx.beginPath();
+            ctx.moveTo(window.Player.x, window.Player.y + g * (window.Player.radius + 8));
+            ctx.lineTo(window.Player.x, targetY);
+            ctx.stroke();
+            ctx.restore();
+        } catch (e) {}
     }
 
     // Завершение Time Attack режима — экран результатов вместо вылета в меню
@@ -755,7 +793,8 @@
                 combo: window.Scoring.bestCombo(),
                 stars: window.Scoring.stars(),
                 newRecord: isNewRecord,
-                dailyBest: dailyBestOut
+                dailyBest: dailyBestOut,
+                cause: _deathCause
             });
         } catch (e) {
             _log('error', '_gameOver', e.message);

@@ -37,6 +37,7 @@
             _buildAchievementsScreen();
             _buildSettingsScreen();
             _buildStatsScreen();
+            _buildHelpScreen();
             _buildPauseScreen();
             _buildGameOverScreen();
             _buildTutorialScreen();
@@ -81,6 +82,7 @@
             '<button id="btn-leaderboard" class="btn" data-i18n="menu.leaderboard">👑 Рекорди ТОП-5</button>' +
             '<button id="btn-settings" class="btn" data-i18n="menu.settings">⚙ Налаштування</button>' +
             '<button id="btn-stats" class="btn" data-i18n="menu.stats">📊 Статистика</button>' +
+            '<button id="btn-help" class="btn" data-i18n="btn.help">❔ Довідка</button>' +
             '</div>' +
             '</div>';
     }
@@ -204,6 +206,10 @@
             '<div class="switch" id="set-vibration"></div>' +
             '</div>' +
             '<div class="setting-row">' +
+            '<span class="setting-label" data-i18n="settings.gravityGuide">Лінія гравітації</span>' +
+            '<div class="switch" id="set-gravity-guide"></div>' +
+            '</div>' +
+            '<div class="setting-row">' +
             '<span class="setting-label" data-i18n="settings.mute">Вимкнути звук повністю</span>' +
             '<div class="switch" id="set-mute"></div>' +
             '</div>' +
@@ -245,12 +251,44 @@
             '</div>';
     }
 
+    // QOL: екран довідки — легенда бонусів + керування
+    function _buildHelpScreen() {
+        const el = window.UI.$('#screen-help');
+        if (!el) return;
+        const types = ['star', 'shield', 'slow', 'double', 'magnet', 'ghost', 'revive', 'phase'];
+        const icons = { star: '★', shield: '⛨', slow: '◷', double: '×2', magnet: 'M', ghost: '👻', revive: '♥', phase: '⚡' };
+        let rows = '';
+        for (let i = 0; i < types.length; i++) {
+            const t = types[i];
+            rows += '<div class="help-row">' +
+                '<span class="help-icon">' + icons[t] + '</span>' +
+                '<div class="help-text">' +
+                '<b data-i18n="bonus.' + t + '">' + window.I18n.t('bonus.' + t) + '</b>' +
+                '<div class="help-desc" data-i18n="hint.' + t + '">' + window.I18n.t('hint.' + t) + '</div>' +
+                '</div>' +
+                '</div>';
+        }
+        el.innerHTML =
+            '<div class="panel help-panel">' +
+            '<h2 data-i18n="help.title">Довідка</h2>' +
+            '<h3 data-i18n="help.controls">Керування</h3>' +
+            '<p data-i18n-html="help.controlsList"></p>' +
+            '<h3 data-i18n="help.bonuses">Бонуси</h3>' +
+            '<div class="help-list">' + rows + '</div>' +
+            '<div class="btn-grid">' +
+            '<button id="btn-help-back" class="btn" data-i18n="btn.back">← Назад</button>' +
+            '</div>' +
+            '</div>';
+    }
+
     function _buildPauseScreen() {
         const el = window.UI.$('#screen-pause');
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
             '<h2 data-i18n="pause.title">Пауза</h2>' +
+            '<div id="pause-info" class="pause-info hidden"></div>' +
+            '<div class="pause-keys" data-i18n-html="pause.keys"></div>' +
             '<div class="btn-grid">' +
             '<button id="btn-resume" class="btn primary" data-i18n="btn.resume">▶ Продовжити</button>' +
             '<button id="btn-pause-retry" class="btn" data-i18n="btn.restart">↻ Перезапустити</button>' +
@@ -274,6 +312,7 @@
             '</div>' +
             '<div id="go-newrecord" class="hidden" style="color:#fff36b; margin-top:8px; font-weight:700;" data-i18n="new_record">🎉 НОВИЙ РЕКОРД!</div>' +
             '<div id="go-dailybest" class="hidden" style="color:#00e5ff; margin-top:6px;"><span data-i18n="gameover.dailyBest">Рекорд дня</span>: <b id="go-dailybest-val">0</b></div>' +
+            '<div id="go-cause" class="hidden" style="color:#8a92b2; margin-top:6px; font-size:13px;"><span data-i18n="gameover.cause">Причина</span>: <span id="go-cause-val">—</span></div>' +
             '</div>' +
             '<div class="btn-grid">' +
             '<button id="btn-retry" class="btn primary" data-i18n="btn.retry">↻ Повторити</button>' +
@@ -362,6 +401,10 @@
             UI.showScreen('stats');
             buildStats();
         });
+        UI.safeBind(UI.$('#btn-help'), 'click', function () {
+            _clickSound();
+            UI.showScreen('help');
+        });
 
         // Назад
         UI.safeBind(UI.$('#btn-levels-back'), 'click', function () { _clickSound(); UI.showScreen('main'); });
@@ -370,6 +413,7 @@
         UI.safeBind(UI.$('#btn-leaderboard-back'), 'click', function () { _clickSound(); UI.showScreen('main'); });
         UI.safeBind(UI.$('#btn-settings-back'), 'click', function () { _clickSound(); UI.showScreen('main'); });
         UI.safeBind(UI.$('#btn-stats-back'), 'click', function () { _clickSound(); UI.showScreen('main'); });
+        UI.safeBind(UI.$('#btn-help-back'), 'click', function () { _clickSound(); UI.showScreen('main'); });
 
         // Пауза
         UI.safeBind(UI.$('#btn-resume'), 'click', function () {
@@ -476,6 +520,16 @@
                     window.State.setSetting('vibration', !cur);
                     vib.classList.toggle('on', !cur);
                     if (!cur) window.Utils.vibrate(60);
+                } catch (e) {}
+            });
+        }
+        const gg = UI.$('#set-gravity-guide');
+        if (gg) {
+            UI.safeBind(gg, 'click', function () {
+                try {
+                    const cur = window.State.getSetting('gravityGuide') !== false;
+                    window.State.setSetting('gravityGuide', !cur);
+                    gg.classList.toggle('on', !cur);
                 } catch (e) {}
             });
         }
@@ -806,6 +860,8 @@
             if (rm) rm.classList.toggle('on', !!window.State.getSetting('reducedMotion'));
             const vib = window.UI.$('#set-vibration');
             if (vib) vib.classList.toggle('on', window.State.getSetting('vibration') !== false);
+            const gg = window.UI.$('#set-gravity-guide');
+            if (gg) gg.classList.toggle('on', window.State.getSetting('gravityGuide') !== false);
             _updateDifficultyUI();
             _updateQualityUI();
             _updateThemeUI();
@@ -1114,6 +1170,33 @@
         }
     }
 
+    // QOL: пауза показывает режим, счёт и время забега
+    function updatePauseInfo(data) {
+        try {
+            const el = window.UI.$('#pause-info');
+            if (!el) return;
+            window.UI.toggle('#pause-info', true);
+            const U = window.Utils;
+            let modeText = _t('lb.' + (data.mode || 'endless'), data.mode || '—');
+            if (data.mode === 'campaign' && data.level) {
+                modeText = _t('hud.level', 'Рівень') + ' ' + data.level.id +
+                    ' · ' + _t('level.' + data.level.id, data.level.name);
+            }
+            const rows = [
+                [_t('pause.mode', 'Режим'), modeText],
+                [_t('score', 'Очки'), U.formatNumber(data.score || 0)],
+                [_t('time', 'Час'), U.formatTime(data.elapsed || 0)]
+            ];
+            let html = '';
+            for (let i = 0; i < rows.length; i++) {
+                html += '<div class="pause-info-row"><span>' + rows[i][0] + '</span><b>' + rows[i][1] + '</b></div>';
+            }
+            el.innerHTML = html;
+        } catch (e) {
+            _log('error', 'updatePauseInfo', e.message);
+        }
+    }
+
     function showGameOver(data) {
         try {
             const U = window.Utils;
@@ -1128,6 +1211,13 @@
             window.UI.toggle('#go-dailybest', hasDaily);
             if (hasDaily) {
                 window.UI.setText('#go-dailybest-val', U.formatNumber(data.dailyBest));
+            }
+
+            // QOL: причина смерти — в что врезался
+            const hasCause = !!data.cause;
+            window.UI.toggle('#go-cause', hasCause);
+            if (hasCause) {
+                window.UI.setText('#go-cause-val', _t('cause.' + data.cause, data.cause));
             }
 
             const levelsBtn = window.UI.$('#btn-gameover-levels');
@@ -1151,6 +1241,7 @@
         buildAchievements: buildAchievements,
         buildStats: buildStats,
         updateMenuStats: updateMenuStats,
+        updatePauseInfo: updatePauseInfo,
         showGameOver: showGameOver,
         updateLanguage: updateLanguage
     };

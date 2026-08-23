@@ -152,6 +152,12 @@
         score: function () { return Math.floor(_score); },
         combo: function () { return _combo; },
         bestCombo: function () { return _bestCombo; },
+        // QOL: 1..0 — скільки часу лишилось до зникнення комбо (для смуги в HUD)
+        comboRemaining: function () {
+            if (_combo <= 0) return 0;
+            const decay = _getGameConfig('COMBO_DECAY', 1.5) || 1.5;
+            return Math.max(0, Math.min(1, 1 - _comboTimer / decay));
+        },
         doubleTime: function () { return Math.max(0, _doubleTime); },
         elapsed: function () { return _elapsed; },
         obstaclesPassed: function () { return _obstaclesPassed; },

@@ -148,6 +148,8 @@
                     }
                     // QOL: легка вібрація підбору бонусу (мобільні)
                     if (window.Utils) window.Utils.vibrate(b.type === 'star' ? 20 : 35);
+                    // QOL: одноразова підказка при першому підборі бонусу
+                    _maybeHint(b.type);
                 } catch (e) {}
                 return b;
             }
@@ -209,6 +211,31 @@
         } catch (e) {
             _log('error', '_applyEffect помилка', e.message);
         }
+    }
+
+    // QOL: одноразові підказки — що робить бонус, показується лише раз за весь прогрес
+    const HINT_KEYS = {
+        shield: 'hint.shield',
+        slow: 'hint.slow',
+        double: 'hint.double',
+        magnet: 'hint.magnet',
+        ghost: 'hint.ghost',
+        revive: 'hint.revive',
+        phase: 'hint.phase'
+    };
+
+    function _maybeHint(type) {
+        try {
+            const key = HINT_KEYS[type];
+            if (!key || !window.State || !window.State.data) return;
+            if (!window.State.data.hints) window.State.data.hints = {};
+            if (window.State.data.hints[type]) return;
+            window.State.data.hints[type] = true;
+            window.State.save();
+            if (window.UI && window.I18n) {
+                window.UI.showToast(window.I18n.t(key), 'info');
+            }
+        } catch (e) {}
     }
 
     function _collectText(b) {

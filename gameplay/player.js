@@ -35,6 +35,7 @@
         color: '#00e5ff',
 
         _flipCooldown: 0,
+        _flipBuffered: false,
         _trailTimer: 0,
 
         reset: function (bounds) {
@@ -54,6 +55,7 @@
             this.gravityZoneTimer = 0;
             this.trail = [];
             this._flipCooldown = 0;
+            this._flipBuffered = false;
             this._trailTimer = 0;
 
             try {
@@ -68,8 +70,16 @@
 
         flip: function () {
             if (!this.alive) return false;
-            if (this._flipCooldown > 0) return false;
+            // QOL: буфер вводу — тап під час кулдауну не губиться, а спрацьовує одразу після нього
+            if (this._flipCooldown > 0) {
+                this._flipBuffered = true;
+                return false;
+            }
+            return this._doFlip();
+        },
 
+        _doFlip: function () {
+            this._flipBuffered = false;
             this.gravityDir = -this.gravityDir;
 
             // P1: імпульс у напрямку нової гравітації
@@ -110,6 +120,23 @@
             const spd = typeof speed === 'number' ? speed : 250;
 
             if (this._flipCooldown > 0) this._flipCooldown -= realDt;
+
+            // QOL: буферизований фліп спрацьовує, щойно кулдаун закінчився
+            if (this._flipBuffered) {
+                let bufferTime = 0.15;
+                try {
+                    if (window.Config && window.Config.GAME) {
+                        bufferTime = window.Config.GAME.FLIP_BUFFER || 0.15;
+                    }
+                } catch (e) {}
+                if (this._flipCooldown <= 0) {
+                    this._doFlip();
+                } else if (this._flipCooldown > bufferTime) {
+                    // Кулдаун довший за вікно буфера — натискання застаріло
+                    this._flipBuffered = false;
+                }
+            }
+
             if (this.invincible > 0) this.invincible -= realDt;
             if (this.ghost > 0) this.ghost -= realDt;
             if (this.phase > 0) this.phase -= realDt;

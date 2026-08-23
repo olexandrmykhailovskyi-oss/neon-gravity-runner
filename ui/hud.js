@@ -71,6 +71,12 @@
                     if (data.combo > 1) {
                         comboWrap.classList.remove('hidden');
                         window.UI.setText('#hud-combo-value', '×' + data.combo);
+                        // QOL: смуга — скільки лишилось до зникнення комбо
+                        const fill = window.UI.$('#hud-combo-bar-fill');
+                        if (fill) {
+                            const rem = typeof data.comboRemaining === 'number' ? data.comboRemaining : 1;
+                            fill.style.width = Math.round(Math.max(0, Math.min(1, rem)) * 100) + '%';
+                        }
                     } else {
                         comboWrap.classList.add('hidden');
                     }

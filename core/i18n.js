@@ -27,6 +27,23 @@
             'menu.stars': 'Зірки',
             'menu.games': 'Ігор',
 
+            // Довідка
+            'btn.help': '❔ Довідка',
+            'help.title': 'Довідка',
+            'help.controls': 'Керування',
+            'help.controlsList': '<b>SPACE</b> / клік / тап — перемкнути гравітацію<br><b>P</b> — пауза · <b>M</b> — звук · <b>F</b> — повний екран<br><b>R</b> — швидкий рестарт · <b>ESC</b> — пауза',
+            'help.bonuses': 'Бонуси',
+
+            // Причина смерті
+            'gameover.cause': 'Причина',
+            'cause.wall': 'Стіна',
+            'cause.gate': 'Ворота',
+            'cause.moving': 'Рухомий блок',
+            'cause.spikes': 'Шипи',
+            'cause.laser': 'Лазер',
+            'cause.moving_laser': 'Рухомий лазер',
+            'cause.pulsar': 'Пульсар',
+
             // Режими гри
             'mode.timeattack.name': 'Time Attack',
             'mode.timeattack.desc': 'Набрати максимум очок за 3 хвилини',
@@ -63,6 +80,8 @@
             'settings.title': 'Налаштування',
             'stats.title': 'Статистика пілота',
             'pause.title': 'Пауза',
+            'pause.mode': 'Режим',
+            'pause.keys': '<b>SPACE</b> — гравітація · <b>P</b> — пауза · <b>M</b> — звук · <b>F</b> — повний екран · <b>R</b> — рестарт',
             'gameover.title': 'Зіткнення!',
             'tutorial.title': 'Як грати',
             'tutorial.description': 'Натискай <b>SPACE</b>, клікай або тапай, щоб перемикати гравітацію.',
@@ -92,6 +111,7 @@
             'settings.reducedMotion': 'Зменшений рух (без тряски)',
             'settings.mute': 'Вимкнути звук повністю',
             'settings.vibration': 'Вібрація (мобільні)',
+            'settings.gravityGuide': 'Лінія гравітації',
             'settings.language': 'Мова',
 
             // Дані прогресу
@@ -220,6 +240,16 @@
             'bonus.revive': 'ДРУГЕ ЖИТТЯ',
             'bonus.phase': 'ФАЗА!',
 
+            // Підказки бонусів (перший підбір + довідка)
+            'hint.star': 'Зірка дає +50 очок',
+            'hint.shield': 'Щит поглинає один удар',
+            'hint.slow': 'Уповільнює час на 3 секунди',
+            'hint.double': 'Подвоює очки на 8 секунд',
+            'hint.magnet': 'Притягує зірки 8 секунд',
+            'hint.ghost': 'Проходь крізь перешкоди 5 секунд',
+            'hint.revive': 'Друге життя після смерті',
+            'hint.phase': 'Миттєвий прохід крізь усе 0.8 секунди',
+
             // Плаваючі тексти
             'float.ghost': 'ПРИВИД!',
             'float.storm': 'ШТОРМ!',
@@ -272,6 +302,23 @@
             'menu.stars': 'Звезды',
             'menu.games': 'Игр',
 
+            // Справка
+            'btn.help': '❔ Справка',
+            'help.title': 'Справка',
+            'help.controls': 'Управление',
+            'help.controlsList': '<b>SPACE</b> / клик / тап — переключить гравитацию<br><b>P</b> — пауза · <b>M</b> — звук · <b>F</b> — полный экран<br><b>R</b> — быстрый рестарт · <b>ESC</b> — пауза',
+            'help.bonuses': 'Бонусы',
+
+            // Причина смерти
+            'gameover.cause': 'Причина',
+            'cause.wall': 'Стена',
+            'cause.gate': 'Ворота',
+            'cause.moving': 'Движущийся блок',
+            'cause.spikes': 'Шипы',
+            'cause.laser': 'Лазер',
+            'cause.moving_laser': 'Движущийся лазер',
+            'cause.pulsar': 'Пульсар',
+
             // Режимы игры
             'mode.timeattack.name': 'Time Attack',
             'mode.timeattack.desc': 'Набрать максимум очков за 3 минуты',
@@ -308,6 +355,8 @@
             'settings.title': 'Настройки',
             'stats.title': 'Статистика пилота',
             'pause.title': 'Пауза',
+            'pause.mode': 'Режим',
+            'pause.keys': '<b>SPACE</b> — гравитация · <b>P</b> — пауза · <b>M</b> — звук · <b>F</b> — полный экран · <b>R</b> — рестарт',
             'gameover.title': 'Столкновение!',
             'tutorial.title': 'Как играть',
             'tutorial.description': 'Нажимай <b>SPACE</b>, кликай или тапай, чтобы переключать гравитацию.',
@@ -337,6 +386,7 @@
             'settings.reducedMotion': 'Уменьшенное движение (без тряски)',
             'settings.mute': 'Выключить звук полностью',
             'settings.vibration': 'Вибрация (мобильные)',
+            'settings.gravityGuide': 'Линия гравитации',
             'settings.language': 'Язык',
 
             // Данные прогресса
@@ -465,6 +515,16 @@
             'bonus.revive': 'ВТОРАЯ ЖИЗНЬ',
             'bonus.phase': 'ФАЗА!',
 
+            // Подсказки бонусов (первый подбор + справка)
+            'hint.star': 'Звезда даёт +50 очков',
+            'hint.shield': 'Щит поглощает один удар',
+            'hint.slow': 'Замедляет время на 3 секунды',
+            'hint.double': 'Удваивает очки на 8 секунд',
+            'hint.magnet': 'Притягивает звёзды 8 секунд',
+            'hint.ghost': 'Проходи сквозь препятствия 5 секунд',
+            'hint.revive': 'Вторая жизнь после смерти',
+            'hint.phase': 'Мгновенный проход сквозь всё 0.8 секунды',
+
             // Плавающие тексты
             'float.ghost': 'ПРИЗРАК!',
             'float.storm': 'ШТОРМ!',
@@ -517,6 +577,23 @@
             'menu.stars': 'Stars',
             'menu.games': 'Games',
 
+            // Help
+            'btn.help': '❔ Help',
+            'help.title': 'Help',
+            'help.controls': 'Controls',
+            'help.controlsList': '<b>SPACE</b> / click / tap — flip gravity<br><b>P</b> — pause · <b>M</b> — mute · <b>F</b> — fullscreen<br><b>R</b> — quick restart · <b>ESC</b> — pause',
+            'help.bonuses': 'Bonuses',
+
+            // Death cause
+            'gameover.cause': 'Cause',
+            'cause.wall': 'Wall',
+            'cause.gate': 'Gate',
+            'cause.moving': 'Moving block',
+            'cause.spikes': 'Spikes',
+            'cause.laser': 'Laser',
+            'cause.moving_laser': 'Moving laser',
+            'cause.pulsar': 'Pulsar',
+
             // Game modes
             'mode.timeattack.name': 'Time Attack',
             'mode.timeattack.desc': 'Score as much as possible in 3 minutes',
@@ -553,6 +630,8 @@
             'settings.title': 'Settings',
             'stats.title': 'Pilot Statistics',
             'pause.title': 'Pause',
+            'pause.mode': 'Mode',
+            'pause.keys': '<b>SPACE</b> — gravity · <b>P</b> — pause · <b>M</b> — mute · <b>F</b> — fullscreen · <b>R</b> — restart',
             'gameover.title': 'Collision!',
             'tutorial.title': 'How to Play',
             'tutorial.description': 'Press <b>SPACE</b>, click or tap to switch gravity.',
@@ -582,6 +661,7 @@
             'settings.reducedMotion': 'Reduced Motion (no shake)',
             'settings.mute': 'Mute All Sounds',
             'settings.vibration': 'Vibration (mobile)',
+            'settings.gravityGuide': 'Gravity guide line',
             'settings.language': 'Language',
 
             // Progress data
@@ -709,6 +789,16 @@
             'bonus.ghost': 'GHOST',
             'bonus.revive': 'EXTRA LIFE',
             'bonus.phase': 'PHASE!',
+
+            // Bonus hints (first pickup + help screen)
+            'hint.star': 'Star gives +50 points',
+            'hint.shield': 'Shield absorbs one hit',
+            'hint.slow': 'Slows down time for 3 seconds',
+            'hint.double': 'Doubles points for 8 seconds',
+            'hint.magnet': 'Attracts stars for 8 seconds',
+            'hint.ghost': 'Pass through obstacles for 5 seconds',
+            'hint.revive': 'Extra life after death',
+            'hint.phase': 'Instant phase through everything for 0.8s',
 
             // Floating texts
             'float.ghost': 'GHOST!',

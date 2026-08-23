@@ -22,6 +22,7 @@
                 reducedMotion: false,
                 mute: false,
                 vibration: true,
+                gravityGuide: true,  // QOL: пунктирна лінія гравітації від гравця
                 difficulty: 'normal', // 'easy' | 'normal' | 'hardcore'
                 language: 'auto'     // 'auto' | 'uk' | 'ru' | 'en'
             },
@@ -51,7 +52,8 @@
                 dailyStreak: 0
             },
             achievements: [],
-            tutorialDone: false
+            tutorialDone: false,
+            hints: {}               // QOL: одноразові підказки (перший підбір кожного бонусу)
         };
     }
 

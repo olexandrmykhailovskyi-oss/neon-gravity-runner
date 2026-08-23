@@ -190,6 +190,23 @@ const i18nKeys = Object.keys(W.I18n.getTranslations().uk);
     check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
 });
 
+// ---- 3f. QOL-2: физика и понятность ----
+console.log('\n[3f] QOL-2 (hitbox / flip buffer / combo / hints):');
+check('HITBOX_FORGIVE = 0.82 у конфігу', W.Config.GAME.HITBOX_FORGIVE === 0.82);
+check('FLIP_BUFFER = 0.15 у конфігу', W.Config.GAME.FLIP_BUFFER === 0.15);
+W.Scoring.reset();
+check('comboRemaining без комбо = 0', W.Scoring.comboRemaining() === 0);
+W.Scoring.addObstacle();
+check('comboRemaining після події > 0', W.Scoring.comboRemaining() > 0);
+W.Scoring.update(2);
+check('comboRemaining після 2с (decay 1.5) = 0', W.Scoring.comboRemaining() === 0);
+W.State.init();
+check('налаштування gravityGuide за замовчуванням = true', W.State.getSetting('gravityGuide') === true);
+check('state.hints існує за замовчуванням', !!W.State.data.hints && typeof W.State.data.hints === 'object');
+['cause.laser', 'hint.shield', 'pause.keys', 'btn.help', 'settings.gravityGuide', 'gameover.cause', 'help.controlsList'].forEach(function (k) {
+    check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
+});
+
 // ---- 3d. CloudStorage без конфігурації ----
 console.log('\n[3d] CloudStorage (без NGR_CLOUD_CONFIG):');
 check('модуль завантажено', !!W.CloudStorage && typeof W.CloudStorage.init === 'function');
