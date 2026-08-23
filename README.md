@@ -1,6 +1,6 @@
 # 🎮 Neon Gravity Runner
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Online-39ff14?style=flat&logo=github)](https://pages.github.com/)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Folexandrmykhailovskyi-oss%2Fneon-gravity-runner)
 [![License: MIT](https://img.shields.io/badge/License-MIT-00e5ff.svg)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JavaScript-fff36b.svg)](https://developer.mozilla.org/uk/docs/Web/JavaScript)
 [![Canvas 2D](https://img.shields.io/badge/Canvas-2D-ff2bd6.svg)](https://developer.mozilla.org/uk/docs/Web/API/Canvas_API)
@@ -10,24 +10,25 @@
 
 ---
 
-## 🚀 Як опублікувати на GitHub Pages
+## 🚀 Деплой на Vercel
 
-Гра повністю готова до запуску на **GitHub Pages** (без збирання, транспіляції чи установки пакетів).
+Гра — статичний сайт без збірки, тому Vercel працює з нульовим конфігом (усі потрібні налаштування вже в `vercel.json`).
 
-### Варіант 1. За допомогою Git (командний рядок):
+### Варіант 1. Через сайт (найпростіше)
 
-1. **Створіть новий порожній репозиторій на GitHub** (наприклад, `neon-gravity-runner`).
-2. **Підключіть віддалений репозиторій та надішліть код:**
-   ```bash
-   git remote add origin https://github.com/<ВАШ_НІК>/<ВАШ_РЕПОЗИТОРІЙ>.git
-   git branch -M main
-   git push -u origin main
-   ```
-3. **Увімкніть GitHub Pages у налаштуваннях репозиторію:**
-   - Перейдіть у **Settings** $\rightarrow$ **Pages**.
-   - У блоці **Source** виберіть **GitHub Actions** (або `Deploy from a branch` $\rightarrow$ `main` / `root`).
-   - Через 30–60 секунд гра стане доступною за адресою:  
-     `https://<ВАШ_НІК>.github.io/<ВАШ_РЕПОЗИТОРІЙ>/`
+1. Відкрийте **https://vercel.com/new**
+2. Натисніть **Import Git Repository** та оберіть `olexandrmykhailovskyi-oss/neon-gravity-runner`
+3. Натисніть **Deploy** — все, гра буде доступна за адресою `https://<ім'я-проєкту>.vercel.app`
+
+Кожен push у `master` надалі автоматично оновлює продакшн.
+
+### Варіант 2. Через CLI
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
 
 ---
 
@@ -59,11 +60,10 @@
 neon_gravity_runner/
 ├── index.html                  # Головна сторінка, HUD, екрани, порядок скриптів
 ├── style.css                   # Неоновий кіберпанк дизайн, адаптивні стилі
+├── vercel.json                 # Конфіг деплою Vercel (статика + безпекові заголовки)
+├── test_smoke.js               # Смоук-тести логіки (node test_smoke.js)
 ├── LICENSE                     # Ліцензія MIT
 ├── .gitignore                  # Ігнорування службових файлів
-├── .github/
-│   └── workflows/
-│       └── pages.yml           # GitHub Actions для автоматичного деплою на Pages
 ├── core/
 │   ├── logger.js               # Тихий кільцевий буфер логів (без console.log)
 │   ├── safe_storage.js         # Безпечне сховище (localStorage з fallback у пам'ять)
