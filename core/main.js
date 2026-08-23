@@ -30,8 +30,15 @@
         } catch (x) {}
     });
 
-    window.addEventListener('beforeunload', function () {
-        try { if (window.State) window.State.save(); } catch (e) {}
+    window.addEventListener('beforeunload', function (e) {
+        try { if (window.State) window.State.save(); } catch (err) {}
+        // QOL: не даємо випадково закрити вкладку посеред забігу
+        try {
+            if (window.Game && typeof window.Game.isPlaying === 'function' && window.Game.isPlaying()) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        } catch (x) {}
     });
 
     window.addEventListener('load', function () {

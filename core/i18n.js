@@ -11,6 +11,7 @@
         uk: {
             // Головне меню
             'menu.title': 'Neon Gravity Runner',
+            'menu.continue': '▶ Продовжити кампанію',
             'menu.campaign': '⭐ Кампанія (15 рівнів)',
             'menu.endless': '♾ Нескінченність',
             'menu.daily': '📅 Виклик дня',
@@ -90,6 +91,7 @@
             'settings.theme': 'Тема оформлення',
             'settings.reducedMotion': 'Зменшений рух (без тряски)',
             'settings.mute': 'Вимкнути звук повністю',
+            'settings.vibration': 'Вібрація (мобільні)',
             'settings.language': 'Мова',
 
             // Дані прогресу
@@ -205,6 +207,7 @@
 
             // HUD
             'hud.level': 'Рівень',
+            'hud.best': 'Рекорд',
             'hud.daily': '📅 Виклик дня',
 
             // Бонуси
@@ -238,6 +241,8 @@
 
             // Інше
             'new_record': '🎉 НОВИЙ РЕКОРД!',
+            'float.record': 'НОВИЙ РЕКОРД!',
+            'gameover.dailyBest': 'Рекорд дня',
             'score': 'Очки',
             'combo': 'Комбо',
             'stars_collected': 'Зірки',
@@ -251,6 +256,7 @@
         ru: {
             // Главное меню
             'menu.title': 'Neon Gravity Runner',
+            'menu.continue': '▶ Продолжить кампанию',
             'menu.campaign': '⭐ Кампания (15 уровней)',
             'menu.endless': '♾ Бесконечность',
             'menu.daily': '📅 Ежедневный вызов',
@@ -330,6 +336,7 @@
             'settings.theme': 'Тема оформления',
             'settings.reducedMotion': 'Уменьшенное движение (без тряски)',
             'settings.mute': 'Выключить звук полностью',
+            'settings.vibration': 'Вибрация (мобильные)',
             'settings.language': 'Язык',
 
             // Данные прогресса
@@ -445,6 +452,7 @@
 
             // HUD
             'hud.level': 'Уровень',
+            'hud.best': 'Рекорд',
             'hud.daily': '📅 Ежедневный вызов',
 
             // Бонусы
@@ -478,6 +486,8 @@
 
             // Другое
             'new_record': '🎉 НОВЫЙ РЕКОРД!',
+            'float.record': 'НОВЫЙ РЕКОРД!',
+            'gameover.dailyBest': 'Рекорд дня',
             'score': 'Очки',
             'combo': 'Комбо',
             'stars_collected': 'Звезды',
@@ -491,6 +501,7 @@
         en: {
             // Main menu
             'menu.title': 'Neon Gravity Runner',
+            'menu.continue': '▶ Continue Campaign',
             'menu.campaign': '⭐ Campaign (15 levels)',
             'menu.endless': '♾ Endless',
             'menu.daily': '📅 Daily Challenge',
@@ -570,6 +581,7 @@
             'settings.theme': 'Theme',
             'settings.reducedMotion': 'Reduced Motion (no shake)',
             'settings.mute': 'Mute All Sounds',
+            'settings.vibration': 'Vibration (mobile)',
             'settings.language': 'Language',
 
             // Progress data
@@ -685,6 +697,7 @@
 
             // HUD
             'hud.level': 'Level',
+            'hud.best': 'Best',
             'hud.daily': '📅 Daily Challenge',
 
             // Bonuses
@@ -718,6 +731,8 @@
 
             // Other
             'new_record': '🎉 NEW RECORD!',
+            'float.record': 'NEW RECORD!',
+            'gameover.dailyBest': "Day's best",
             'score': 'Score',
             'combo': 'Combo',
             'stars_collected': 'Stars',

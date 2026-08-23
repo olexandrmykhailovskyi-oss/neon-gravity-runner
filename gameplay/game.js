@@ -29,6 +29,12 @@
     let _errorCount = 0;
     let _errorTimer = 0;
 
+    // QOL: рекорд на початку забігу (для HUD і моменту «новий рекорд»)
+    let _bestAtRunStart = 0;
+    let _recordBeaten = false;
+    // QOL: Wake Lock — не даємо екрану мобільного згаснути під час гри
+    let _wakeLock = null;
+
     function _log(level, msg, data) {
         try { if (window.Logger) window.Logger[level]('[Game] ' + msg, data); } catch (e) {}
     }
@@ -99,6 +105,32 @@
 
     function isPlaying() {
         return _state === 'playing';
+    }
+
+    // ---- Wake Lock (екран не гасне під час гри; де не підтримується — тихо ігнорується) ----
+    function _acquireWakeLock() {
+        try {
+            if (!(navigator && navigator.wakeLock && typeof navigator.wakeLock.request === 'function')) return;
+            if (_wakeLock) return;
+            navigator.wakeLock.request('screen').then(function (lock) {
+                _wakeLock = lock;
+                try {
+                    lock.addEventListener('release', function () { _wakeLock = null; });
+                } catch (e) {}
+                _log('info', 'Wake Lock acquired');
+            }, function () { /* відмовлено/не підтримується — не критично */ });
+        } catch (e) {}
+    }
+
+    function _releaseWakeLock() {
+        try {
+            if (_wakeLock) {
+                _wakeLock.release();
+                _wakeLock = null;
+            }
+        } catch (e) {
+            _wakeLock = null;
+        }
     }
 
     function tryStart() {
@@ -261,10 +293,16 @@
             _hudTimer = 0;
             _stormsThisRun = 0;
             _ghostThisRun = 0;
+
+            // QOL: фіксуємо рекорд на старті — для HUD і моменту «новий рекорд»
+            try { _bestAtRunStart = window.State.getStats('bestScore') || 0; } catch (e) { _bestAtRunStart = 0; }
+            _recordBeaten = false;
+
             _state = 'playing';
 
             _hideAllScreens();
             window.HUD.show(true);
+            _acquireWakeLock();
 
             if (window.AudioSys) {
                 window.AudioSys.ensure();
@@ -279,6 +317,7 @@
     function goMenu() {
         _state = 'menu';
         window.HUD.show(false);
+        _releaseWakeLock();
         try { if (window.AudioSys) window.AudioSys.stopMusic(); } catch (e) {}
         window.UI.showScreen('main');
         try { window.Screens.updateMenuStats(); } catch (e) {}
@@ -295,6 +334,7 @@
     function pause() {
         if (_state !== 'playing') return;
         _state = 'paused';
+        _releaseWakeLock();
         window.UI.showScreen('pause');
     }
 
@@ -303,6 +343,7 @@
         _state = 'playing';
         _hideAllScreens();
         _lastTime = 0;
+        _acquireWakeLock();
     }
 
     function pressAction() {
@@ -425,11 +466,14 @@
                 } catch (e) {}
             } else if (result.revived) {
                 // Воскресіння оброблено в Player
+                try { window.Utils.vibrate(60); } catch (e) {}
             } else if (result.usedShield) {
                 // Щит поглинув удар
+                try { window.Utils.vibrate(40); } catch (e) {}
             } else if (result.wasInvincible || result.wasPhase) {
                 // Невразливість
             } else if (result.died) {
+                try { window.Utils.vibrate([100, 50, 160]); } catch (e) {}
                 _gameOver();
                 return;
             }
@@ -468,6 +512,19 @@
             try { window.Achievements.checkAll(); } catch (e) {}
         }
 
+        // QOL: момент побиття рекорду прямо під час гри
+        if (!_recordBeaten && _bestAtRunStart > 0 && _mode !== 'zen') {
+            try {
+                if (window.Scoring.score() > _bestAtRunStart) {
+                    _recordBeaten = true;
+                    let recText = 'НОВИЙ РЕКОРД!';
+                    try { if (window.I18n) recText = window.I18n.t('float.record'); } catch (x) {}
+                    window.FloatingTexts.add(window.Player.x, window.Player.y - 60, recText, '#fff36b');
+                    try { if (window.Effects) window.Effects.flash('#fff36b', 0.12, 120); } catch (x) {}
+                }
+            } catch (e) {}
+        }
+
         // Оновлення HUD
         _hudTimer += dt;
         if (_hudTimer > 0.08) {
@@ -483,6 +540,7 @@
                 window.HUD.update({
                     score: window.Scoring.score(),
                     combo: window.Scoring.combo(),
+                    best: _bestAtRunStart,
                     shield: window.Player.shield,
                     magnet: window.Player.magnet > 0,
                     ghost: window.Player.ghost > 0,
@@ -533,6 +591,7 @@
     function _timeAttackComplete() {
         _state = 'victory';
         window.HUD.show(false);
+        _releaseWakeLock();
         try { if (window.AudioSys) window.AudioSys.stopMusic(); } catch (e) {}
 
         try {
@@ -584,6 +643,7 @@
     function _levelComplete() {
         _state = 'victory';
         window.HUD.show(false);
+        _releaseWakeLock();
         try { if (window.AudioSys) window.AudioSys.stopMusic(); } catch (e) {}
 
         try {
@@ -636,6 +696,7 @@
     function _gameOver() {
         _state = 'gameover';
         window.HUD.show(false);
+        _releaseWakeLock();
         try { if (window.AudioSys) window.AudioSys.stopMusic(); } catch (e) {}
 
         try {
@@ -681,13 +742,20 @@
             try { window.Skins.checkUnlocks(); } catch (e) {}
             try { if (window.CloudStorage) window.CloudStorage.pushProgress(); } catch (e) {}
 
+            // QOL: рекорд дня для экрана Daily
+            let dailyBestOut = null;
+            if (_mode === 'daily') {
+                try { dailyBestOut = window.State.getStats('dailyBest') || 0; } catch (x) {}
+            }
+
             window.Screens.showGameOver({
                 mode: _mode,
                 score: finalScore,
                 best: Math.max(s.bestScore || 0, finalScore),
                 combo: window.Scoring.bestCombo(),
                 stars: window.Scoring.stars(),
-                newRecord: isNewRecord
+                newRecord: isNewRecord,
+                dailyBest: dailyBestOut
             });
         } catch (e) {
             _log('error', '_gameOver', e.message);

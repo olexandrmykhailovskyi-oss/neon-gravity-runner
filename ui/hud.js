@@ -52,6 +52,17 @@
             const comboWrap = window.UI.$('#hud-combo');
             if (comboWrap && data.mode === 'zen') comboWrap.classList.add('hidden');
 
+            // Рекорд під рукою — видно, скільки наздоганяєш (в Zen не потрібно)
+            const bestWrap = window.UI.$('#hud-best');
+            if (bestWrap) {
+                if (data.mode === 'zen' || typeof data.best !== 'number') {
+                    bestWrap.classList.add('hidden');
+                } else {
+                    bestWrap.classList.remove('hidden');
+                    window.UI.setText('#hud-best-value', U.formatNumber(data.best));
+                }
+            }
+
             if (data.mode !== 'zen') {
                 window.UI.setText('#hud-score', U.formatNumber(data.score || 0));
 

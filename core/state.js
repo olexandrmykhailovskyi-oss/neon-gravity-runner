@@ -21,6 +21,7 @@
                 skin: 'default',
                 reducedMotion: false,
                 mute: false,
+                vibration: true,
                 difficulty: 'normal', // 'easy' | 'normal' | 'hardcore'
                 language: 'auto'     // 'auto' | 'uk' | 'ru' | 'en'
             },

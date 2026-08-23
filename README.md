@@ -20,8 +20,6 @@
 2. Натисніть **Import Git Repository** та оберіть `olexandrmykhailovskyi-oss/neon-gravity-runner`
 3. Натисніть **Deploy** — все, гра буде доступна за адресою `https://<ім'я-проєкту>.vercel.app`
 
-Кожен push у `master` надалі автоматично оновлює продакшн.
-
 ### Варіант 2. Через CLI
 
 ```bash
@@ -29,6 +27,10 @@ npm i -g vercel
 vercel login
 vercel --prod
 ```
+
+> ⚙ Автоматичний деплой з Git **вимкнено** (`git.deploymentEnabled.master = false` у `vercel.json`).
+> Продакшн оновлюється тільки вручну — командою вище або слеш-командою `/deploy-Vercel`
+> (вона спершу ганяє смоук-тести і не випускає червоний код).
 
 ---
 

@@ -177,6 +177,19 @@ check('скінів у конфігу = 8, токсичний відкриває
         return s.id === 'toxic' && s.unlock && s.unlock.stats === 'dailyStreak' && s.unlock.value === 3;
     }));
 
+// ---- 3e. QOL: вібрація та нові налаштування ----
+console.log('\n[3e] QOL (vibration / settings):');
+W.State.init();
+check('налаштування vibration за замовчуванням = true', W.State.getSetting('vibration') === true);
+check('vibrate без підтримки браузером повертає false', W.Utils.vibrate(50) === false);
+W.State.setSetting('vibration', false);
+check('vibrate вимкнено налаштуванням', W.Utils.vibrate(50) === false);
+W.State.setSetting('vibration', true);
+const i18nKeys = Object.keys(W.I18n.getTranslations().uk);
+['menu.continue', 'hud.best', 'float.record', 'gameover.dailyBest', 'settings.vibration'].forEach(function (k) {
+    check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
+});
+
 // ---- 3d. CloudStorage без конфігурації ----
 console.log('\n[3d] CloudStorage (без NGR_CLOUD_CONFIG):');
 check('модуль завантажено', !!W.CloudStorage && typeof W.CloudStorage.init === 'function');

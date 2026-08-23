@@ -113,6 +113,17 @@
         return prevDate === shiftDateString(todayStr, -1) ? prev + 1 : 1;
     }
 
+    // Вібрація (мобільні пристрої). Поважає налаштування 'vibration'; без підтримки — тихо false.
+    function vibrate(pattern) {
+        try {
+            if (!navigator || typeof navigator.vibrate !== 'function') return false;
+            if (window.State && window.State.getSetting('vibration') === false) return false;
+            return navigator.vibrate(pattern) === true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Детермінований PRNG (Mulberry32) за числовим сідом
     function createRng(seed) {
         let s = Math.abs(typeof seed === 'number' ? seed : 123456789);
@@ -149,6 +160,7 @@
         getTodayString: getTodayString,
         shiftDateString: shiftDateString,
         nextDailyStreak: nextDailyStreak,
+        vibrate: vibrate,
         createRng: createRng,
         seedFromString: seedFromString
     };

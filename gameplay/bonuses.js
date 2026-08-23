@@ -146,6 +146,8 @@
                     if (window.FloatingTexts) {
                         window.FloatingTexts.add(b.x, b.y - 20, _collectText(b), b.color);
                     }
+                    // QOL: легка вібрація підбору бонусу (мобільні)
+                    if (window.Utils) window.Utils.vibrate(b.type === 'star' ? 20 : 35);
                 } catch (e) {}
                 return b;
             }

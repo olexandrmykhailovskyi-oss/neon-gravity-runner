@@ -237,6 +237,17 @@ button {
     font-variant-numeric: tabular-nums;
 }
 
+.hud-best {
+    margin-top: 2px;
+    font-size: 13px;
+    color: #fff36b;
+    text-shadow: 0 0 8px rgba(255, 243, 107, 0.5);
+    opacity: 0.9;
+    font-variant-numeric: tabular-nums;
+}
+
+#hud-best-value { font-weight: 700; }
+
 .hud-combo {
     padding: 6px 12px;
     border-radius: 20px;

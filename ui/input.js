@@ -74,6 +74,28 @@
             _action();
         } else if (e.code === 'Escape') {
             _pause();
+        } else if (e.code === 'KeyP' || e.key === 'p' || e.key === 'P' || e.key === 'з' || e.key === 'З') {
+            // QOL: пауза другою рукою — працює як toggle, у меню ігнорується
+            const tagP = ((e.target && e.target.tagName) || '');
+            if (tagP !== 'INPUT' && tagP !== 'TEXTAREA') _pause();
+        } else if (e.code === 'KeyM' || e.key === 'm' || e.key === 'M' || e.key === 'ь' || e.key === 'Ь') {
+            // QOL: швидкий мут
+            const tagM = ((e.target && e.target.tagName) || '');
+            if (tagM !== 'INPUT' && tagM !== 'TEXTAREA') {
+                try { if (window.AudioSys) window.AudioSys.toggleMute(); } catch (err) {}
+            }
+        } else if (e.code === 'KeyF' || e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') {
+            // QOL: повний екран
+            const tagF = ((e.target && e.target.tagName) || '');
+            if (tagF !== 'INPUT' && tagF !== 'TEXTAREA') {
+                try {
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(function () {});
+                    }
+                } catch (err) {}
+            }
         }
     }
 

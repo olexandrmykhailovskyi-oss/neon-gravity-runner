@@ -69,6 +69,7 @@
             '<span>🎮 <span id="menu-games-label">Ігор</span>: <b id="menu-games">0</b></span>' +
             '</div>' +
             '<div class="btn-grid main-menu-grid">' +
+            '<button id="btn-continue" class="btn accent-btn hidden">▶ Продовжити кампанію</button>' +
             '<button id="btn-campaign" class="btn primary highlight-btn" data-i18n="menu.campaign">⭐ Кампанія (15 рівнів)</button>' +
             '<button id="btn-endless" class="btn primary" data-i18n="menu.endless">♾ Нескінченність</button>' +
             '<button id="btn-daily" class="btn accent-btn" data-i18n="menu.daily">📅 Виклик дня</button>' +
@@ -199,6 +200,10 @@
             '<div class="switch" id="set-reduced-motion"></div>' +
             '</div>' +
             '<div class="setting-row">' +
+            '<span class="setting-label" data-i18n="settings.vibration">Вібрація (мобільні)</span>' +
+            '<div class="switch" id="set-vibration"></div>' +
+            '</div>' +
+            '<div class="setting-row">' +
             '<span class="setting-label" data-i18n="settings.mute">Вимкнути звук повністю</span>' +
             '<div class="switch" id="set-mute"></div>' +
             '</div>' +
@@ -268,6 +273,7 @@
             '<span data-i18n="stars_collected">Зірки</span>: <span id="go-stars">0</span>' +
             '</div>' +
             '<div id="go-newrecord" class="hidden" style="color:#fff36b; margin-top:8px; font-weight:700;" data-i18n="new_record">🎉 НОВИЙ РЕКОРД!</div>' +
+            '<div id="go-dailybest" class="hidden" style="color:#00e5ff; margin-top:6px;"><span data-i18n="gameover.dailyBest">Рекорд дня</span>: <b id="go-dailybest-val">0</b></div>' +
             '</div>' +
             '<div class="btn-grid">' +
             '<button id="btn-retry" class="btn primary" data-i18n="btn.retry">↻ Повторити</button>' +
@@ -297,6 +303,15 @@
         const UI = window.UI;
 
         // Головне меню
+        UI.safeBind(UI.$('#btn-continue'), 'click', function () {
+            _clickSound();
+            try {
+                const c = window.State.data.campaign || {};
+                const target = Math.min(15, Math.max(1, c.maxLevel || 1));
+                buildLevelsGrid();
+                if (window.Game) window.Game.startCampaignLevel(target);
+            } catch (e) {}
+        });
         UI.safeBind(UI.$('#btn-campaign'), 'click', function () {
             _clickSound();
             buildLevelsGrid();
@@ -449,6 +464,18 @@
                     const cur = !!window.State.getSetting('reducedMotion');
                     window.State.setSetting('reducedMotion', !cur);
                     rm.classList.toggle('on', !cur);
+                } catch (e) {}
+            });
+        }
+        const vib = UI.$('#set-vibration');
+        if (vib) {
+            UI.safeBind(vib, 'click', function () {
+                try {
+                    // Демонстрация отзыва: короткая вибрация при включении
+                    const cur = window.State.getSetting('vibration') !== false;
+                    window.State.setSetting('vibration', !cur);
+                    vib.classList.toggle('on', !cur);
+                    if (!cur) window.Utils.vibrate(60);
                 } catch (e) {}
             });
         }
@@ -713,6 +740,9 @@
             _updateThemeUI();
             _updateLanguageUI();
 
+            // Оновлюємо меню-статистику (напис кнопки «Продовжити» залежить від мови)
+            try { updateMenuStats(); } catch (e) {}
+
             // Перебудова динамічних списків, щоб мова застосувалась всюди
             try { buildLeaderboard(); } catch (e) {}
             try { buildStats(); } catch (e) {}
@@ -774,6 +804,8 @@
             if (mute) mute.classList.toggle('on', !!window.State.getSetting('mute'));
             const rm = window.UI.$('#set-reduced-motion');
             if (rm) rm.classList.toggle('on', !!window.State.getSetting('reducedMotion'));
+            const vib = window.UI.$('#set-vibration');
+            if (vib) vib.classList.toggle('on', window.State.getSetting('vibration') !== false);
             _updateDifficultyUI();
             _updateQualityUI();
             _updateThemeUI();
@@ -797,6 +829,18 @@
                 }
             }
             window.UI.setText('#menu-stars', totalStars + '/45');
+
+            // Кнопка «Продовжити кампанію» — лише коли є прогрес
+            const contBtn = window.UI.$('#btn-continue');
+            if (contBtn) {
+                const nextLvl = Math.min(15, Math.max(1, (c && c.maxLevel) || 1));
+                const showIt = nextLvl > 1;
+                contBtn.classList.toggle('hidden', !showIt);
+                if (showIt) {
+                    contBtn.textContent = _t('menu.continue', '▶ Продовжити кампанію') +
+                        ' · ' + _t('hud.level', 'Рівень') + ' ' + nextLvl;
+                }
+            }
         } catch (e) {}
     }
 
@@ -1078,6 +1122,13 @@
             window.UI.setText('#go-combo', data.combo || 0);
             window.UI.setText('#go-stars', data.stars || 0);
             window.UI.toggle('#go-newrecord', !!data.newRecord);
+
+            // Рекорд дня — только в режиме Daily Challenge
+            const hasDaily = typeof data.dailyBest === 'number';
+            window.UI.toggle('#go-dailybest', hasDaily);
+            if (hasDaily) {
+                window.UI.setText('#go-dailybest-val', U.formatNumber(data.dailyBest));
+            }
 
             const levelsBtn = window.UI.$('#btn-gameover-levels');
             if (levelsBtn) {
