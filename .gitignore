@@ -22,3 +22,7 @@ temp/
 *.log
 scratch/
 .system_generated/
+
+# Local AI tooling (not part of the game)
+.opencode/
+.zcode/

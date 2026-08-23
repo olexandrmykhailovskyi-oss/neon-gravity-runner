@@ -37,19 +37,19 @@
         },
 
         QUALITY: [
-            { name: 'Низька',  particles: 0.3, glow: false, trails: 0, nebulae: false },
-            { name: 'Середня', particles: 0.6, glow: true,  trails: 2, nebulae: true  },
-            { name: 'Висока',  particles: 1.0, glow: true,  trails: 4, nebulae: true  },
-            { name: 'Ультра',  particles: 1.5, glow: true,  trails: 6, nebulae: true  }
+            { id: 'low',    name: 'Низька',  particles: 0.3, glow: false, trails: 0, nebulae: false },
+            { id: 'medium', name: 'Середня', particles: 0.6, glow: true,  trails: 2, nebulae: true  },
+            { id: 'high',   name: 'Висока',  particles: 1.0, glow: true,  trails: 4, nebulae: true  },
+            { id: 'ultra',  name: 'Ультра',  particles: 1.5, glow: true,  trails: 6, nebulae: true  }
         ],
 
         THEMES: [
-            { id: 0, name: 'Кіберпанк',      bg1: '#05010f', bg2: '#0c0628', grid: '#00e5ff', accent: '#ff2bd6' },
-            { id: 1, name: 'Ретро-вейв',     bg1: '#1a0033', bg2: '#4b0082', grid: '#ff00ff', accent: '#00ffff' },
-            { id: 2, name: 'Матриця',        bg1: '#000800', bg2: '#002200', grid: '#00ff41', accent: '#00ff41' },
-            { id: 3, name: 'Вогонь',         bg1: '#1a0500', bg2: '#3a0c00', grid: '#ff6b00', accent: '#ff2bd6' },
-            { id: 4, name: 'Темний сектор', bg1: '#020008', bg2: '#120024', grid: '#9d4edd', accent: '#e0aaff' },
-            { id: 5, name: 'Ірис',           bg1: '#001f24', bg2: '#003840', grid: '#00f5d4', accent: '#ffd166' }
+            { id: 0, i18n: 'cyberpunk', name: 'Кіберпанк',      bg1: '#05010f', bg2: '#0c0628', grid: '#00e5ff', accent: '#ff2bd6' },
+            { id: 1, i18n: 'retrowave', name: 'Ретро-вейв',     bg1: '#1a0033', bg2: '#4b0082', grid: '#ff00ff', accent: '#00ffff' },
+            { id: 2, i18n: 'matrix',    name: 'Матриця',        bg1: '#000800', bg2: '#002200', grid: '#00ff41', accent: '#00ff41' },
+            { id: 3, i18n: 'fire',      name: 'Вогонь',         bg1: '#1a0500', bg2: '#3a0c00', grid: '#ff6b00', accent: '#ff2bd6' },
+            { id: 4, i18n: 'dark',      name: 'Темний сектор', bg1: '#020008', bg2: '#120024', grid: '#9d4edd', accent: '#e0aaff' },
+            { id: 5, i18n: 'iris',      name: 'Ірис',           bg1: '#001f24', bg2: '#003840', grid: '#00f5d4', accent: '#ffd166' }
         ],
 
         SKINS: [
@@ -59,7 +59,8 @@
             { id: 'green',   name: 'Хакер',        color: '#39ff14', trailShape: 'square',  unlock: { achievement: 'first_storm' } },
             { id: 'rainbow', name: 'Веселка',      color: 'rainbow', trailShape: 'diamond', unlock: { stats: 'bestCombo', value: 12 } },
             { id: 'white',   name: 'Привид',       color: '#ffffff', trailShape: 'spark',   unlock: { achievement: 'ghost_master' } },
-            { id: 'plasma',  name: 'Плазма',       color: '#ff00ff', trailShape: 'star',    unlock: { stats: 'starsCollected', value: 50 } }
+            { id: 'plasma',  name: 'Плазма',       color: '#ff00ff', trailShape: 'star',    unlock: { stats: 'starsCollected', value: 50 } },
+            { id: 'toxic',   name: 'Токсичний',    color: '#ccff00', trailShape: 'diamond', unlock: { stats: 'dailyStreak', value: 3 } }
         ],
 
         ACHIEVEMENTS: [

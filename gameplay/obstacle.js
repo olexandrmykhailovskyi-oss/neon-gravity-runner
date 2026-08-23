@@ -229,7 +229,11 @@
                         obs.triggered = true;
                         player.applyGravityZone(3.0);
                         if (window.FloatingTexts) {
-                            window.FloatingTexts.add(player.x, player.y - 25, 'ГРАВІТАЦІЯ!', '#a855f7');
+                            let gText = 'ГРАВІТАЦІЯ!';
+                            try {
+                                if (window.I18n) gText = window.I18n.t('float.gravity');
+                            } catch (x) {}
+                            window.FloatingTexts.add(player.x, player.y - 25, gText, '#a855f7');
                         }
                     }
                 }

@@ -94,6 +94,25 @@
         return y + '-' + m + '-' + day;
     }
 
+    // Зсув дати у форматі YYYY-MM-DD на задану кількість днів
+    function shiftDateString(dateStr, days) {
+        if (typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return '';
+        const parts = dateStr.split('-');
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        d.setDate(d.getDate() + days);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    }
+
+    // Нова серія викликів дня: той самий день → без змін; вчора → +1; інакше → 1
+    function nextDailyStreak(prevStreak, prevDate, todayStr) {
+        const prev = Math.max(0, Number(prevStreak) || 0);
+        if (prevDate === todayStr) return prev;
+        return prevDate === shiftDateString(todayStr, -1) ? prev + 1 : 1;
+    }
+
     // Детермінований PRNG (Mulberry32) за числовим сідом
     function createRng(seed) {
         let s = Math.abs(typeof seed === 'number' ? seed : 123456789);
@@ -128,6 +147,8 @@
         formatTime: formatTime,
         uid: uid,
         getTodayString: getTodayString,
+        shiftDateString: shiftDateString,
+        nextDailyStreak: nextDailyStreak,
         createRng: createRng,
         seedFromString: seedFromString
     };

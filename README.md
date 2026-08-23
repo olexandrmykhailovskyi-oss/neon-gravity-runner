@@ -1,6 +1,6 @@
 # 🎮 Neon Gravity Runner
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Online-39ff14?style=flat&logo=github)](https://github.com)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Online-39ff14?style=flat&logo=github)](https://pages.github.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-00e5ff.svg)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JavaScript-fff36b.svg)](https://developer.mozilla.org/uk/docs/Web/JavaScript)
 [![Canvas 2D](https://img.shields.io/badge/Canvas-2D-ff2bd6.svg)](https://developer.mozilla.org/uk/docs/Web/API/Canvas_API)
@@ -94,7 +94,7 @@ neon_gravity_runner/
     ├── screens.js              # Екрани меню, вибір 15 рівнів, перемога із зірками, ТОП-5
     ├── hud.js                  # HUD з таймером, прогрес-баром рівня та бейджами
     ├── input.js                # Обробник клавіш та автопаузи при зміні вкладок
-    ├── skins.js                # 7 скінів із різними формами частинок трейлу
+    ├── skins.js                # 8 скінів із різними формами частинок трейлу
     └── achievements.js         # 15 досягнень пілота
 ```
 
@@ -123,9 +123,43 @@ neon_gravity_runner/
   - `♥ Друге життя` (воскресіння з 2с невразливості при смерті);
   - `⚡ Фаза` (миттєвий прохід крізь перешкоди на 0.8с зі спідлайнами).
 - **🎵 Процедурна музика**: генеративний ембієнт на Web Audio API із тривожним шаром під час Neon Storm.
-- **🎨 7 скінів** з індивідуальними формами трейлів (коло, іскра, зірка, квадрат, діамант) та **6 неонових тем**.
+- **🎨 8 скінів** з індивідуальними формами трейлів (коло, іскра, зірка, квадрат, діамант) та **6 неонових тем**.
 - **👑 ТОП-5 локальних рекордів** та повна статистика польотів.
+- **🔥 Серія викликів дня** (daily streak) — грайте щодня та підтримуйте серію.
+- **☁ Хмарна синхронізація прогресу** через Supabase (опційно, див. розділ нижче).
 - **Налаштування доступності**: Зменшений рух (`reducedMotion`), 3 рівні складності (**Легко**, **Нормально**, **Хардкор**).
+- **🌍 Три мови інтерфейсу**: українська, російська, англійська (автовизначення за браузером).
+
+---
+
+## ☁ Хмарна синхронізація (Supabase)
+
+Прогрес можна зберігати в хмарі через [Supabase](https://supabase.com) (безкоштовний тариф вистачає). Без налаштування гра повністю працює локально.
+
+### Підключення за 4 кроки
+
+1. **Створіть проєкт** на [supabase.com](https://supabase.com) → **New project**.
+2. **Створіть таблицю** — SQL Editor → виконайте:
+   ```sql
+   create table if not exists user_progress (
+     device_id text primary key,
+     data jsonb not null,
+     updated_at timestamptz not null default now()
+   );
+   alter table user_progress enable row level security;
+   create policy "anon device progress" on user_progress
+     for all using (true) with check (true);
+   ```
+3. **Скопіюйте ключі**: Settings → API → `Project URL` та anon-ключ `service_role` НЕ брати, лише `anon public`.
+4. **Вставте їх в `index.html`** у скрипт `window.NGR_CLOUD_CONFIG = { supabaseUrl: '...', supabaseKey: '...' }`.
+
+Після цього в **Налаштуваннях** з'явиться рядок «☁ Хмарна синхронізація»:
+
+- прогрес автоматично підтягується з хмари при запуску гри (злиття «тільки вгору» — зірки, рекорди та досягнення не втрачаються);
+- після кожного забігу локальний стан відправляється в хмару;
+- кнопка «☁ Синхронізувати» робить push+pull вручну.
+
+> ⚠ **Безпека**: політика RLS вище дозволяє будь-кому писати за власний `device_id`. Для аркади з анонімним прогресом це прийнятно, але якщо дані почнуть зловживати — додайте Supabase Auth або обмежте політику.
 
 ---
 

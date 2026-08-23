@@ -17,6 +17,16 @@
         try { if (window.AudioSys) window.AudioSys.playClick(); } catch (e) {}
     }
 
+    // Переклад з fallback: якщо ключа немає в словнику, повертаємо запасний текст
+    function _t(key, fallback) {
+        try {
+            const v = window.I18n ? window.I18n.t(key) : key;
+            return (v === key && fallback !== undefined) ? fallback : v;
+        } catch (e) {
+            return fallback !== undefined ? fallback : key;
+        }
+    }
+
     function init() {
         try {
             _buildMainMenu();
@@ -52,21 +62,24 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel main-panel">' +
-            '<h1>Neon Gravity Runner</h1>' +
+            '<h1 id="menu-title">Neon Gravity Runner</h1>' +
             '<div class="menu-stats-row">' +
-            '<span>🏆 Рекорд: <b id="menu-best">0</b></span>' +
-            '<span>⭐ Зірки: <b id="menu-stars">0/45</b></span>' +
-            '<span>🎮 Ігор: <b id="menu-games">0</b></span>' +
+            '<span>🏆 <span id="menu-best-label">Рекорд</span>: <b id="menu-best">0</b></span>' +
+            '<span>⭐ <span id="menu-stars-label">Зірки</span>: <b id="menu-stars">0/45</b></span>' +
+            '<span>🎮 <span id="menu-games-label">Ігор</span>: <b id="menu-games">0</b></span>' +
             '</div>' +
             '<div class="btn-grid main-menu-grid">' +
-            '<button id="btn-campaign" class="btn primary highlight-btn">⭐ Кампанія (15 рівнів)</button>' +
-            '<button id="btn-endless" class="btn primary">♾ Нескінченність</button>' +
-            '<button id="btn-daily" class="btn accent-btn">📅 Виклик дня</button>' +
-            '<button id="btn-skins" class="btn">🎨 Скіни</button>' +
-            '<button id="btn-achievements" class="btn">🏆 Досягнення</button>' +
-            '<button id="btn-leaderboard" class="btn">👑 Рекорди ТОП-5</button>' +
-            '<button id="btn-settings" class="btn">⚙ Налаштування</button>' +
-            '<button id="btn-stats" class="btn">📊 Статистика</button>' +
+            '<button id="btn-campaign" class="btn primary highlight-btn" data-i18n="menu.campaign">⭐ Кампанія (15 рівнів)</button>' +
+            '<button id="btn-endless" class="btn primary" data-i18n="menu.endless">♾ Нескінченність</button>' +
+            '<button id="btn-daily" class="btn accent-btn" data-i18n="menu.daily">📅 Виклик дня</button>' +
+            '<button id="btn-timeattack" class="btn" data-i18n="menu.timeattack">⏱ Time Attack</button>' +
+            '<button id="btn-survival" class="btn" data-i18n="menu.survival">💀 Survival</button>' +
+            '<button id="btn-zen" class="btn" data-i18n="menu.zen">🧘 Zen</button>' +
+            '<button id="btn-skins" class="btn" data-i18n="menu.skins">🎨 Скіни</button>' +
+            '<button id="btn-achievements" class="btn" data-i18n="menu.achievements">🏆 Досягнення</button>' +
+            '<button id="btn-leaderboard" class="btn" data-i18n="menu.leaderboard">👑 Рекорди ТОП-5</button>' +
+            '<button id="btn-settings" class="btn" data-i18n="menu.settings">⚙ Налаштування</button>' +
+            '<button id="btn-stats" class="btn" data-i18n="menu.stats">📊 Статистика</button>' +
             '</div>' +
             '</div>';
     }
@@ -76,11 +89,11 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel levels-panel">' +
-            '<h2>Вибір рівня кампанії</h2>' +
-            '<p style="text-align:center;">Пройдіть усі 15 випробувань та зберіть максимум зірок!</p>' +
+            '<h2 id="levels-title" data-i18n="levels.title">Вибір рівня кампанії</h2>' +
+            '<p id="levels-description" style="text-align:center;" data-i18n="levels.description">Пройдіть усі 15 випробувань та зберіть максимум зірок!</p>' +
             '<div class="levels-grid" id="levels-grid"></div>' +
             '<div class="btn-grid" style="margin-top:18px;">' +
-            '<button id="btn-levels-back" class="btn">← Назад у меню</button>' +
+            '<button id="btn-levels-back" class="btn" data-i18n="btn.back">← Назад у меню</button>' +
             '</div>' +
             '</div>';
     }
@@ -90,26 +103,27 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel victory-panel">' +
-            '<h2 id="vic-title" style="color:#39ff14; text-shadow: 0 0 16px #39ff14;">Рівень пройдено!</h2>' +
+            '<h2 id="vic-title" style="color:#39ff14; text-shadow: 0 0 16px #39ff14;" data-i18n="victory.title">Рівень пройдено!</h2>' +
             '<div class="victory-stars-box" id="vic-stars-box">' +
             '<span class="star-icon" id="vic-star-1">★</span>' +
             '<span class="star-icon" id="vic-star-2">★</span>' +
             '<span class="star-icon" id="vic-star-3">★</span>' +
             '</div>' +
-            '<div class="victory-details">' +
-            '<div class="vic-row" id="vic-req-1"><span>★ Вижити до кінця:</span> <b class="ok">ВИКОНАНО</b></div>' +
-            '<div class="vic-row" id="vic-req-2"><span>★★ Рахунок:</span> <b id="vic-score-val">0 / 0</b></div>' +
-            '<div class="vic-row" id="vic-req-3"><span>★★★ Без втрати щита та ≥5 Near-Miss:</span> <b id="vic-shield-val">—</b></div>' +
+            '<div class="victory-details" id="vic-details">' +
+            '<div class="vic-row" id="vic-req-1"><span data-i18n="victory.req1">★ Вижити до кінця:</span> <b class="ok" data-i18n="survived">ВИКОНАНО</b></div>' +
+            '<div class="vic-row" id="vic-req-2"><span>★★ <span data-i18n="score">Рахунок</span>:</span> <b id="vic-score-val">0 / 0</b></div>' +
+            '<div class="vic-row" id="vic-req-3"><span data-i18n="victory.req3">★★★ Без втрати щита та ≥5 Near-Miss:</span> <b id="vic-shield-val" data-i18n="shield_used">—</b></div>' +
             '</div>' +
             '<div style="text-align:center; margin: 12px 0;">' +
             '<div style="font-size:32px; color:#00e5ff; font-weight:700;" id="vic-score">0</div>' +
-            '<div style="color:#8a92b2;">Отримано очок у рівні</div>' +
+            '<div style="color:#8a92b2;" id="vic-score-label" data-i18n="victory.scoreEarned">Отримано очок у рівні</div>' +
+            '<div id="vic-newrecord" class="hidden" style="color:#fff36b; margin-top:8px; font-weight:700;" data-i18n="new_record">🎉 НОВИЙ РЕКОРД!</div>' +
             '</div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-vic-next" class="btn primary">Наступний рівень ▶</button>' +
-            '<button id="btn-vic-retry" class="btn">↻ Повторити</button>' +
-            '<button id="btn-vic-levels" class="btn">☰ Усі рівні</button>' +
-            '<button id="btn-vic-menu" class="btn">У меню</button>' +
+            '<button id="btn-vic-next" class="btn primary" data-i18n="btn.next">Наступний рівень ▶</button>' +
+            '<button id="btn-vic-retry" class="btn" data-i18n="btn.retry">↻ Повторити</button>' +
+            '<button id="btn-vic-levels" class="btn" data-i18n="btn.levels">☰ Усі рівні</button>' +
+            '<button id="btn-vic-menu" class="btn" data-i18n="btn.menu">У меню</button>' +
             '</div>' +
             '</div>';
     }
@@ -119,10 +133,10 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>👑 ТОП-5 Рекордів</h2>' +
+            '<h2 data-i18n="leaderboard.title">👑 ТОП-5 Рекордів</h2>' +
             '<div id="leaderboard-list" style="margin: 14px 0;"></div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-leaderboard-back" class="btn">← Назад</button>' +
+            '<button id="btn-leaderboard-back" class="btn" data-i18n="btn.back">← Назад</button>' +
             '</div>' +
             '</div>';
     }
@@ -132,11 +146,11 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>Скіни гравця</h2>' +
-            '<p style="text-align:center;">Кожен скін має свій колір та унікальну форму трейлу!</p>' +
+            '<h2 data-i18n="skins.title">Скіни гравця</h2>' +
+            '<p style="text-align:center;" data-i18n="skins.description">Кожен скін має свій колір та унікальну форму трейлу!</p>' +
             '<div class="grid" id="skins-grid"></div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-skins-back" class="btn">← Назад</button>' +
+            '<button id="btn-skins-back" class="btn" data-i18n="btn.back">← Назад</button>' +
             '</div>' +
             '</div>';
     }
@@ -146,10 +160,10 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>Досягнення</h2>' +
+            '<h2 data-i18n="achievements.title">Досягнення</h2>' +
             '<div class="grid" id="achievements-grid"></div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-achievements-back" class="btn">← Назад</button>' +
+            '<button id="btn-achievements-back" class="btn" data-i18n="btn.back">← Назад</button>' +
             '</div>' +
             '</div>';
     }
@@ -159,37 +173,56 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>Налаштування</h2>' +
+            '<h2 id="settings-title" data-i18n="settings.title">Налаштування</h2>' +
             '<div class="setting-row">' +
-            '<span class="setting-label">Складність</span>' +
+            '<span class="setting-label" data-i18n="settings.difficulty">Складність</span>' +
             '<div id="diff-btns" class="btn-grid" style="margin:0;"></div>' +
             '</div>' +
             '<div class="setting-row">' +
-            '<span class="setting-label">Звуки</span>' +
+            '<span class="setting-label" data-i18n="settings.sfx">Звуки</span>' +
             '<input type="range" id="set-sfx" min="0" max="1" step="0.1">' +
             '</div>' +
             '<div class="setting-row">' +
-            '<span class="setting-label">Музика</span>' +
+            '<span class="setting-label" data-i18n="settings.music">Музика</span>' +
             '<input type="range" id="set-music" min="0" max="1" step="0.1">' +
             '</div>' +
             '<div class="setting-row">' +
-            '<span class="setting-label">Якість графіки</span>' +
+            '<span class="setting-label" data-i18n="settings.quality">Якість графіки</span>' +
             '<div id="quality-btns" class="btn-grid" style="margin:0;"></div>' +
             '</div>' +
             '<div class="setting-row">' +
-            '<span class="setting-label">Тема оформлення</span>' +
+            '<span class="setting-label" data-i18n="settings.theme">Тема оформлення</span>' +
             '<div id="theme-btns" class="btn-grid" style="margin:0;"></div>' +
             '</div>' +
             '<div class="setting-row">' +
-            '<span class="setting-label">Зменшений рух (без тряски)</span>' +
+            '<span class="setting-label" data-i18n="settings.reducedMotion">Зменшений рух (без тряски)</span>' +
             '<div class="switch" id="set-reduced-motion"></div>' +
             '</div>' +
             '<div class="setting-row">' +
-            '<span class="setting-label">Вимкнути звук повністю</span>' +
+            '<span class="setting-label" data-i18n="settings.mute">Вимкнути звук повністю</span>' +
             '<div class="switch" id="set-mute"></div>' +
             '</div>' +
+            '<div class="setting-row">' +
+            '<span class="setting-label" data-i18n="settings.language">Мова</span>' +
+            '<div id="lang-btns" class="btn-grid" style="margin:0;"></div>' +
+            '</div>' +
+            '<div class="setting-row" style="flex-direction:column; align-items:stretch;">' +
+            '<span class="setting-label" data-i18n="settings.data" style="margin-bottom:8px;">Дані прогресу</span>' +
+            '<div class="btn-grid" style="margin:0;">' +
+            '<button id="btn-data-export" class="btn" data-i18n="settings.export" style="min-width:110px;">⬆ Експорт</button>' +
+            '<button id="btn-data-import" class="btn" data-i18n="settings.import" style="min-width:110px;">⬇ Імпорт</button>' +
+            '<button id="btn-data-reset" class="btn" data-i18n="settings.reset" style="min-width:110px;">🗑 Скинути</button>' +
+            '</div>' +
+            '</div>' +
+            '<div class="setting-row hidden" id="cloud-row" style="flex-direction:column; align-items:stretch;">' +
+            '<span class="setting-label" data-i18n="settings.cloudSync" style="margin-bottom:8px;">☁ Хмарна синхронізація</span>' +
+            '<div class="btn-grid" style="margin:0;">' +
+            '<button id="btn-cloud-sync" class="btn" data-i18n="settings.cloudSyncBtn" style="min-width:110px;">☁ Синхронізувати</button>' +
+            '</div>' +
+            '<div id="cloud-status" style="font-size:12px; color:var(--text-dim); margin-top:6px; text-align:center;"></div>' +
+            '</div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-settings-back" class="btn">← Назад</button>' +
+            '<button id="btn-settings-back" class="btn" data-i18n="btn.back">← Назад</button>' +
             '</div>' +
             '</div>';
     }
@@ -199,10 +232,10 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>Статистика пілота</h2>' +
+            '<h2 data-i18n="stats.title">Статистика пілота</h2>' +
             '<div id="stats-list"></div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-stats-back" class="btn">← Назад</button>' +
+            '<button id="btn-stats-back" class="btn" data-i18n="btn.back">← Назад</button>' +
             '</div>' +
             '</div>';
     }
@@ -212,11 +245,11 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>Пауза</h2>' +
+            '<h2 data-i18n="pause.title">Пауза</h2>' +
             '<div class="btn-grid">' +
-            '<button id="btn-resume" class="btn primary">▶ Продовжити</button>' +
-            '<button id="btn-pause-retry" class="btn">↻ Перезапустити</button>' +
-            '<button id="btn-pause-menu" class="btn">У меню</button>' +
+            '<button id="btn-resume" class="btn primary" data-i18n="btn.resume">▶ Продовжити</button>' +
+            '<button id="btn-pause-retry" class="btn" data-i18n="btn.restart">↻ Перезапустити</button>' +
+            '<button id="btn-pause-menu" class="btn" data-i18n="btn.menu">У меню</button>' +
             '</div>' +
             '</div>';
     }
@@ -226,20 +259,20 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>Зіткнення!</h2>' +
+            '<h2 data-i18n="gameover.title">Зіткнення!</h2>' +
             '<div style="text-align:center; margin-bottom:16px;">' +
             '<div style="font-size:42px; color:#ff3860; font-weight:700;" id="go-score">0</div>' +
             '<div style="color:#8a92b2; margin-top:4px;">' +
-            'Рекорд: <span id="go-best">0</span> | ' +
-            'Комбо: <span id="go-combo">0</span> | ' +
-            'Зірки: <span id="go-stars">0</span>' +
+            '<span data-i18n="record">Рекорд</span>: <span id="go-best">0</span> | ' +
+            '<span data-i18n="combo">Комбо</span>: <span id="go-combo">0</span> | ' +
+            '<span data-i18n="stars_collected">Зірки</span>: <span id="go-stars">0</span>' +
             '</div>' +
-            '<div id="go-newrecord" class="hidden" style="color:#fff36b; margin-top:8px; font-weight:700;">🎉 НОВИЙ РЕКОРД!</div>' +
+            '<div id="go-newrecord" class="hidden" style="color:#fff36b; margin-top:8px; font-weight:700;" data-i18n="new_record">🎉 НОВИЙ РЕКОРД!</div>' +
             '</div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-retry" class="btn primary">↻ Повторити</button>' +
-            '<button id="btn-gameover-levels" class="btn hidden" id="btn-go-levels">☰ Рівні</button>' +
-            '<button id="btn-gameover-menu" class="btn">У меню</button>' +
+            '<button id="btn-retry" class="btn primary" data-i18n="btn.retry">↻ Повторити</button>' +
+            '<button id="btn-gameover-levels" class="btn hidden" data-i18n="btn.levels">☰ Рівні</button>' +
+            '<button id="btn-gameover-menu" class="btn" data-i18n="btn.menu">У меню</button>' +
             '</div>' +
             '</div>';
     }
@@ -249,13 +282,13 @@
         if (!el) return;
         el.innerHTML =
             '<div class="panel">' +
-            '<h2>Як грати</h2>' +
-            '<p>Натискай <b>SPACE</b>, клікай або тапай, щоб перемикати гравітацію.</p>' +
-            '<p>Кожен стрибок дає імпульс. Уникай стін, лазерів, вогняних шипів і пульсарів!</p>' +
-            '<p>🌀 <b>Гравітаційні зони</b> тимчасово перевертають гравітацію.</p>' +
-            '<p>⚡ Кожні 45 секунд — <b>Neon Storm</b>!</p>' +
+            '<h2 data-i18n="tutorial.title">Як грати</h2>' +
+            '<p data-i18n-html="tutorial.description">Натискай <b>SPACE</b>, клікай або тапай, щоб перемикати гравітацію.</p>' +
+            '<p data-i18n-html="tutorial.description2">Кожен стрибок дає імпульс. Уникай стін, лазерів, вогняних шипів і пульсарів!</p>' +
+            '<p data-i18n-html="tutorial.gravity">🌀 <b>Гравітаційні зони</b> тимчасово перевертають гравітацію.</p>' +
+            '<p data-i18n-html="tutorial.storm">⚡ Кожні 45 секунд — <b>Neon Storm</b>!</p>' +
             '<div class="btn-grid">' +
-            '<button id="btn-tutorial-start" class="btn primary">Почати політ!</button>' +
+            '<button id="btn-tutorial-start" class="btn primary" data-i18n="btn.start">Почати політ!</button>' +
             '</div>' +
             '</div>';
     }
@@ -276,6 +309,18 @@
         UI.safeBind(UI.$('#btn-daily'), 'click', function () {
             _clickSound();
             try { if (window.Game) window.Game.startDaily(); } catch (e) {}
+        });
+        UI.safeBind(UI.$('#btn-timeattack'), 'click', function () {
+            _clickSound();
+            try { if (window.Game) window.Game.startTimeAttack(); } catch (e) {}
+        });
+        UI.safeBind(UI.$('#btn-survival'), 'click', function () {
+            _clickSound();
+            try { if (window.Game) window.Game.startSurvival(); } catch (e) {}
+        });
+        UI.safeBind(UI.$('#btn-zen'), 'click', function () {
+            _clickSound();
+            try { if (window.Game) window.Game.startZen(); } catch (e) {}
         });
         UI.safeBind(UI.$('#btn-skins'), 'click', function () {
             _clickSound();
@@ -407,6 +452,103 @@
                 } catch (e) {}
             });
         }
+
+        // Експорт прогресу (код для переносу між пристроями)
+        UI.safeBind(UI.$('#btn-data-export'), 'click', function () {
+            _clickSound();
+            try {
+                const code = window.State.exportProgress();
+                if (!code) return;
+                // Спочатку — буфер обміну; якщо недоступний (file:// тощо) — код у полі для ручного копіювання
+                let copied = false;
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(code).then(function () {
+                            window.UI.showToast(_t('settings.exportCopied', 'Код скопійовано в буфер обміну'), 'success');
+                        }, function () {
+                            window.prompt(_t('settings.exportPrompt', 'Скопіюйте код прогресу:'), code);
+                        });
+                        copied = true;
+                    }
+                } catch (x) {}
+                if (!copied) {
+                    window.prompt(_t('settings.exportPrompt', 'Скопіюйте код прогресу:'), code);
+                }
+            } catch (e) {
+                _log('error', 'export', e.message);
+            }
+        });
+
+        // Синхронизация с облаком
+        UI.safeBind(UI.$('#btn-cloud-sync'), 'click', function () {
+            _clickSound();
+            try {
+                if (window.CloudStorage && window.CloudStorage.isReady()) {
+                    window.UI.showToast(_t('cloud.syncing', 'Синхронізація…'), 'warn');
+                    Promise.all([
+                        window.CloudStorage.pushProgress(),
+                        window.CloudStorage.pullFromCloud()
+                    ]).then(function (results) {
+                        if (results[0] === true || results[1] !== null) {
+                            window.UI.showToast(_t('cloud.syncOk', 'Синхронізація успішна'), 'success');
+                        } else {
+                            window.UI.showToast(_t('cloud.syncFail', 'Помилка синхронізації'), 'error');
+                        }
+                        _updateCloudStatus();
+                    });
+                } else {
+                    window.UI.showToast(_t('cloud.notReady', 'Хмарне сховище не налаштовано'), 'error');
+                }
+            } catch (e) {
+                _log('error', 'cloud sync', e.message);
+            }
+        });
+
+        // Імпорт прогресу
+        UI.safeBind(UI.$('#btn-data-import'), 'click', function () {
+            _clickSound();
+            try {
+                const code = window.prompt(_t('settings.importPrompt', 'Вставте код прогресу:'));
+                if (!code || !code.trim()) return;
+                const ok = window.State.importProgress(code.trim());
+                window.UI.showToast(
+                    ok ? _t('settings.importSuccess', 'Прогрес відновлено!') : _t('settings.importError', 'Некоректний код прогресу'),
+                    ok ? 'success' : 'error'
+                );
+                if (ok) {
+                    // Імпорт міг принести іншу мову — застосовуємо одразу, без перезавантаження
+                    try {
+                        const savedLang = window.State.getSetting('language');
+                        if (savedLang && savedLang !== 'auto' && savedLang !== window.I18n.getCurrentLanguage() &&
+                            window.I18n.setLanguage(savedLang)) {
+                            updateLanguage();
+                        }
+                    } catch (langErr) {}
+                    updateMenuStats();
+                    _refreshSettings();
+                }
+            } catch (e) {
+                _log('error', 'import', e.message);
+            }
+        });
+
+        // Обновление статуса облачного хранилища
+        _updateCloudStatus();
+
+        // Скидання прогресу
+        UI.safeBind(UI.$('#btn-data-reset'), 'click', function () {
+            _clickSound();
+            try {
+                const confirmed = window.confirm(_t('settings.resetConfirm', 'Скинути весь прогрес? Це незворотно!'));
+                if (!confirmed) return;
+                window.State.resetProgress();
+                updateMenuStats();
+                _refreshSettings();
+                window.UI.showToast(_t('settings.resetDone', 'Прогрес скинуто'), 'success');
+            } catch (e) {
+                _log('error', 'reset', e.message);
+            }
+        });
     }
 
     function _buildQualityThemeDifficultyButtons() {
@@ -417,13 +559,13 @@
             const dBox = window.UI.$('#diff-btns');
             if (dBox) {
                 const diffs = [
-                    { id: 'easy', name: 'Легко' },
-                    { id: 'normal', name: 'Нормально' },
-                    { id: 'hardcore', name: 'Хардкор' }
+                    { id: 'easy', key: 'settings.easy' },
+                    { id: 'normal', key: 'settings.normal' },
+                    { id: 'hardcore', key: 'settings.hardcore' }
                 ];
                 let html = '';
                 for (let i = 0; i < diffs.length; i++) {
-                    html += '<button class="btn diff-btn" data-d="' + diffs[i].id + '" style="min-width:80px;">' + diffs[i].name + '</button>';
+                    html += '<button class="btn diff-btn" data-d="' + diffs[i].id + '" data-i18n="' + diffs[i].key + '" style="min-width:80px;">' + window.I18n.t(diffs[i].key) + '</button>';
                 }
                 dBox.innerHTML = html;
                 const btns = dBox.querySelectorAll('.diff-btn');
@@ -443,7 +585,8 @@
             if (qBox && C && C.QUALITY) {
                 let html = '';
                 for (let i = 0; i < C.QUALITY.length; i++) {
-                    html += '<button class="btn quality-btn" data-q="' + i + '" style="min-width:70px;">' + C.QUALITY[i].name + '</button>';
+                    const key = 'quality.' + (C.QUALITY[i].id || String(i));
+                    html += '<button class="btn quality-btn" data-q="' + i + '" data-i18n="' + key + '" style="min-width:70px;">' + _t(key, C.QUALITY[i].name) + '</button>';
                 }
                 qBox.innerHTML = html;
                 const btns = qBox.querySelectorAll('.quality-btn');
@@ -465,7 +608,8 @@
             if (tBox && C && C.THEMES) {
                 let html = '';
                 for (let i = 0; i < C.THEMES.length; i++) {
-                    html += '<button class="btn theme-btn" data-t="' + i + '" style="min-width:90px;">' + C.THEMES[i].name + '</button>';
+                    const key = 'theme.' + (C.THEMES[i].i18n || String(C.THEMES[i].id));
+                    html += '<button class="btn theme-btn" data-t="' + i + '" data-i18n="' + key + '" style="min-width:90px;">' + _t(key, C.THEMES[i].name) + '</button>';
                 }
                 tBox.innerHTML = html;
                 const btns = tBox.querySelectorAll('.theme-btn');
@@ -480,8 +624,105 @@
                     });
                 }
             }
+
+            // Язык
+            const lBox = window.UI.$('#lang-btns');
+            if (lBox) {
+                const langs = window.I18n.getAvailableLanguages();
+                let html = '';
+                for (let i = 0; i < langs.length; i++) {
+                    html += '<button class="btn lang-btn" data-l="' + langs[i].code + '" style="min-width:90px;">' + langs[i].name + '</button>';
+                }
+                lBox.innerHTML = html;
+                const btns = lBox.querySelectorAll('.lang-btn');
+                for (let i = 0; i < btns.length; i++) {
+                    window.UI.safeBind(btns[i], 'click', function () {
+                        const lang = this.getAttribute('data-l');
+                        try {
+                            window.I18n.setLanguage(lang);
+                            _updateLanguageUI();
+                            updateLanguage();
+                        } catch (e) {}
+                    });
+                }
+            }
         } catch (e) {
             _log('error', '_buildQualityThemeDifficultyButtons', e.message);
+        }
+    }
+
+    function _updateLanguageUI() {
+        try {
+            const currentLang = window.I18n.getCurrentLanguage();
+            const btns = document.querySelectorAll('.lang-btn');
+            for (let i = 0; i < btns.length; i++) {
+                const lang = btns[i].getAttribute('data-l');
+                btns[i].classList.toggle('primary', lang === currentLang);
+            }
+        } catch (e) {
+            _log('error', '_updateLanguageUI', e.message);
+        }
+    }
+
+    function _updateCloudStatus() {
+        try {
+            const statusEl = window.UI.$('#cloud-status');
+            if (!statusEl) return;
+            // Рядок хмарної синхронізації видно лише коли хмара реально підключена
+            const ready = !!(window.CloudStorage && window.CloudStorage.isReady());
+            window.UI.toggle('#cloud-row', ready);
+            if (ready) {
+                const lastSync = window.CloudStorage.getLastSyncTime();
+                const syncTime = lastSync > 0 ? new Date(lastSync).toLocaleTimeString() : _t('cloud.never', 'ніколи');
+                statusEl.textContent = window.CloudStorage.getProvider() + ' | ' +
+                    _t('cloud.lastSync', 'Остання синхронізація') + ': ' + syncTime;
+                statusEl.style.color = 'var(--neon-green)';
+            } else {
+                statusEl.textContent = _t('cloud.notConfigured', 'Не налаштовано');
+                statusEl.style.color = 'var(--text-dim)';
+            }
+        } catch (e) {
+            _log('error', '_updateCloudStatus', e.message);
+        }
+    }
+
+    function updateLanguage() {
+        try {
+            // Оновлення всіх елементів з data-i18n (звичайний текст)
+            const elements = document.querySelectorAll('[data-i18n]');
+            for (let i = 0; i < elements.length; i++) {
+                const key = elements[i].getAttribute('data-i18n');
+                elements[i].textContent = window.I18n.t(key);
+            }
+
+            // Оновлення елементів з HTML-розміткою (туторіал тощо)
+            const htmlElements = document.querySelectorAll('[data-i18n-html]');
+            for (let i = 0; i < htmlElements.length; i++) {
+                const key = htmlElements[i].getAttribute('data-i18n-html');
+                htmlElements[i].innerHTML = window.I18n.t(key);
+            }
+
+            // Update main menu labels
+            window.UI.setText('#menu-best-label', window.I18n.t('menu.best'));
+            window.UI.setText('#menu-stars-label', window.I18n.t('menu.stars'));
+            window.UI.setText('#menu-games-label', window.I18n.t('menu.games'));
+
+            // Update settings buttons
+            _updateDifficultyUI();
+            _updateQualityUI();
+            _updateThemeUI();
+            _updateLanguageUI();
+
+            // Перебудова динамічних списків, щоб мова застосувалась всюди
+            try { buildLeaderboard(); } catch (e) {}
+            try { buildStats(); } catch (e) {}
+            try { buildSkins(); } catch (e) {}
+            try { buildAchievements(); } catch (e) {}
+            try { buildLevelsGrid(); } catch (e) {}
+
+            _log('info', 'Language updated');
+        } catch (e) {
+            _log('error', 'updateLanguage', e.message);
         }
     }
 
@@ -491,6 +732,8 @@
             const btns = document.querySelectorAll('.diff-btn');
             for (let i = 0; i < btns.length; i++) {
                 btns[i].classList.toggle('primary', btns[i].getAttribute('data-d') === cur);
+                const key = btns[i].getAttribute('data-i18n');
+                if (key) btns[i].textContent = window.I18n.t(key);
             }
         } catch (e) {}
     }
@@ -502,6 +745,8 @@
             for (let i = 0; i < btns.length; i++) {
                 const idx = parseInt(btns[i].getAttribute('data-q'), 10);
                 btns[i].classList.toggle('primary', idx === cur);
+                const key = btns[i].getAttribute('data-i18n');
+                if (key) btns[i].textContent = window.I18n.t(key);
             }
         } catch (e) {}
     }
@@ -513,6 +758,8 @@
             for (let i = 0; i < btns.length; i++) {
                 const idx = parseInt(btns[i].getAttribute('data-t'), 10);
                 btns[i].classList.toggle('primary', idx === cur);
+                const key = btns[i].getAttribute('data-i18n');
+                if (key) btns[i].textContent = window.I18n.t(key);
             }
         } catch (e) {}
     }
@@ -530,6 +777,8 @@
             _updateDifficultyUI();
             _updateQualityUI();
             _updateThemeUI();
+            _updateLanguageUI();
+            _updateCloudStatus();
         } catch (e) {}
     }
 
@@ -565,6 +814,7 @@
                 const lvl = levels[i];
                 const isUnlocked = lvl.id <= maxLvl;
                 const starsCount = (c.stars && c.stars[lvl.id]) || 0;
+                const lvlName = _t('level.' + lvl.id, lvl.name);
 
                 let starsHtml = '';
                 for (let s = 1; s <= 3; s++) {
@@ -577,9 +827,9 @@
                 html += '<div class="' + cls + '" data-level="' + lvl.id + '">' +
                     lockIcon +
                     '<div class="level-num">' + lvl.id + '</div>' +
-                    '<div class="level-name">' + lvl.name + '</div>' +
+                    '<div class="level-name">' + lvlName + '</div>' +
                     '<div class="level-stars">' + (isUnlocked ? starsHtml : '🔒') + '</div>' +
-                    '<div class="level-time">⏱ ' + lvl.duration + 'с</div>' +
+                    '<div class="level-time">⏱ ' + lvl.duration + _t('time.sec', 'с') + '</div>' +
                     '</div>';
             }
 
@@ -605,8 +855,14 @@
         try {
             const U = window.Utils;
             const lvl = data.level;
-            window.UI.setText('#vic-title', 'Рівень ' + lvl.id + ' пройдено!');
+            window.UI.setText('#vic-title', _t('hud.level', 'Рівень') + ' ' + lvl.id + ' — ' + _t('level.' + lvl.id, lvl.name) + ' ✓');
             window.UI.setText('#vic-score', U.formatNumber(data.score || 0));
+
+            // Режим рівня кампанії: показуємо зірки та вимоги
+            window.UI.toggle('#vic-stars-box', true);
+            window.UI.toggle('#vic-details', true);
+            window.UI.toggle('#btn-vic-levels', true);
+            window.UI.toggle('#vic-newrecord', false);
 
             // Зірки
             const stars = data.stars || 1;
@@ -623,7 +879,7 @@
             if (req2El) req2El.classList.toggle('ok', data.score >= lvl.starScore);
 
             const shieldOk = !data.shieldUsed && data.nearMisses >= 5;
-            window.UI.setText('#vic-shield-val', (data.shieldUsed ? 'Щит пошкоджено' : 'Без шкоди') + ', ' + (data.nearMisses || 0) + '/5 near-miss' + (shieldOk ? ' ✓' : ' ✗'));
+            window.UI.setText('#vic-shield-val', (data.shieldUsed ? _t('victory.shieldDamaged', 'Щит пошкоджено') : _t('victory.noDamage', 'Без шкоди')) + ', ' + (data.nearMisses || 0) + '/5 near-miss' + (shieldOk ? ' ✓' : ' ✗'));
             const req3El = window.UI.$('#vic-req-3');
             if (req3El) req3El.classList.toggle('ok', shieldOk);
 
@@ -640,6 +896,27 @@
         }
     }
 
+    // Екран результатів режиму (Time Attack тощо) — без зірок і вимог кампанії
+    function showModeVictory(data) {
+        try {
+            const U = window.Utils;
+            window.UI.setText('#vic-title', _t('mode.' + data.mode + '.done', 'Гру завершено!'));
+            window.UI.setText('#vic-score', U.formatNumber(data.score || 0));
+
+            window.UI.toggle('#vic-stars-box', false);
+            window.UI.toggle('#vic-details', false);
+            window.UI.toggle('#btn-vic-next', false);
+            window.UI.toggle('#btn-vic-levels', false);
+            window.UI.toggle('#btn-vic-retry', true);
+            window.UI.toggle('#vic-newrecord', !!data.newRecord);
+
+            window.UI.showScreen('victory');
+            try { if (window.AudioSys) window.AudioSys.playVictory(); } catch (e) {}
+        } catch (e) {
+            _log('error', 'showModeVictory', e.message);
+        }
+    }
+
     // ТОП-5 Рекордів
     function buildLeaderboard() {
         const box = window.UI.$('#leaderboard-list');
@@ -648,7 +925,7 @@
             const list = window.State.getLeaderboard();
             const U = window.Utils;
             if (list.length === 0) {
-                box.innerHTML = '<div style="text-align:center; color:#8a92b2; padding:20px;">Ще немає збережених рекордів. Зіграйте забіг!</div>';
+                box.innerHTML = '<div style="text-align:center; color:#8a92b2; padding:20px;">' + _t('leaderboard.empty', 'Ще немає збережених рекордів. Зіграйте забіг!') + '</div>';
                 return;
             }
             let html = '';
@@ -656,7 +933,10 @@
                 const item = list[i];
                 const rank = i + 1;
                 const badge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : '#' + rank));
-                const modeText = item.mode === 'campaign' ? ('Рівень ' + (item.level || '?')) : (item.mode === 'daily' ? 'Виклик дня' : 'Нескінченність');
+                let modeText = _t('lb.' + item.mode, _t('lb.endless', 'Нескінченність'));
+                if (item.mode === 'campaign') {
+                    modeText = _t('hud.level', 'Рівень') + ' ' + (item.level || '?');
+                }
                 html += '<div class="setting-row" style="padding:10px 0;">' +
                     '<span class="setting-label">' + badge + ' ' + modeText + ' <span style="font-size:11px;color:#8a92b2;">(' + (item.date || '') + ')</span></span>' +
                     '<span class="setting-value" style="font-size:17px;">' + U.formatNumber(item.score) + '</span>' +
@@ -679,6 +959,7 @@
                 const s = skins[i];
                 const active = s.id === currentId ? ' active' : '';
                 const locked = s.unlocked ? '' : ' locked';
+                const skinName = _t('skin.' + s.id, s.name);
                 let iconStyle = 'background:' + s.color + ';';
                 if (s.color === 'rainbow') {
                     iconStyle = 'background:linear-gradient(45deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff);';
@@ -687,11 +968,11 @@
                 if (!s.unlocked) {
                     unlockHint = '<div class="tile-label" style="color:#ff3860;font-size:10px;">' + _unlockText(s.unlock) + '</div>';
                 } else {
-                    unlockHint = '<div class="tile-label" style="font-size:10px; color:#8a92b2;">Трейл: ' + s.trailShape + '</div>';
+                    unlockHint = '<div class="tile-label" style="font-size:10px; color:#8a92b2;">' + _t('skins.trail', 'Трейл') + ': ' + s.trailShape + '</div>';
                 }
                 html += '<div class="tile' + active + locked + '" data-skin="' + s.id + '">' +
                     '<div class="tile-icon" style="' + iconStyle + '"></div>' +
-                    '<div class="tile-label">' + s.name + '</div>' +
+                    '<div class="tile-label">' + skinName + '</div>' +
                     unlockHint +
                     '</div>';
             }
@@ -705,7 +986,7 @@
                         _clickSound();
                         buildSkins();
                     } else {
-                        try { window.UI.showToast('Скін заблокований', 'warn'); } catch (e) {}
+                        try { window.UI.showToast(_t('skins.locked', 'Скін заблокований'), 'warn'); } catch (e) {}
                     }
                 });
             }
@@ -716,11 +997,15 @@
 
     function _unlockText(u) {
         if (!u || u === 'free') return '';
-        const names = { bestScore: 'Рекорд', bestCombo: 'Комбо', starsCollected: 'Зірки' };
         if (u.stats) {
+            const names = {
+                bestScore: _t('record', 'Рекорд'),
+                bestCombo: _t('combo', 'Комбо'),
+                starsCollected: _t('stars_collected', 'Зірки')
+            };
             return (names[u.stats] || u.stats) + ' ≥ ' + u.value;
         }
-        if (u.achievement) return 'Досягнення';
+        if (u.achievement) return _t('achievements.word', 'Досягнення');
         return '';
     }
 
@@ -736,8 +1021,8 @@
                 const icon = a.unlocked ? '🏆' : '🔒';
                 html += '<div class="tile' + cls + '">' +
                     '<div class="tile-icon">' + icon + '</div>' +
-                    '<div class="tile-label">' + a.name + '</div>' +
-                    '<div class="tile-label" style="font-size:10px;">' + a.desc + '</div>' +
+                    '<div class="tile-label">' + _t('ach.' + a.id + '.name', a.name) + '</div>' +
+                    '<div class="tile-label" style="font-size:10px;">' + _t('ach.' + a.id + '.desc', a.desc) + '</div>' +
                     '</div>';
             }
             grid.innerHTML = html;
@@ -759,17 +1044,18 @@
             }
 
             const rows = [
-                ['🏆 Найкращий рахунок', U.formatNumber(s.bestScore || 0)],
-                ['⭐ Зірок у кампанії', totalStars + ' / 45'],
-                ['🔥 Найкраще комбо', s.bestCombo || 0],
-                ['🎮 Всього ігор', s.totalGames || 0],
-                ['💀 Всього смертей', s.totalDeaths || 0],
-                ['⭐ Зірок зібрано під час гри', s.starsCollected || 0],
-                ['⚡ Штормів пережито', s.stormsSurvived || 0],
-                ['🎯 Near-miss', s.nearMisses || 0],
-                ['👻 Крізь стіни', s.ghostPasses || 0],
-                ['⏱ Найдовша гра', U.formatTime(s.longestGame || 0)],
-                ['🕐 Загальний час', U.formatTime(s.totalPlaytime || 0)]
+                [_t('stats.bestScore', '🏆 Найкращий рахунок'), U.formatNumber(s.bestScore || 0)],
+                [_t('stats.campaignStars', '⭐ Зірок у кампанії'), totalStars + ' / 45'],
+                [_t('stats.dailyStreak', '🔥 Серія викликів дня'), (s.dailyStreak || 0) + ' 🔥'],
+                [_t('stats.bestCombo', '🔥 Найкраще комбо'), s.bestCombo || 0],
+                [_t('stats.totalGames', '🎮 Всього ігор'), s.totalGames || 0],
+                [_t('stats.totalDeaths', '💀 Всього смертей'), s.totalDeaths || 0],
+                [_t('stats.starsCollected', '⭐ Зірок зібрано під час гри'), s.starsCollected || 0],
+                [_t('stats.stormsSurvived', '⚡ Штормів пережито'), s.stormsSurvived || 0],
+                [_t('stats.nearMisses', '🎯 Near-miss'), s.nearMisses || 0],
+                [_t('stats.ghostPasses', '👻 Крізь стіни'), s.ghostPasses || 0],
+                [_t('stats.longestGame', '⏱ Найдовша гра'), U.formatTime(s.longestGame || 0)],
+                [_t('stats.totalPlaytime', '🕐 Загальний час'), U.formatTime(s.totalPlaytime || 0)]
             ];
             let html = '';
             for (let i = 0; i < rows.length; i++) {
@@ -808,11 +1094,13 @@
         init: init,
         buildLevelsGrid: buildLevelsGrid,
         showLevelVictory: showLevelVictory,
+        showModeVictory: showModeVictory,
         buildLeaderboard: buildLeaderboard,
         buildSkins: buildSkins,
         buildAchievements: buildAchievements,
         buildStats: buildStats,
         updateMenuStats: updateMenuStats,
-        showGameOver: showGameOver
+        showGameOver: showGameOver,
+        updateLanguage: updateLanguage
     };
 })();

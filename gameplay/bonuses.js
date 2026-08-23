@@ -56,8 +56,61 @@
                 }
                 r -= weights[i];
             }
+
             const x = area.width + 60;
-            const y = area.top + 40 + _rng() * (area.bottom - area.top - 80);
+            const BONUS_R = 16;       // максимальний радіус бонуса (14) + запас
+            const SAFE_MARGIN = 30;   // відступ від перешкод
+
+            // Геометрії перешкод у зоні спавну (ураховує gates, рухомі блоки, пульсари)
+            let blockers = { rects: [], circles: [] };
+            try {
+                if (window.Obstacles && typeof window.Obstacles.getBlockers === 'function') {
+                    blockers = window.Obstacles.getBlockers(x - 320, x + 160);
+                }
+            } catch (e) {}
+
+            let y = 0;
+            let freeFound = false;
+            const MAX_ATTEMPTS = 10;
+
+            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                y = area.top + 40 + _rng() * (area.bottom - area.top - 80);
+
+                let blocked = false;
+                const need = BONUS_R + SAFE_MARGIN;
+
+                for (let i = 0; i < blockers.rects.length && !blocked; i++) {
+                    const rc = blockers.rects[i];
+                    if (window.Collision) {
+                        blocked = window.Collision.circleRectDist(x, y, need, rc.x, rc.y, rc.w, rc.h) <= 0;
+                    } else {
+                        blocked = !(y + need < rc.y || y - need > rc.y + rc.h);
+                    }
+                }
+                for (let i = 0; i < blockers.circles.length && !blocked; i++) {
+                    const cc = blockers.circles[i];
+                    if (window.Collision) {
+                        blocked = window.Collision.circleCircleDist(
+                            { x: x, y: y, radius: need },
+                            { x: cc.x, y: cc.y, radius: cc.radius }
+                        ) <= 0;
+                    } else {
+                        const dx = x - cc.x;
+                        const dy = y - cc.y;
+                        const rr = need + cc.radius;
+                        blocked = (dx * dx + dy * dy) <= rr * rr;
+                    }
+                }
+
+                if (!blocked) {
+                    freeFound = true;
+                    break;
+                }
+            }
+
+            // Краще пропустити спавн, ніж видати бонус усередині перешкоди
+            if (!freeFound) return;
+
             const b = window.Bonus.create(type, x, y, area);
             if (b) list.push(b);
         } catch (e) {
@@ -157,17 +210,25 @@
     }
 
     function _collectText(b) {
-        switch (b.type) {
-            case 'star': return '+50';
-            case 'shield': return 'ЩИТ!';
-            case 'slow': return 'SLOW-MO';
-            case 'double': return '×2 ОЧКИ';
-            case 'magnet': return 'МАГНІТ';
-            case 'ghost': return 'ПРИВИД';
-            case 'revive': return 'ДРУГЕ ЖИТТЯ';
-            case 'phase': return 'ФАЗА!';
-            default: return '';
+        const key = 'bonus.' + b.type;
+        let text = key;
+        try {
+            if (window.I18n) text = window.I18n.t(key);
+        } catch (e) {}
+        if (text === key) {
+            switch (b.type) {
+                case 'star': return '+50';
+                case 'shield': return 'ЩИТ!';
+                case 'slow': return 'SLOW-MO';
+                case 'double': return '×2 ОЧКИ';
+                case 'magnet': return 'МАГНІТ';
+                case 'ghost': return 'ПРИВИД';
+                case 'revive': return 'ДРУГЕ ЖИТТЯ';
+                case 'phase': return 'ФАЗА!';
+                default: return '';
+            }
         }
+        return text;
     }
 
     function count() {

@@ -39,6 +39,7 @@ html, body {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     user-select: none;
+    overscroll-behavior: none;
 }
 
 button {
@@ -67,6 +68,7 @@ button {
     height: 100%;
     display: block;
     image-rendering: pixelated;
+    touch-action: none; /* весь вхід на канвасі — тапи гри, не скрол/зум */
 }
 
 /* ---- Оверлеї-екрани ---- */
@@ -210,7 +212,11 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 16px 20px;
+    padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        calc(20px + env(safe-area-inset-right, 0px))
+        calc(16px + env(safe-area-inset-bottom, 0px))
+        calc(20px + env(safe-area-inset-left, 0px));
     z-index: 5;
 }
 
@@ -484,7 +490,7 @@ button {
 /* ---- Тости ---- */
 .toast-container {
     position: absolute;
-    bottom: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -608,4 +614,22 @@ input[type="range"] {
     .levels-grid { grid-template-columns: repeat(3, 1fr); }
     .main-menu-grid { grid-template-columns: 1fr; }
     .main-menu-grid .highlight-btn { grid-column: span 1; }
+}
+
+@media (max-width: 360px) {
+    .panel { padding: 14px; }
+    .panel h1 { font-size: 18px; }
+    .panel h2 { font-size: 18px; }
+    .hud-score { font-size: 28px; }
+    .btn { min-width: 90px; padding: 8px 10px; font-size: 11px; }
+    #hud { padding: 8px 10px; }
+    .levels-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .icon-btn { width: 40px; height: 40px; font-size: 16px; }
+    .hud-combo { padding: 4px 8px; font-size: 12px; }
+    .hud-level-title { font-size: 13px; }
+    .hud-progress-bar { width: 180px; height: 6px; }
+    .badge { width: 28px; height: 28px; font-size: 13px; }
+    .tile { padding: 10px 6px; }
+    .tile-icon { width: 38px; height: 38px; font-size: 18px; }
 }

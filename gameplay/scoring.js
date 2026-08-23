@@ -17,6 +17,7 @@
     let _obstaclesPassed = 0;
     let _nearMisses = 0;
     let _stars = 0;
+    let _externalMult = 1;   // множник режиму гри (Time Attack ×2, Zen ×0 тощо)
 
     function _log(level, msg) {
         try { if (window.Logger) window.Logger[level]('[Scoring] ' + msg); } catch (e) {}
@@ -43,7 +44,7 @@
     function _multiplier() {
         const comboMult = 1 + _combo * 0.1;
         const doubleMult = _doubleTime > 0 ? 2 : 1;
-        return comboMult * doubleMult;
+        return comboMult * doubleMult * _externalMult;
     }
 
     function _checkComboMilestone(newCombo) {
@@ -80,12 +81,18 @@
             _obstaclesPassed = 0;
             _nearMisses = 0;
             _stars = 0;
+            _externalMult = 1;
+        },
+
+        // Множник режиму гри; викликається після reset() при старті забігу
+        setExternalMultiplier: function (m) {
+            _externalMult = (typeof m === 'number' && m >= 0) ? m : 1;
         },
 
         update: function (dt) {
             if (dt <= 0) return;
             _elapsed += dt;
-            _score += dt * 5;
+            _score += dt * 5 * _externalMult;
 
             if (_doubleTime > 0) {
                 _doubleTime -= dt;

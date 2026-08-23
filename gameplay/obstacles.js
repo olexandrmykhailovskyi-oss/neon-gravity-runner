@@ -164,6 +164,59 @@
         return list.slice();
     }
 
+    /**
+     * Геометрії перешкод у діапазоні X — для перевірки безпечного спавну бонусів.
+     * Повертає { rects: [{x,y,w,h}], circles: [{x,y,radius}] }.
+     * Для рухомих блоків — повна огибающая коливання (baseY ± amp),
+     * для пульсарів — максимальний радіус, лазери завжди рахуються повною колонкою.
+     */
+    function getBlockers(xMin, xMax) {
+        const result = { rects: [], circles: [] };
+        try {
+            for (let i = 0; i < list.length; i++) {
+                const obs = list[i];
+                if (obs.x + obs.w < xMin || obs.x > xMax) continue;
+
+                switch (obs.type) {
+                    case 'moving':
+                        result.rects.push({
+                            x: obs.x,
+                            y: obs.baseY - obs.amp,
+                            w: obs.w,
+                            h: obs.h + obs.amp * 2
+                        });
+                        break;
+
+                    case 'laser':
+                    case 'moving_laser':
+                        // Завжди блокуємо колонку: фази циклічні, стан на момент спавну невідомий
+                        result.rects.push({ x: obs.x, y: obs.y, w: obs.w, h: obs.h });
+                        break;
+
+                    case 'pulsar':
+                        result.circles.push({ x: obs.x, y: obs.y, radius: obs.baseRadius * 1.2 });
+                        break;
+
+                    case 'gravity_zone':
+                        result.circles.push({ x: obs.x, y: obs.y, radius: obs.radius });
+                        break;
+
+                    default: {
+                        // wall / gate / spikes — через фабрику getRects (gate дає два прямокутники)
+                        const rects = window.Obstacle ? window.Obstacle.getRects(obs) : [];
+                        for (let r = 0; r < rects.length; r++) {
+                            result.rects.push({ x: rects[r].x, y: rects[r].y, w: rects[r].w, h: rects[r].h });
+                        }
+                        break;
+                    }
+                }
+            }
+        } catch (e) {
+            _log('error', 'getBlockers', e.message);
+        }
+        return result;
+    }
+
     window.Obstacles = {
         reset: reset,
         update: update,
@@ -171,6 +224,7 @@
         hit: hit,
         checkNearMiss: checkNearMiss,
         count: count,
-        getList: getList
+        getList: getList,
+        getBlockers: getBlockers
     };
 })();

@@ -62,6 +62,7 @@
             _state = 'menu';
             _lastTime = 0;
             _rafId = requestAnimationFrame(_loop);
+            // Прим.: автопауза при зміні вкладки вже реалізована в ui/input.js
             _log('info', 'init OK');
         } catch (e) {
             _log('error', 'init', e.message);
@@ -130,11 +131,35 @@
         _startRun();
     }
 
+    function startTimeAttack() {
+        _mode = 'timeattack';
+        _currentLevel = null;
+        _startRun();
+    }
+
+    function startSurvival() {
+        _mode = 'survival';
+        _currentLevel = null;
+        _startRun();
+    }
+
+    function startZen() {
+        _mode = 'zen';
+        _currentLevel = null;
+        _startRun();
+    }
+
     function retryCurrent() {
         if (_mode === 'campaign' && _currentLevel) {
             startCampaignLevel(_currentLevel.id);
         } else if (_mode === 'daily') {
             startDaily();
+        } else if (_mode === 'timeattack') {
+            startTimeAttack();
+        } else if (_mode === 'survival') {
+            startSurvival();
+        } else if (_mode === 'zen') {
+            startZen();
         } else {
             startEndless();
         }
@@ -165,10 +190,29 @@
                 customRng = window.Utils.createRng(seed);
             }
 
+            // Применение настроек режима
+            let modeSettings = {};
+            if (_mode === 'timeattack' || _mode === 'survival' || _mode === 'zen') {
+                try {
+                    if (window.Modes) {
+                        modeSettings = window.Modes.getModeConfig(_mode) || {};
+                    }
+                } catch (e) {}
+            }
+
             // Скидання систем
             window.Scoring.reset();
+            // Множник очок режиму (Time Attack ×2, Survival ×1.5, Zen ×0)
+            if (modeSettings && typeof modeSettings.scoreMultiplier === 'number') {
+                window.Scoring.setExternalMultiplier(modeSettings.scoreMultiplier);
+            } else {
+                window.Scoring.setExternalMultiplier(1);
+            }
             window.Particles.clear();
             window.FloatingTexts.clear();
+
+            // Zen — спокійний режим: базові перешкоди, менша щільність, без штормів
+            const ZEN_TYPES = ['wall', 'gate', 'moving', 'spikes'];
 
             // Скидання перешкод та бонусів
             if (_mode === 'campaign' && _currentLevel) {
@@ -176,6 +220,12 @@
                 window.Bonuses.reset(customRng);
                 window.Storm.reset(_currentLevel);
                 if (window.Background) window.Background.setTheme(_currentLevel.theme);
+            } else if (_mode === 'zen') {
+                window.Obstacles.reset(ZEN_TYPES, 0.7, customRng);
+                window.Bonuses.reset(customRng);
+                window.Storm.reset({ storm: false });
+                const t = window.State.getSetting('theme');
+                if (window.Background) window.Background.setTheme(t);
             } else {
                 window.Obstacles.reset(null, 1.0, customRng);
                 window.Bonuses.reset(customRng);
@@ -309,6 +359,20 @@
         const growth = _cfg('GAME', 'SPEED_GROWTH', 2.5);
         const maxSpd = _cfg('GAME', 'MAX_SPEED', 700);
 
+        // Получаем настройки режима
+        let modeGrowth = growth;
+        let modeDuration = Infinity;
+
+        try {
+            if (window.Modes && (_mode === 'timeattack' || _mode === 'survival' || _mode === 'zen')) {
+                const modeConfig = window.Modes.getModeConfig(_mode);
+                if (modeConfig) {
+                    modeGrowth = growth * (modeConfig.difficultyGrowth || 1.0);
+                    modeDuration = modeConfig.duration || Infinity;
+                }
+            }
+        } catch (e) {}
+
         if (_mode === 'campaign' && _currentLevel) {
             let lvlSpd = baseSpd * (_currentLevel.speedMult || 1.0);
             if (_currentLevel.speedGrowthMax) {
@@ -317,7 +381,7 @@
             }
             _speed = lvlSpd * diffMult;
         } else {
-            _speed = Math.min(baseSpd + _elapsed * growth, maxSpd) * diffMult;
+            _speed = Math.min(baseSpd + _elapsed * modeGrowth, maxSpd) * diffMult;
         }
 
         // Множник шторму
@@ -339,15 +403,25 @@
             return;
         }
 
-        // Колізії з перешкодами
+        // Проверка завершения Time Attack режима
+        if (_mode === 'timeattack' && _elapsed >= modeDuration) {
+            _timeAttackComplete();
+            return;
+        }
+
+        // Колізії з перешкодами (у Zen смерть вимкнена — гравець проходить крізь усе)
         let hitObs = null;
-        try { hitObs = window.Obstacles.hit(window.Player); } catch (e) {}
+        if (_mode !== 'zen') {
+            try { hitObs = window.Obstacles.hit(window.Player); } catch (e) {}
+        }
         if (hitObs) {
             const result = window.Player.hit();
             if (result.wasGhost) {
                 _ghostThisRun++;
                 try {
-                    window.FloatingTexts.add(window.Player.x, window.Player.y - 30, 'ПРИВИД!', '#c0a0ff');
+                    let ghostText = 'ПРИВИД!';
+                    try { if (window.I18n) ghostText = window.I18n.t('float.ghost'); } catch (x) {}
+                    window.FloatingTexts.add(window.Player.x, window.Player.y - 30, ghostText, '#c0a0ff');
                 } catch (e) {}
             } else if (result.revived) {
                 // Воскресіння оброблено в Player
@@ -381,7 +455,9 @@
             if (window.Storm.consumeSurvived()) {
                 _stormsThisRun++;
                 window.Scoring.addStorm();
-                window.FloatingTexts.add(window.Player.x, window.Player.y - 40, 'ШТОРМ!', '#ff2bd6');
+                let stormText = 'ШТОРМ!';
+                try { if (window.I18n) stormText = window.I18n.t('float.storm'); } catch (x) {}
+                window.FloatingTexts.add(window.Player.x, window.Player.y - 40, stormText, '#ff2bd6');
             }
         } catch (e) {}
 
@@ -397,9 +473,12 @@
         if (_hudTimer > 0.08) {
             _hudTimer = 0;
             try {
-                const lvlProg = (_mode === 'campaign' && _currentLevel && _currentLevel.duration > 0)
-                    ? (_elapsed / _currentLevel.duration)
-                    : 0;
+                let lvlProg = 0;
+                if (_mode === 'campaign' && _currentLevel && _currentLevel.duration > 0) {
+                    lvlProg = _elapsed / _currentLevel.duration;
+                } else if (_mode === 'timeattack' && modeDuration > 0) {
+                    lvlProg = _elapsed / modeDuration;
+                }
 
                 window.HUD.update({
                     score: window.Scoring.score(),
@@ -412,7 +491,9 @@
                     double: window.Scoring.isDoubleActive(),
                     mode: _mode,
                     level: _currentLevel,
-                    levelProgress: lvlProg
+                    levelProgress: lvlProg,
+                    elapsed: _elapsed,
+                    duration: modeDuration
                 });
             } catch (e) {}
         }
@@ -445,6 +526,57 @@
             } catch (e) {}
         } catch (e) {
             _handleLoopError(e);
+        }
+    }
+
+    // Завершение Time Attack режима — экран результатов вместо вылета в меню
+    function _timeAttackComplete() {
+        _state = 'victory';
+        window.HUD.show(false);
+        try { if (window.AudioSys) window.AudioSys.stopMusic(); } catch (e) {}
+
+        try {
+            const finalScore = window.Scoring.finalScore();
+            let isNewRecord = false;
+
+            const s = window.State.getStats();
+            isNewRecord = finalScore > (s.bestScore || 0);
+            window.State.updateStats({
+                bestScore: Math.max(s.bestScore || 0, finalScore),
+                bestCombo: Math.max(s.bestCombo || 0, window.Scoring.bestCombo()),
+                totalGames: (s.totalGames || 0) + 1,
+                starsCollected: (s.starsCollected || 0) + window.Scoring.stars(),
+                stormsSurvived: (s.stormsSurvived || 0) + _stormsThisRun,
+                nearMisses: (s.nearMisses || 0) + window.Scoring.nearMisses(),
+                ghostPasses: (s.ghostPasses || 0) + _ghostThisRun,
+                totalPlaytime: (s.totalPlaytime || 0) + _elapsed,
+                lastPlayed: Date.now()
+            });
+
+            window.State.addLeaderboardEntry({
+                score: finalScore,
+                mode: 'timeattack',
+                level: null,
+                combo: window.Scoring.bestCombo()
+            });
+
+            try { window.Achievements.checkAll(); } catch (e) {}
+            try { window.Skins.checkUnlocks(); } catch (e) {}
+            try { if (window.CloudStorage) window.CloudStorage.pushProgress(); } catch (e) {}
+
+            // Показать экран результатов Time Attack
+            if (window.Screens && typeof window.Screens.showModeVictory === 'function') {
+                window.Screens.showModeVictory({
+                    mode: 'timeattack',
+                    score: finalScore,
+                    newRecord: isNewRecord
+                });
+            } else {
+                window.UI.showScreen('main');
+                try { window.Screens.updateMenuStats(); } catch (e) {}
+            }
+        } catch (e) {
+            _log('error', '_timeAttackComplete', e.message);
         }
     }
 
@@ -487,6 +619,7 @@
 
             try { window.Achievements.checkAll(); } catch (e) {}
             try { window.Skins.checkUnlocks(); } catch (e) {}
+            try { if (window.CloudStorage) window.CloudStorage.pushProgress(); } catch (e) {}
 
             window.Screens.showLevelVictory({
                 level: _currentLevel,
@@ -526,10 +659,13 @@
 
             if (_mode === 'daily') {
                 const todayStr = window.Utils.getTodayString();
+                // Серія днів підряд з викликом дня: +1 якщо грали вчора, скидання при пропуску
+                const nextStreak = window.Utils.nextDailyStreak(s.dailyStreak, s.dailyDate, todayStr);
                 if (s.dailyDate !== todayStr || finalScore > (s.dailyBest || 0)) {
                     window.State.updateStats({
                         dailyBest: finalScore,
-                        dailyDate: todayStr
+                        dailyDate: todayStr,
+                        dailyStreak: nextStreak
                     });
                 }
             }
@@ -543,6 +679,7 @@
 
             try { window.Achievements.checkAll(); } catch (e) {}
             try { window.Skins.checkUnlocks(); } catch (e) {}
+            try { if (window.CloudStorage) window.CloudStorage.pushProgress(); } catch (e) {}
 
             window.Screens.showGameOver({
                 mode: _mode,
@@ -606,6 +743,9 @@
         startCampaignLevel: startCampaignLevel,
         startNextLevel: startNextLevel,
         startDaily: startDaily,
+        startTimeAttack: startTimeAttack,
+        startSurvival: startSurvival,
+        startZen: startZen,
         retryCurrent: retryCurrent,
         finishTutorial: finishTutorial,
         goMenu: goMenu,

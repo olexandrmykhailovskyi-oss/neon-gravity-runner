@@ -22,10 +22,10 @@
 
     function _checkModules() {
         const required = [
-            'Logger', 'SafeStorage', 'State', 'Config', 'Utils', 'Collision',
+            'Logger', 'SafeStorage', 'State', 'Config', 'Utils', 'Collision', 'I18n',
             'AudioSys', 'Particles', 'FloatingTexts', 'Background', 'Effects',
             'Skins', 'Achievements', 'Player', 'Obstacle', 'Obstacles',
-            'Bonus', 'Bonuses', 'Storm', 'Scoring', 'Levels', 'UI', 'Screens',
+            'Bonus', 'Bonuses', 'Storm', 'Scoring', 'Levels', 'Modes', 'UI', 'Screens',
             'HUD', 'Game', 'Input'
         ];
         const missing = [];
@@ -69,26 +69,50 @@
         }
     }
 
+    function _tr(key, fallback) {
+        try {
+            const v = window.I18n ? window.I18n.t(key) : key;
+            return v === key ? fallback : v;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
     function start() {
         try {
-            _setProgress(5, 'Перевірка модулів…');
+            _setProgress(5, _tr('boot.check', 'Перевірка модулів…'));
             _checkModules();
 
-            _setProgress(20, 'Ініціалізація стану…');
+            _setProgress(20, _tr('boot.state', 'Ініціалізація стану…'));
             window.State.init();
 
-            _setProgress(40, 'Побудова інтерфейсу…');
+            _setProgress(30, _tr('boot.lang', 'Ініціалізація мови…'));
+            window.I18n.init();
+
+            _setProgress(40, _tr('boot.ui', 'Побудова інтерфейсу…'));
             window.Screens.init();
             window.HUD.init();
 
-            _setProgress(60, 'Ініціалізація гри…');
+            _setProgress(60, _tr('boot.game', 'Ініціалізація гри…'));
             window.Game.init();
             window.Input.init();
 
-            _setProgress(80, 'Застосування налаштувань…');
+            _setProgress(75, _tr('boot.settings', 'Застосування налаштувань…'));
             _applySettings();
 
-            _setProgress(100, 'Готово!');
+            // Хмарна синхронізація (асинхронна, не блокує старт гри)
+            try { if (window.CloudStorage) window.CloudStorage.init(); } catch (e) {
+                _log('warn', 'CloudStorage.init: ' + e.message);
+            }
+
+            _setProgress(90, _tr('boot.update', 'Оновлення інтерфейсу…'));
+            try {
+                window.Screens.updateLanguage();
+            } catch (e) {
+                _log('warn', 'Language update failed: ' + e.message);
+            }
+
+            _setProgress(100, _tr('boot.ready', 'Готово!'));
 
             try {
                 const reloadBtn = document.getElementById('error-reload');

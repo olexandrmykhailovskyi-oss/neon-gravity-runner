@@ -21,7 +21,8 @@
                 skin: 'default',
                 reducedMotion: false,
                 mute: false,
-                difficulty: 'normal' // 'easy' | 'normal' | 'hardcore'
+                difficulty: 'normal', // 'easy' | 'normal' | 'hardcore'
+                language: 'auto'     // 'auto' | 'uk' | 'ru' | 'en'
             },
             campaign: {
                 maxLevel: 1,
@@ -45,7 +46,8 @@
                 totalPlaytime: 0,
                 lastPlayed: 0,
                 dailyBest: 0,
-                dailyDate: ''
+                dailyDate: '',
+                dailyStreak: 0
             },
             achievements: [],
             tutorialDone: false
@@ -222,6 +224,154 @@
         }
     }
 
+    // ---- Експорт / імпорт / скидання прогресу ----
+
+    // Unicode-безпечний base64
+    function _b64Encode(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (m, p) {
+            return String.fromCharCode(parseInt(p, 16));
+        }));
+    }
+
+    function _b64Decode(str) {
+        return decodeURIComponent(Array.prototype.map.call(atob(str), function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+    }
+
+    function exportProgress() {
+        try {
+            const payload = { state: data, leaderboard: getLeaderboard(), exportedAt: Date.now() };
+            const code = _b64Encode(JSON.stringify(payload));
+            // Коротка контрольна сума для валідації при імпорті
+            return 'NGR1-' + _hash36(code) + '-' + code;
+        } catch (e) {
+            try { if (window.Logger) window.Logger.error('exportProgress', e.message || ''); } catch (x) {}
+            return null;
+        }
+    }
+
+    // Несекретна контрольна сума (djb2-подібна) для перевірки цілісності payload
+    function _hash36(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+        }
+        return (hash >>> 0).toString(36);
+    }
+
+    function importProgress(code) {
+        try {
+            if (typeof code !== 'string' || code.indexOf('NGR1-') !== 0) return false;
+            const rest = code.slice(5);
+            const dash = rest.indexOf('-');
+            if (dash < 0) return false;
+
+            const hashToken = rest.slice(0, dash);
+            const payloadB64 = rest.slice(dash + 1);
+            if (!payloadB64) return false;
+
+            // Перевірка чексуми: будь-яка підміна символів у payload відхиляється
+            if (_hash36(payloadB64) !== hashToken) return false;
+
+            const payloadRaw = JSON.parse(_b64Decode(payloadB64));
+            return _applyPayload(payloadRaw);
+        } catch (e) {
+            try { if (window.Logger) window.Logger.error('importProgress', e.message || ''); } catch (x) {}
+            return false;
+        }
+    }
+
+    // Злиття стану з хмари (той самий формат, що всередині експорт-коду)
+    function mergeRemote(remoteState) {
+        try {
+            if (!remoteState || typeof remoteState !== 'object' ||
+                !remoteState.settings || !remoteState.stats) return false;
+            return _applyPayload({ state: remoteState });
+        } catch (e) {
+            try { if (window.Logger) window.Logger.error('mergeRemote', e.message || ''); } catch (x) {}
+            return false;
+        }
+    }
+
+    function _applyPayload(payloadRaw) {
+        try {
+            if (!payloadRaw || typeof payloadRaw !== 'object' || !payloadRaw.state) return false;
+
+            const incoming = payloadRaw.state;
+            if (typeof incoming !== 'object' || !incoming.settings || !incoming.stats) return false;
+
+            // Захоплюємо ЛОКАЛЬНІ значення до злиття — вони не мають зникнути
+            const prevStars = {};
+            const prevC = data.campaign || {};
+            if (prevC.stars) {
+                for (let k = 1; k <= 15; k++) prevStars[k] = prevC.stars[k] || 0;
+            }
+            const prevMaxLevel = prevC.maxLevel || 1;
+            const MAXIMA = [
+                'bestScore', 'bestCombo', 'longestGame', 'dailyBest',
+                'totalGames', 'totalDeaths', 'starsCollected', 'stormsSurvived',
+                'nearMisses', 'ghostPasses', 'totalPlaytime'
+            ];
+            const prevStats = {};
+            for (let i = 0; i < MAXIMA.length; i++) {
+                prevStats[MAXIMA[i]] = (data.stats && data.stats[MAXIMA[i]]) || 0;
+            }
+            const prevAch = Array.isArray(data.achievements) ? data.achievements.slice() : [];
+
+            // Поточний стан — база; імпорт доповнює його (налаштування — з коду)
+            data = deepMerge(data, incoming);
+
+            // Зірки, maxLevel, статистика, досягнення — тільки вгору/об'єднання
+            const c = data.campaign;
+            const incC = incoming.campaign || {};
+            for (let k = 1; k <= 15; k++) {
+                c.stars[k] = Math.max((incC.stars && incC.stars[k]) || 0, prevStars[k] || 0);
+            }
+            c.maxLevel = Math.max(typeof incC.maxLevel === 'number' ? incC.maxLevel : 1, prevMaxLevel);
+
+            const incS = incoming.stats || {};
+            for (let i = 0; i < MAXIMA.length; i++) {
+                const kk = MAXIMA[i];
+                data.stats[kk] = Math.max(incS[kk] || 0, prevStats[kk] || 0);
+            }
+
+            if (!Array.isArray(data.achievements)) data.achievements = [];
+            const allAch = prevAch.concat(Array.isArray(incoming.achievements) ? incoming.achievements : []);
+            for (let i = 0; i < allAch.length; i++) {
+                if (data.achievements.indexOf(allAch[i]) === -1) {
+                    data.achievements.push(allAch[i]);
+                }
+            }
+
+            // Рекорди — мержимо та залишаємо ТОП-5
+            if (Array.isArray(payloadRaw.leaderboard) && payloadRaw.leaderboard.length > 0) {
+                const merged = getLeaderboard();
+                for (let i = 0; i < payloadRaw.leaderboard.length; i++) merged.push(payloadRaw.leaderboard[i]);
+                merged.sort(function (a, b) { return b.score - a.score; });
+                window.SafeStorage.set(LEADERBOARD_KEY, merged.slice(0, 5));
+            }
+
+            save();
+            return true;
+        } catch (e) {
+            try { if (window.Logger) window.Logger.error('_applyPayload', e.message || ''); } catch (x) {}
+            return false;
+        }
+    }
+
+    function resetProgress() {
+        try {
+            window.SafeStorage.remove(STORAGE_KEY);
+            window.SafeStorage.remove(LEADERBOARD_KEY);
+            data = createDefaults();
+            save();
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     window.State = {
         init: init,
         save: save,
@@ -234,6 +384,10 @@
         isAchievementUnlocked: isAchievementUnlocked,
         getDifficultyMultipliers: getDifficultyMultipliers,
         getLeaderboard: getLeaderboard,
-        addLeaderboardEntry: addLeaderboardEntry
+        addLeaderboardEntry: addLeaderboardEntry,
+        exportProgress: exportProgress,
+        importProgress: importProgress,
+        mergeRemote: mergeRemote,
+        resetProgress: resetProgress
     };
 })();

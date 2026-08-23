@@ -32,20 +32,37 @@
         try { window.UI.toggle('#hud', !!bool); } catch (e) {}
     }
 
+    function _tr(key, fallback) {
+        try {
+            const v = window.I18n ? window.I18n.t(key) : key;
+            return v === key ? fallback : v;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
     function update(data) {
         if (!data) return;
         try {
             const U = window.Utils;
-            window.UI.setText('#hud-score', U.formatNumber(data.score || 0));
 
-            // Комбо
-            const comboEl = window.UI.$('#hud-combo');
-            if (comboEl) {
-                if (data.combo > 1) {
-                    comboEl.classList.remove('hidden');
-                    window.UI.setText('#hud-combo-value', '×' + data.combo);
-                } else {
-                    comboEl.classList.add('hidden');
+            // Zen — без очок: ховаємо рахунок і комбо
+            const scoreEl = document.querySelector('.hud-score');
+            if (scoreEl) scoreEl.classList.toggle('hidden', data.mode === 'zen');
+            const comboWrap = window.UI.$('#hud-combo');
+            if (comboWrap && data.mode === 'zen') comboWrap.classList.add('hidden');
+
+            if (data.mode !== 'zen') {
+                window.UI.setText('#hud-score', U.formatNumber(data.score || 0));
+
+                // Комбо
+                if (comboWrap) {
+                    if (data.combo > 1) {
+                        comboWrap.classList.remove('hidden');
+                        window.UI.setText('#hud-combo-value', '×' + data.combo);
+                    } else {
+                        comboWrap.classList.add('hidden');
+                    }
                 }
             }
 
@@ -56,7 +73,19 @@
                 if (levelInfoEl) {
                     levelInfoEl.classList.remove('hidden');
                     const lvl = data.level;
-                    window.UI.setText('#hud-level-title', 'Рівень ' + lvl.id + ' — ' + lvl.name);
+                    const levelWord = _tr('hud.level', 'Рівень');
+                    let lvlName = '';
+                    try {
+                        if (window.Config && window.Config.LEVELS) {
+                            for (let i = 0; i < window.Config.LEVELS.length; i++) {
+                                if (window.Config.LEVELS[i].id === lvl.id) {
+                                    lvlName = _tr('level.' + lvl.id, window.Config.LEVELS[i].name);
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                    window.UI.setText('#hud-level-title', levelWord + ' ' + lvl.id + ' — ' + lvlName);
                 }
                 if (levelProgressEl && typeof data.levelProgress === 'number') {
                     levelProgressEl.classList.remove('hidden');
@@ -69,7 +98,36 @@
             } else if (data.mode === 'daily') {
                 if (levelInfoEl) {
                     levelInfoEl.classList.remove('hidden');
-                    window.UI.setText('#hud-level-title', '📅 Виклик дня');
+                    window.UI.setText('#hud-level-title', _tr('hud.daily', '📅 Виклик дня'));
+                }
+                if (levelProgressEl) levelProgressEl.classList.add('hidden');
+            } else if (data.mode === 'timeattack') {
+                // Time Attack — зворотний відлік + прогрес-бар
+                if (levelInfoEl) {
+                    levelInfoEl.classList.remove('hidden');
+                    const remain = Math.max(0, (data.duration || 180) - (data.elapsed || 0));
+                    window.UI.setText('#hud-level-title', _tr('mode.timeattack.hud', '⏱ Time Attack') + ' — ' + U.formatTime(remain));
+                }
+                if (levelProgressEl && typeof data.levelProgress === 'number') {
+                    levelProgressEl.classList.remove('hidden');
+                    const fill = window.UI.$('#hud-level-progress-fill');
+                    if (fill) {
+                        const pct = Math.min(100, Math.max(0, data.levelProgress * 100));
+                        fill.style.width = pct + '%';
+                    }
+                }
+            } else if (data.mode === 'survival') {
+                // Survival — час виживання
+                if (levelInfoEl) {
+                    levelInfoEl.classList.remove('hidden');
+                    window.UI.setText('#hud-level-title', _tr('mode.survival.hud', '💀 Survival') + ' — ' + U.formatTime(data.elapsed || 0));
+                }
+                if (levelProgressEl) levelProgressEl.classList.add('hidden');
+            } else if (data.mode === 'zen') {
+                // Zen — просто заголовок режиму
+                if (levelInfoEl) {
+                    levelInfoEl.classList.remove('hidden');
+                    window.UI.setText('#hud-level-title', _tr('mode.zen.hud', '🧘 Zen'));
                 }
                 if (levelProgressEl) levelProgressEl.classList.add('hidden');
             } else {
@@ -87,13 +145,14 @@
     function _updateBadges(data) {
         const c = window.UI.$('#hud-badges');
         if (!c) return;
+        // _tr ніколи не кидає винятків, тож fallback-гілка з дублюванням бейджів не потрібна
         let html = '';
-        if (data.shield) html += '<div class="badge shield" title="Щит">⛨</div>';
-        if (data.revive) html += '<div class="badge revive" title="Друге життя">♥</div>';
-        if (data.phase) html += '<div class="badge phase" title="Фаза">⚡</div>';
-        if (data.magnet) html += '<div class="badge magnet" title="Магніт">M</div>';
-        if (data.ghost) html += '<div class="badge ghost" title="Привид">👻</div>';
-        if (data.double) html += '<div class="badge double" title="×2 очки">×2</div>';
+        if (data.shield) html += '<div class="badge shield" title="' + _tr('bonus.shield', 'Щит') + '">⛨</div>';
+        if (data.revive) html += '<div class="badge revive" title="' + _tr('bonus.revive', 'Друге життя') + '">♥</div>';
+        if (data.phase) html += '<div class="badge phase" title="' + _tr('bonus.phase', 'Фаза') + '">⚡</div>';
+        if (data.magnet) html += '<div class="badge magnet" title="' + _tr('bonus.magnet', 'Магніт') + '">M</div>';
+        if (data.ghost) html += '<div class="badge ghost" title="' + _tr('bonus.ghost', 'Привид') + '">👻</div>';
+        if (data.double) html += '<div class="badge double" title="' + _tr('bonus.double', '×2 очки') + '">×2</div>';
         c.innerHTML = html;
     }
 

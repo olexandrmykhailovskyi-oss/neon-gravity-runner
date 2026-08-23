@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Neon Gravity Runner — неон-аркада з перемиканням гравітації та кампанією з 15 рівнів.">
     <meta name="theme-color" content="#05010f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Neon Gravity Runner">
+    <meta property="og:title" content="Neon Gravity Runner">
+    <meta property="og:description" content="Неон-аркада з перемиканням гравітації: 15 рівнів кампанії, зірки, бонуси та Neon Storm. Грається прямо в браузері.">
     <title>Neon Gravity Runner</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
@@ -56,7 +63,7 @@
                 <div class="boot-title">NEON GRAVITY RUNNER</div>
                 <div class="boot-loader">
                     <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
-                    <div class="boot-text" id="boot-text">Ініціалізація…</div>
+                    <div class="boot-text" id="boot-text" data-i18n="boot.init">Ініціалізація…</div>
                 </div>
             </div>
         </div>
@@ -65,10 +72,10 @@
         <div id="screen-error" class="screen hidden">
             <div class="error-box">
                 <div class="error-icon">⚠</div>
-                <h2>Щось пішло не так</h2>
-                <p id="error-text">Сталася неочікувана помилка.</p>
+                <h2 data-i18n="error.title">Щось пішло не так</h2>
+                <p id="error-text" data-i18n="error.text">Сталася неочікувана помилка.</p>
                 <pre id="error-stack"></pre>
-                <button id="error-reload" class="btn primary">Перезапустити гру</button>
+                <button id="error-reload" class="btn primary" data-i18n="error.reload">Перезапустити гру</button>
             </div>
         </div>
 
@@ -88,6 +95,23 @@
     <script src="core/config.js"></script>
     <script src="core/utils.js"></script>
     <script src="core/collision.js"></script>
+    <script src="core/i18n.js"></script>
+
+    <!-- ===================================================== -->
+    <!-- ХМАРНА СИНХРОНІЗАЦІЯ ПРОГРЕСУ (Supabase)              -->
+    <!-- 1. Створіть безкоштовний проєкт на https://supabase.com -->
+    <!-- 2. Виконайте SQL з README.md (розділ «Хмарна синхронізація») -->
+    <!-- 3. Вставте URL та anon-ключ нижче — рядок «Хмарна     -->
+    <!--    синхронізація» з'явиться в налаштуваннях гри.      -->
+    <!-- Якщо поля порожні, гра працює суто локально.          -->
+    <!-- ===================================================== -->
+    <script>
+        window.NGR_CLOUD_CONFIG = {
+            supabaseUrl: '',
+            supabaseKey: ''
+        };
+    </script>
+    <script src="core/cloud_storage.js"></script>
 
     <script src="fx/audio.js"></script>
     <script src="fx/particles.js"></script>
@@ -106,6 +130,7 @@
     <script src="gameplay/storm.js"></script>
     <script src="gameplay/scoring.js"></script>
     <script src="gameplay/levels.js"></script>
+    <script src="gameplay/modes.js"></script>
 
     <script src="ui/ui.js"></script>
     <script src="ui/screens.js"></script>
