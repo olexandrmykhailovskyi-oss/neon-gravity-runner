@@ -4,6 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-00e5ff.svg)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JavaScript-fff36b.svg)](https://developer.mozilla.org/uk/docs/Web/JavaScript)
 [![Canvas 2D](https://img.shields.io/badge/Canvas-2D-ff2bd6.svg)](https://developer.mozilla.org/uk/docs/Web/API/Canvas_API)
+[![Tests](https://img.shields.io/badge/smoke_tests-104_✔-39ff14.svg)](test_smoke.js)
+
+**▶ [ГРАТИ ОНЛАЙН](https://neon-gravity-runner.vercel.app)** — без реєстрації, встановлюється як PWA та працює офлайн після першого візиту.
 
 > **Neon Gravity Runner** — браузерна неон-аркада на чистому JavaScript (Canvas 2D, без зовнішніх бібліотек та бандлерів).  
 > Керуй неоновою частинкою, що мчить крізь кібер-тунель: перемикай гравітацію, долай усі 35 рівнів кампанії, збирай зірки, бонуси та тримай комбо!
@@ -73,6 +76,9 @@ neon_gravity_runner/
 │   ├── config.js               # Заморожені константи: 35 рівнів, фізика, досягнення
 │   ├── utils.js                # Математика, форматування, Mulberry32 PRNG для Daily
 │   ├── collision.js            # Геометричні колізії (circle-rect, circle-circle)
+│   ├── cloud_storage.js        # Хмарна синхронізація прогресу (Supabase SDK з CDN)
+│   ├── global_scores.js        # Світовий лідерборд: submit/top (таблиця scores)
+│   ├── analytics.js            # Анонімна телеметрія подій (батчі, analytics_events)
 │   ├── boot.js                 # Контроль модулів та завантажувальний екран
 │   └── main.js                 # Глобальний життєвий цикл та обробники помилок
 ├── fx/
@@ -94,6 +100,7 @@ neon_gravity_runner/
 └── ui/
     ├── ui.js                   # Безпечний DOM-маніпулятор
     ├── screens.js              # Екрани меню, вибір 35 рівнів, перемога із зірками, ТОП-5
+    ├── editor.js               # 🛠 Редактор рівнів: конструктор, коди NGRL1, «Мої рівні»
     ├── hud.js                  # HUD з таймером, прогрес-баром рівня та бейджами
     ├── input.js                # Обробник клавіш та автопаузи при зміні вкладок
     ├── skins.js                # 8 скінів із різними формами частинок трейлу
@@ -129,20 +136,25 @@ neon_gravity_runner/
 - **👑 ТОП-5 локальних рекордів** та повна статистика польотів.
 - **🔥 Серія викликів дня** (daily streak) — грайте щодня та підтримуйте серію.
 - **☁ Хмарна синхронізація прогресу** через Supabase (опційно, див. розділ нижче).
+- **🌍 Світовий лідерборд** — результати надсилаються у глобальний ТОП-10 (Supabase), у рекордах є вкладки «Локальні / Світ» з фільтром за режимами.
+- **🛠 Редактор рівнів** — конструктор власних випробувань (тривалість, швидкість, щільність, шторм, тема, набір перешкод) з миттєвим плейтестом, бібліотекою «Мої рівні» та **шаринг-кодами NGRL1** з контрольною сумою.
+- **📊 Анонімна телеметрія** — батч-події сесій у Supabase для розуміння ретеншену; вимикається однією кнопкою в налаштуваннях.
+- **✨ Плавні анімації** — переходи екранів, каскадна поява меню та плиток, пружні зірки перемоги, відлік рекордів; поважає `reducedMotion`.
 - **Налаштування доступності**: Зменшений рух (`reducedMotion`), 3 рівні складності (**Легко**, **Нормально**, **Хардкор**).
 - **🌍 Три мови інтерфейсу**: українська, російська, англійська (автовизначення за браузером).
 
 ---
 
-## ☁ Хмарна синхронізація (Supabase)
+## ☁ Хмара (Supabase): прогрес, світовий рейтинг, телеметрія
 
-Прогрес можна зберігати в хмарі через [Supabase](https://supabase.com) (безкоштовний тариф вистачає). Без налаштування гра повністю працює локально.
+Гра опційно інтегрується з [Supabase](https://supabase.com) (безкоштовний тариф вистачає). Без налаштування все працює суто локально.
 
 ### Підключення за 4 кроки
 
 1. **Створіть проєкт** на [supabase.com](https://supabase.com) → **New project**.
-2. **Створіть таблицю** — SQL Editor → виконайте:
+2. **Створіть таблиці** — SQL Editor → виконайте:
    ```sql
+   -- Прогрес (хмарна синхронізація)
    create table if not exists user_progress (
      device_id text primary key,
      data jsonb not null,
@@ -151,17 +163,43 @@ neon_gravity_runner/
    alter table user_progress enable row level security;
    create policy "anon device progress" on user_progress
      for all using (true) with check (true);
+
+   -- Світовий лідерборд
+   create table if not exists scores (
+     id bigint generated always as identity primary key,
+     player text not null default 'Пілот',
+     score bigint not null check (score >= 0 and score < 100000000),
+     mode text not null default 'endless',
+     level int,
+     combo int not null default 0,
+     device_id text,
+     created_at timestamptz not null default now()
+   );
+   alter table scores enable row level security;
+   create policy "scores_read" on scores for select using (true);
+   create policy "scores_insert" on scores for insert with check (char_length(player) <= 24);
+
+   -- Анонімна телеметрія
+   create table if not exists analytics_events (
+     id bigint generated always as identity primary key,
+     anon_id text not null,
+     event text not null,
+     props jsonb not null default '{}'::jsonb,
+     ts timestamptz not null default now()
+   );
+   alter table analytics_events enable row level security;
+   create policy "analytics_insert" on analytics_events for insert with check (true);
    ```
-3. **Скопіюйте ключі**: Settings → API → `Project URL` та anon-ключ `service_role` НЕ брати, лише `anon public`.
+3. **Скопіюйте ключі**: Settings → API → `Project URL` та anon-ключ (`service_role` НЕ брати, лише `anon public` / publishable).
 4. **Вставте їх в `index.html`** у скрипт `window.NGR_CLOUD_CONFIG = { supabaseUrl: '...', supabaseKey: '...' }`.
 
-Після цього в **Налаштуваннях** з'явиться рядок «☁ Хмарна синхронізація»:
+Що з'явиться у грі після підключення:
 
-- прогрес автоматично підтягується з хмари при запуску гри (злиття «тільки вгору» — зірки, рекорди та досягнення не втрачаються);
-- після кожного забігу локальний стан відправляється в хмару;
-- кнопка «☁ Синхронізувати» робить push+pull вручну.
+- **☁ Синхронізація прогресу** — автопідхват при старті (злиття «тільки вгору»: зірки/рекорди/досягнення не втрачаються), push після кожного забігу, ручна кнопка в налаштуваннях;
+- **🌍 Світовий лідерборд** — задайте «Ім'я пілота» в налаштуваннях, і результати кожного забігу летять у глобальний ТОП (вкладка «Світ» у рекордах);
+- **📊 Телеметрія** — анонімні події сесій; вимикається тумблером «Анонімна статистика».
 
-> ⚠ **Безпека**: політика RLS вище дозволяє будь-кому писати за власний `device_id`. Для аркади з анонімним прогресом це прийнятно, але якщо дані почнуть зловживати — додайте Supabase Auth або обмежте політику.
+> ⚠ **Безпека**: політики RLS вище дозволяють анонімний запис — для аркади це свідомий компроміс. Політики видалення відсутні, тож чистити дані можна лише з дашборду. Для серйозного проєкту додайте Supabase Auth та rate-limiting через Edge Functions.
 
 ---
 

@@ -304,8 +304,10 @@
             '<div id="cloud-status" style="font-size:12px; color:var(--text-dim); margin-top:6px; text-align:center;"></div>' +
             '</div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-settings-back" class="btn" data-i18n="btn.back">← Назад</button>' +
+            '<button id="btn-settings-back" class="btn" data-i18n="btn.back">← Назад у меню</button>' +
             '</div>' +
+            '<div style="text-align:center;color:#5a6080;font-size:11px;margin-top:10px;">Neon Gravity Runner v' +
+            ((window.Config && window.Config.VERSION) || '1.0.0') + ' · vanilla JS · <a href="https://github.com/olexandrmykhailovskyi-oss/neon-gravity-runner" target="_blank" rel="noopener" style="color:#5a6080;">GitHub</a></div>' +
             '</div>';
     }
 

@@ -556,6 +556,7 @@
     // Кількість рівнів кампанії — єдине джерело правди замість хардкоду «15»
     Config.MAX_LEVEL = Config.LEVELS.length;
     Config.MAX_STARS = Config.MAX_LEVEL * 3;
+    Config.VERSION = '1.0.0';
 
     function deepFreeze(obj) {
         Object.freeze(obj);
