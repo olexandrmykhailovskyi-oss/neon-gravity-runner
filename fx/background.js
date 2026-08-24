@@ -73,11 +73,11 @@
             });
         }
         speedLines = [];
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 18; i++) {
             speedLines.push({
                 x: Math.random() * W,
                 y: Math.random() * H,
-                len: Math.random() * 60 + 20,
+                len: Math.random() * 140 + 70,
                 speed: Math.random() * 400 + 300
             });
         }
@@ -176,14 +176,18 @@
             ctx.restore();
 
             // 4. Спідлайни (вимкнено при reducedMotion)
+            // QOL: довгі тонкі напівпрозорі смуги руху замість коротких «глюків» із тінями
             if (!reduced) {
                 ctx.save();
-                ctx.strokeStyle = _hexRgba(theme.grid, 0.35);
-                ctx.lineWidth = 1;
-                ctx.shadowBlur = 6;
-                ctx.shadowColor = theme.grid;
+                ctx.strokeStyle = _hexRgba(theme.grid, 0.16);
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
                 for (let i = 0; i < speedLines.length; i++) {
                     const l = speedLines[i];
+                    const grad = ctx.createLinearGradient(l.x + l.len, l.y, l.x, l.y);
+                    grad.addColorStop(0, _hexRgba(theme.grid, 0.02));
+                    grad.addColorStop(1, _hexRgba(theme.grid, 0.30));
+                    ctx.strokeStyle = grad;
                     ctx.beginPath();
                     ctx.moveTo(l.x, l.y);
                     ctx.lineTo(l.x + l.len, l.y);
