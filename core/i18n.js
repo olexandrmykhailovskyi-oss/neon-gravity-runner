@@ -185,6 +185,16 @@
             'level.23': 'Матричний хаос',
             'level.24': 'Ядро бурі',
             'level.25': 'Остання межа',
+            'level.26': 'Хромований пульс',
+            'level.27': 'Танок тіней',
+            'level.28': 'Подвійна спіраль',
+            'level.29': 'Критична маса',
+            'level.30': 'Промені помсти',
+            'level.31': 'Нульова гравітація',
+            'level.32': 'Швидкість світла',
+            'level.33': 'Лабіринт бурі',
+            'level.34': 'Передостання межа',
+            'level.35': 'Neon Ascension',
 
             // Скіни
             'skin.default': 'Базовий',
@@ -228,7 +238,7 @@
             'ach.level_10.name': 'Рубіж 10',
             'ach.level_10.desc': 'Пройти 10 рівень кампанії',
             'ach.level_15.name': 'Чемпіон',
-            'ach.level_15.desc': 'Пройти всі 25 рівнів кампанії',
+            'ach.level_15.desc': 'Пройти всі 35 рівнів кампанії',
             'ach.stars_15.name': 'Колекціонер зірок',
             'ach.stars_15.desc': 'Зібрати 15★ у кампанії',
 
@@ -488,6 +498,16 @@
             'level.23': 'Матричный хаос',
             'level.24': 'Око бури',
             'level.25': 'Последний предел',
+            'level.26': 'Хромированный пульс',
+            'level.27': 'Танец теней',
+            'level.28': 'Двойная спираль',
+            'level.29': 'Критическая масса',
+            'level.30': 'Лучи возмездия',
+            'level.31': 'Нулевая гравитация',
+            'level.32': 'Скорость света',
+            'level.33': 'Лабиринт бури',
+            'level.34': 'Предпоследний рубеж',
+            'level.35': 'Neon Ascension',
 
             // Скины
             'skin.default': 'Базовый',
@@ -531,7 +551,7 @@
             'ach.level_10.name': 'Рубеж 10',
             'ach.level_10.desc': 'Пройти 10 уровень кампании',
             'ach.level_15.name': 'Чемпион',
-            'ach.level_15.desc': 'Пройти все 25 уровней кампании',
+            'ach.level_15.desc': 'Пройти все 35 уровней кампании',
             'ach.stars_15.name': 'Коллекционер звезд',
             'ach.stars_15.desc': 'Собрать 15★ в кампании',
 
@@ -791,6 +811,16 @@
             'level.23': 'Matrix Chaos',
             'level.24': 'Eye of the Storm',
             'level.25': 'The Final Limit',
+            'level.26': 'Chrome Pulse',
+            'level.27': 'Shadow Dance',
+            'level.28': 'Double Spiral',
+            'level.29': 'Critical Mass',
+            'level.30': 'Vengeance Rays',
+            'level.31': 'Zero Gravity',
+            'level.32': 'Light Speed',
+            'level.33': 'Storm Labyrinth',
+            'level.34': 'Penultimate Limit',
+            'level.35': 'Neon Ascension',
 
             // Skins
             'skin.default': 'Basic',
@@ -834,7 +864,7 @@
             'ach.level_10.name': 'Milestone 10',
             'ach.level_10.desc': 'Complete campaign level 10',
             'ach.level_15.name': 'Champion',
-            'ach.level_15.desc': 'Complete all 25 campaign levels',
+            'ach.level_15.desc': 'Complete all 35 campaign levels',
             'ach.stars_15.name': 'Star Hoarder',
             'ach.stars_15.desc': 'Collect 15★ in campaign',
 

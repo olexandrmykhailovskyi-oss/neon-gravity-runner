@@ -28,6 +28,10 @@
             const target = $('#screen-' + id);
             if (target) {
                 target.classList.remove('hidden');
+                // QOL-4: плавна поява екрана (перезапуск CSS-анімації через reflow)
+                target.classList.remove('screen-enter');
+                void target.offsetWidth;
+                target.classList.add('screen-enter');
                 _currentScreen = id;
             } else {
                 _log('warn', 'showScreen: не знайдено screen-' + id);
@@ -64,8 +68,14 @@
 
             setTimeout(function () {
                 try {
-                    if (el.parentNode) el.parentNode.removeChild(el);
-                } catch (e) {}
+                    // QOL-4: плавне зникнення тоста перед видаленням
+                    el.classList.add('toast-out');
+                    setTimeout(function () {
+                        try { if (el.parentNode) el.parentNode.removeChild(el); } catch (e) {}
+                    }, 220);
+                } catch (e) {
+                    try { if (el.parentNode) el.parentNode.removeChild(el); } catch (x) {}
+                }
             }, dur);
         } catch (e) {
             _log('error', 'showToast помилка', e.message);

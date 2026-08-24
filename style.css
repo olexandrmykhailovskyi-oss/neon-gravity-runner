@@ -764,8 +764,10 @@ input[type="range"] {
     border-color: var(--neon-green);
 }
 
+/* Поточний рівень: вхід + пульс (обидві анімації, бо .current перебиває базову) */
 .level-tile.current:not(:hover) {
-    animation: currentPulse 1.8s ease-in-out infinite;
+    animation: ngrItemIn 0.34s ease forwards,
+        currentPulse 1.8s ease-in-out infinite 0.45s;
 }
 
 @keyframes currentPulse {
@@ -807,4 +809,109 @@ input[type="range"] {
 
 @media (prefers-reduced-motion: reduce) {
     .level-tile.current { animation: none; }
+}
+
+/* ---- QOL-4: плавні анімації (екрани, меню, плитки, зірки, тости) ---- */
+
+@keyframes ngrScreenIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+}
+
+.screen.screen-enter {
+    animation: ngrScreenIn 0.30s cubic-bezier(0.22, 0.9, 0.32, 1) both;
+}
+
+@keyframes ngrItemIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Каскадна поява кнопок головного меню */
+.main-menu-grid .btn {
+    opacity: 0;
+    animation: ngrItemIn 0.38s ease forwards;
+}
+.main-menu-grid .btn:nth-child(1)  { animation-delay: 0.02s; }
+.main-menu-grid .btn:nth-child(2)  { animation-delay: 0.06s; }
+.main-menu-grid .btn:nth-child(3)  { animation-delay: 0.10s; }
+.main-menu-grid .btn:nth-child(4)  { animation-delay: 0.14s; }
+.main-menu-grid .btn:nth-child(5)  { animation-delay: 0.18s; }
+.main-menu-grid .btn:nth-child(6)  { animation-delay: 0.22s; }
+.main-menu-grid .btn:nth-child(7)  { animation-delay: 0.26s; }
+.main-menu-grid .btn:nth-child(8)  { animation-delay: 0.30s; }
+.main-menu-grid .btn:nth-child(9)  { animation-delay: 0.34s; }
+.main-menu-grid .btn:nth-child(10) { animation-delay: 0.38s; }
+.main-menu-grid .btn:nth-child(11) { animation-delay: 0.42s; }
+.main-menu-grid .btn:nth-child(12) { animation-delay: 0.46s; }
+.main-menu-grid .btn:nth-child(13) { animation-delay: 0.50s; }
+
+/* Каскадна поява плиток рівнів (затримка задається інлайном у screens.js) */
+.level-tile {
+    opacity: 0;
+    animation: ngrItemIn 0.34s ease forwards;
+}
+
+/* Зірки на екрані перемоги — пружне «спливання» по черзі */
+@keyframes ngrStarPop {
+    0%   { transform: scale(0); }
+    60%  { transform: scale(1.35); }
+    100% { transform: scale(1.15); }
+}
+.victory-stars-box .star-icon.active {
+    animation: ngrStarPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.victory-stars-box .star-icon.active:nth-child(2) { animation-delay: 0.12s; }
+.victory-stars-box .star-icon.active:nth-child(3) { animation-delay: 0.24s; }
+
+/* Великий рахунок на екранах перемоги/поразки */
+@keyframes ngrScoreIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.9); }
+    to   { opacity: 1; transform: none; }
+}
+#go-score, #vic-score {
+    animation: ngrScoreIn 0.45s cubic-bezier(0.22, 0.9, 0.32, 1) both;
+}
+
+/* Тактильний відгук на натискання кнопок */
+.btn:active { transform: translateY(1px) scale(0.97); }
+
+/* Тости: м'який вліт і злет */
+@keyframes ngrToastIn {
+    from { opacity: 0; transform: translateY(-14px); }
+    to   { opacity: 1; transform: none; }
+}
+.toast {
+    animation: ngrToastIn 0.26s cubic-bezier(0.22, 0.9, 0.32, 1) both;
+}
+@keyframes ngrToastOut {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: translateY(-10px); }
+}
+.toast.toast-out {
+    animation: ngrToastOut 0.20s ease both;
+}
+
+/* Іконки активних плиток (досягнення/скіни) — одноразовий підстриб */
+@keyframes ngrPopOnce {
+    0%   { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.12); opacity: 1; }
+    100% { transform: none; opacity: 1; }
+}
+.tile.active .tile-icon {
+    animation: ngrPopOnce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Глобальний вимикач для користувачів із reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .screen.screen-enter,
+    .main-menu-grid .btn,
+    .level-tile,
+    .victory-stars-box .star-icon.active,
+    #go-score, #vic-score,
+    .toast, .toast.toast-out,
+    .tile.active .tile-icon {
+        animation: none;
+        opacity: 1;
+    }
 }

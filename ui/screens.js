@@ -44,6 +44,47 @@
         }
     }
 
+    // QOL-4: плавний відлік чисел (рекорди/рахунки) із easeOutCubic; поважає reducedMotion
+    const _numState = {};
+    function _nowMs() {
+        return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    }
+    function _animateNumber(sel, to, fmt) {
+        const el = window.UI.$(sel);
+        if (!el || typeof to !== 'number' || !isFinite(to)) return;
+        const shown = _numState[sel];
+        if (shown === undefined || Math.abs(shown - to) < 0.5) {
+            _numState[sel] = to;
+            el.textContent = fmt(to);
+            return;
+        }
+        let reduced = false;
+        try { reduced = !!(window.State && window.State.getSetting && window.State.getSetting('reducedMotion')); } catch (e) {}
+        if (reduced || typeof requestAnimationFrame !== 'function') {
+            _numState[sel] = to;
+            el.textContent = fmt(to);
+            return;
+        }
+        if (_numState[sel + '_raf']) {
+            try { cancelAnimationFrame(_numState[sel + '_raf']); } catch (e) {}
+        }
+        const from = shown;
+        const t0 = _nowMs();
+        function step() {
+            let p = Math.min(1, (_nowMs() - t0) / 650);
+            p = 1 - Math.pow(1 - p, 3);
+            const val = Math.round(from + (to - from) * p);
+            _numState[sel] = val;
+            el.textContent = fmt(val);
+            if (p < 1) {
+                _numState[sel + '_raf'] = requestAnimationFrame(step);
+            } else {
+                _numState[sel + '_raf'] = null;
+            }
+        }
+        _numState[sel + '_raf'] = requestAnimationFrame(step);
+    }
+
     function init() {
         try {
             _buildMainMenu();
@@ -920,8 +961,8 @@
             const s = window.State.getStats();
             const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
             const maxStars = (window.Config && window.Config.MAX_STARS) || (maxLvl * 3);
-            window.UI.setText('#menu-best', window.Utils.formatNumber(s.bestScore || 0));
-            window.UI.setText('#menu-games', s.totalGames || 0);
+            _animateNumber('#menu-best', s.bestScore || 0, function (v) { return window.Utils.formatNumber(v); });
+            _animateNumber('#menu-games', s.totalGames || 0, function (v) { return String(v); });
 
             // Підрахунок зірок кампанії
             let totalStars = 0;
@@ -1007,7 +1048,7 @@
                 const lockIcon = isUnlocked ? '' : '<div class="level-lock">🔒</div>';
                 const nextBadge = isFrontier ? '<div class="level-next">▶ ' + _t('levels.frontier', 'Далі') + '</div>' : '';
 
-                html += '<div class="' + cls + '" data-level="' + lvl.id + '">' +
+                html += '<div class="' + cls + '" data-level="' + lvl.id + '" style="animation-delay:' + Math.min(i * 26, 400) + 'ms">' +
                     lockIcon +
                     nextBadge +
                     '<div class="level-num">' + lvl.id + '</div>' +
@@ -1040,7 +1081,7 @@
             const U = window.Utils;
             const lvl = data.level;
             window.UI.setText('#vic-title', _t('hud.level', 'Рівень') + ' ' + lvl.id + ' — ' + _t('level.' + lvl.id, lvl.name) + ' ✓');
-            window.UI.setText('#vic-score', U.formatNumber(data.score || 0));
+            _animateNumber('#vic-score', data.score || 0, function (v) { return U.formatNumber(v); });
 
             // Режим рівня кампанії: показуємо зірки та вимоги
             window.UI.toggle('#vic-stars-box', true);
@@ -1099,8 +1140,8 @@
     function showModeVictory(data) {
         try {
             const U = window.Utils;
-            window.UI.setText('#vic-title', _t('mode.' + data.mode + '.done', 'Гру завершено!'));
-            window.UI.setText('#vic-score', U.formatNumber(data.score || 0));
+        window.UI.setText('#vic-title', _t('mode.' + data.mode + '.done', 'Гру завершено!'));
+        _animateNumber('#vic-score', data.score || 0, function (v) { return U.formatNumber(v); });
 
             window.UI.toggle('#vic-stars-box', false);
             window.UI.toggle('#vic-details', false);
@@ -1306,7 +1347,7 @@
     function showGameOver(data) {
         try {
             const U = window.Utils;
-            window.UI.setText('#go-score', U.formatNumber(data.score || 0));
+            _animateNumber('#go-score', data.score || 0, function (v) { return U.formatNumber(v); });
             window.UI.setText('#go-best', U.formatNumber(data.best || 0));
             window.UI.setText('#go-combo', data.combo || 0);
             window.UI.setText('#go-stars', data.stars || 0);

@@ -104,7 +104,7 @@
             {
                 id: 'level_15',
                 name: 'Чемпіон',
-                desc: 'Пройти всі 25 рівнів кампанії',
+                desc: 'Пройти всі 35 рівнів кампанії',
                 check: function () {
                     try {
                         const c = window.State && window.State.data && window.State.data.campaign;
@@ -406,6 +406,118 @@
                 storm: 'boss',
                 theme: 0,
                 starScore: 3200
+            },
+            {
+                id: 26,
+                name: 'Хромований пульс',
+                duration: 70,
+                speedMult: 1.55,
+                obstacles: ['wall', 'gate', 'pulsar', 'laser'],
+                density: 1.5,
+                storm: false,
+                theme: 1,
+                starScore: 3300
+            },
+            {
+                id: 27,
+                name: 'Танок тіней',
+                duration: 70,
+                speedMult: 1.55,
+                obstacles: ['moving', 'moving_laser', 'spikes', 'gravity_zone'],
+                density: 1.55,
+                storm: true,
+                theme: 4,
+                starScore: 3400
+            },
+            {
+                id: 28,
+                name: 'Подвійна спіраль',
+                duration: 75,
+                speedMult: 1.60,
+                obstacles: ['gate', 'gravity_zone', 'pulsar', 'moving'],
+                density: 1.5,
+                storm: false,
+                theme: 0,
+                starScore: 3500
+            },
+            {
+                id: 29,
+                name: 'Критична маса',
+                duration: 75,
+                speedMult: 1.60,
+                obstacles: ['wall', 'gate', 'moving', 'spikes', 'laser', 'moving_laser', 'gravity_zone', 'pulsar'],
+                density: 1.55,
+                storm: 'double',
+                theme: 2,
+                starScore: 3600
+            },
+            {
+                id: 30,
+                name: 'Промені помсти',
+                duration: 75,
+                speedMult: 1.60,
+                obstacles: ['laser', 'moving_laser', 'wall', 'spikes'],
+                density: 1.6,
+                storm: false,
+                theme: 3,
+                starScore: 3700
+            },
+            {
+                id: 31,
+                name: 'Нульова гравітація',
+                duration: 80,
+                speedMult: 1.65,
+                obstacles: ['gravity_zone', 'gate', 'wall', 'pulsar'],
+                density: 1.5,
+                storm: false,
+                theme: 5,
+                starScore: 3800
+            },
+            {
+                id: 32,
+                name: 'Швидкість світла',
+                duration: 80,
+                speedMult: 1.65,
+                speedGrowthMax: 1.85, // розгін до межі
+                obstacles: ['wall', 'laser', 'pulsar', 'moving_laser'],
+                density: 1.6,
+                storm: true,
+                theme: 0,
+                starScore: 3900
+            },
+            {
+                id: 33,
+                name: 'Лабіринт бурі',
+                duration: 85,
+                speedMult: 1.70,
+                obstacles: ['wall', 'gate', 'moving', 'spikes', 'laser', 'moving_laser', 'gravity_zone', 'pulsar'],
+                density: 1.6,
+                storm: true,
+                theme: 4,
+                starScore: 4000
+            },
+            {
+                id: 34,
+                name: 'Передостання межа',
+                duration: 85,
+                speedMult: 1.70,
+                obstacles: ['wall', 'gate', 'moving', 'spikes', 'laser', 'moving_laser', 'gravity_zone', 'pulsar'],
+                density: 1.65,
+                storm: 'double',
+                theme: 1,
+                starScore: 4200
+            },
+            {
+                id: 35,
+                name: 'Neon Ascension',
+                duration: 95,
+                speedMult: 1.75,
+                speedGrowthMax: 1.85,
+                obstacles: ['wall', 'gate', 'moving', 'spikes', 'laser', 'moving_laser', 'gravity_zone', 'pulsar'],
+                density: 1.7,
+                storm: 'boss',
+                theme: 5,
+                starScore: 4500
             }
         ],
 
