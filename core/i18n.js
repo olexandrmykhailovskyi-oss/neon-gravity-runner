@@ -12,7 +12,8 @@
             // Головне меню
             'menu.title': 'Neon Gravity Runner',
             'menu.continue': '▶ Продовжити кампанію',
-            'menu.campaign': '⭐ Кампанія (15 рівнів)',
+            'menu.campaign': '⭐ Кампанія',
+            'levels.word': 'рівнів',
             'menu.endless': '♾ Нескінченність',
             'menu.daily': '📅 Виклик дня',
             'menu.timeattack': '⏱ Time Attack',
@@ -58,7 +59,7 @@
 
             // Екрани
             'levels.title': 'Вибір рівня кампанії',
-            'levels.description': 'Пройдіть усі 15 випробувань та зберіть максимум зірок!',
+            'levels.description': 'Пройдіть усі 25 випробувань та зберіть максимум зірок!',
             'victory.title': 'Рівень пройдено!',
             'victory.scoreEarned': 'Отримано очок у рівні',
             'victory.req1': '★ Вижити до кінця:',
@@ -221,7 +222,7 @@
             'ach.level_10.name': 'Рубіж 10',
             'ach.level_10.desc': 'Пройти 10 рівень кампанії',
             'ach.level_15.name': 'Чемпіон',
-            'ach.level_15.desc': 'Пройти всі 15 рівнів кампанії',
+            'ach.level_15.desc': 'Пройти всі 25 рівнів кампанії',
             'ach.stars_15.name': 'Колекціонер зірок',
             'ach.stars_15.desc': 'Зібрати 15★ у кампанії',
 
@@ -308,7 +309,8 @@
             // Главное меню
             'menu.title': 'Neon Gravity Runner',
             'menu.continue': '▶ Продолжить кампанию',
-            'menu.campaign': '⭐ Кампания (15 уровней)',
+            'menu.campaign': '⭐ Кампания',
+            'levels.word': 'уровней',
             'menu.endless': '♾ Бесконечность',
             'menu.daily': '📅 Ежедневный вызов',
             'menu.timeattack': '⏱ Time Attack',
@@ -354,7 +356,7 @@
 
             // Экраны
             'levels.title': 'Выбор уровня кампании',
-            'levels.description': 'Пройдите все 15 испытаний и соберите максимум звезд!',
+            'levels.description': 'Пройдите все 25 испытаний и соберите максимум звезд!',
             'victory.title': 'Уровень пройден!',
             'victory.scoreEarned': 'Получено очков за уровень',
             'victory.req1': '★ Продержаться до конца:',
@@ -517,7 +519,7 @@
             'ach.level_10.name': 'Рубеж 10',
             'ach.level_10.desc': 'Пройти 10 уровень кампании',
             'ach.level_15.name': 'Чемпион',
-            'ach.level_15.desc': 'Пройти все 15 уровней кампании',
+            'ach.level_15.desc': 'Пройти все 25 уровней кампании',
             'ach.stars_15.name': 'Коллекционер звезд',
             'ach.stars_15.desc': 'Собрать 15★ в кампании',
 
@@ -604,7 +606,8 @@
             // Main menu
             'menu.title': 'Neon Gravity Runner',
             'menu.continue': '▶ Continue Campaign',
-            'menu.campaign': '⭐ Campaign (15 levels)',
+            'menu.campaign': '⭐ Campaign',
+            'levels.word': 'levels',
             'menu.endless': '♾ Endless',
             'menu.daily': '📅 Daily Challenge',
             'menu.timeattack': '⏱ Time Attack',
@@ -650,7 +653,7 @@
 
             // Screens
             'levels.title': 'Campaign Level Selection',
-            'levels.description': 'Complete all 15 challenges and collect maximum stars!',
+            'levels.description': 'Complete all 25 challenges and collect maximum stars!',
             'victory.title': 'Level Completed!',
             'victory.scoreEarned': 'Points earned in level',
             'victory.req1': '★ Survive until the end:',
@@ -813,7 +816,7 @@
             'ach.level_10.name': 'Milestone 10',
             'ach.level_10.desc': 'Complete campaign level 10',
             'ach.level_15.name': 'Champion',
-            'ach.level_15.desc': 'Complete all 15 campaign levels',
+            'ach.level_15.desc': 'Complete all 25 campaign levels',
             'ach.stars_15.name': 'Star Hoarder',
             'ach.stars_15.desc': 'Collect 15★ in campaign',
 

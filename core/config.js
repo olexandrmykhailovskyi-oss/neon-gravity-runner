@@ -104,11 +104,12 @@
             {
                 id: 'level_15',
                 name: 'Чемпіон',
-                desc: 'Пройти всі 15 рівнів кампанії',
+                desc: 'Пройти всі 25 рівнів кампанії',
                 check: function () {
                     try {
                         const c = window.State && window.State.data && window.State.data.campaign;
-                        return !!(c && c.stars && c.stars[15] > 0);
+                        const maxL = (window.Config && window.Config.MAX_LEVEL) || 15;
+                        return !!(c && c.stars && c.stars[maxL] > 0);
                     } catch (e) { return false; }
                 }
             },

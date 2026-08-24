@@ -1,7 +1,7 @@
 /**
  * Screens.js — побудова та керування всіма екранами гри.
  * - Головне меню (Кампанія, Нескінченність, Виклик дня, Скіни, Досягнення, Рекорди, Налаштування, Статистика)
- * - Кампанія: сітка 15 рівнів із зірками та замками
+ * - Кампанія: сітка рівнів (Config.MAX_LEVEL) із зірками та замками
  * - Екран перемоги рівня із зірками (★ / ★★ / ★★★)
  * - Екран ТОП-5 локальних рекордів
  * - Налаштування: складність (Легко/Норм/Хардкор), зменшений рух (reducedMotion), теми, якість, звук
@@ -88,7 +88,7 @@
             '</div>' +
             '<div class="btn-grid main-menu-grid">' +
             '<button id="btn-continue" class="btn accent-btn hidden">▶ Продовжити кампанію</button>' +
-            '<button id="btn-campaign" class="btn primary highlight-btn" data-i18n="menu.campaign">⭐ Кампанія (15 рівнів)</button>' +
+            '<button id="btn-campaign" class="btn primary highlight-btn">⭐ Кампанія</button>' +
             '<button id="btn-endless" class="btn primary" data-i18n="menu.endless">♾ Нескінченність</button>' +
             '<button id="btn-daily" class="btn accent-btn" data-i18n="menu.daily">📅 Виклик дня</button>' +
             '<button id="btn-timeattack" class="btn" data-i18n="menu.timeattack">⏱ Time Attack</button>' +
@@ -110,7 +110,7 @@
         el.innerHTML =
             '<div class="panel levels-panel">' +
             '<h2 id="levels-title" data-i18n="levels.title">Вибір рівня кампанії</h2>' +
-            '<p id="levels-description" style="text-align:center;" data-i18n="levels.description">Пройдіть усі 15 випробувань та зберіть максимум зірок!</p>' +
+            '<p id="levels-description" style="text-align:center;" data-i18n="levels.description">Пройдіть усі 25 випробувань та зберіть максимум зірок!</p>' +
             '<div class="levels-grid" id="levels-grid"></div>' +
             '<div class="btn-grid" style="margin-top:18px;">' +
             '<button id="btn-levels-back" class="btn" data-i18n="btn.back">← Назад у меню</button>' +
@@ -928,6 +928,13 @@
             }
             window.UI.setText('#menu-stars', totalStars + '/' + maxStars);
 
+            // Напис кнопки «Кампанія» — кількість рівнів беремо з конфіга, без хардкоду
+            const campBtn = window.UI.$('#btn-campaign');
+            if (campBtn) {
+                campBtn.textContent = _t('menu.campaign', '⭐ Кампанія') +
+                    ' (' + maxLvl + ' ' + _t('levels.word', 'рівнів') + ')';
+            }
+
             // Кнопка «Продовжити кампанію» — лише коли є прогрес
             const contBtn = window.UI.$('#btn-continue');
             if (contBtn) {
@@ -943,7 +950,7 @@
         } catch (e) {}
     }
 
-    // Сітка 15 рівнів кампанії
+    // Сітка рівнів кампанії
     function buildLevelsGrid() {
         const grid = window.UI.$('#levels-grid');
         if (!grid) return;
