@@ -121,8 +121,8 @@
                 break;
 
             case 'spikes':
-                base.w = p.w || 60;
-                base.h = p.h || 40;
+                base.w = p.w || 78;
+                base.h = p.h || 44;
                 const onFloor = typeof p.onFloor === 'boolean' ? p.onFloor : (Math.random() < 0.5);
                 base.onFloor = onFloor;
                 base.y = onFloor ? (a.bottom - base.h) : a.top;
@@ -257,6 +257,14 @@
             case 'pulsar':
                 // Коло — обробляється окремо в hitTest
                 return [];
+
+            case 'spikes':
+                // Трикутники: суцільна зона лише біля основи — між вістрями визуально
+                // пусто, тому там хітбоксу нема (чесно до гравця)
+                if (obs.onFloor) {
+                    return [{ x: obs.x, y: obs.y + obs.h * 0.35, w: obs.w, h: obs.h * 0.65 }];
+                }
+                return [{ x: obs.x, y: obs.y, w: obs.w, h: obs.h * 0.65 }];
 
             default:
                 return [{ x: obs.x, y: obs.y, w: obs.w, h: obs.h }];
@@ -453,29 +461,53 @@
     }
 
     function _drawSpikes(obs, ctx) {
-        const count = Math.max(2, Math.floor(obs.w / 16));
+        // Кожен шип — окремий замкнений трикутник із градієнтом (вістря світліше),
+        // без спільного контуру: інакше stroke малює фальшиві з'єднання між шипами
+        const count = Math.max(2, Math.round(obs.w / 26));
         const spikeW = obs.w / count;
-        ctx.fillStyle = 'rgba(255, 43, 214, 0.25)';
-        ctx.shadowBlur = 10;
+        const grad = ctx.createLinearGradient(0, obs.y, 0, obs.y + obs.h);
+        if (obs.onFloor) {
+            grad.addColorStop(0, 'rgba(255, 170, 243, 0.95)'); // вістря (зверху)
+            grad.addColorStop(1, 'rgba(255, 43, 214, 0.60)');  // основа
+        } else {
+            grad.addColorStop(0, 'rgba(255, 43, 214, 0.60)');
+            grad.addColorStop(1, 'rgba(255, 170, 243, 0.95)'); // вістря (знизу)
+        }
+
+        ctx.shadowBlur = 12;
         ctx.shadowColor = '#ff2bd6';
-        ctx.beginPath();
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = '#ff5fd8';
+        ctx.lineWidth = 1.5;
+        ctx.lineJoin = 'round';
+
         for (let i = 0; i < count; i++) {
             const sx = obs.x + i * spikeW;
+            const tipX = sx + spikeW / 2;
+            ctx.beginPath();
             if (obs.onFloor) {
-                ctx.moveTo(sx, obs.y + obs.h);
-                ctx.lineTo(sx + spikeW / 2, obs.y);
+                ctx.moveTo(tipX, obs.y);
+                ctx.lineTo(sx, obs.y + obs.h);
                 ctx.lineTo(sx + spikeW, obs.y + obs.h);
             } else {
-                ctx.moveTo(sx, obs.y);
-                ctx.lineTo(sx + spikeW / 2, obs.y + obs.h);
+                ctx.moveTo(tipX, obs.y + obs.h);
+                ctx.lineTo(sx, obs.y);
                 ctx.lineTo(sx + spikeW, obs.y);
             }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
         }
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#ff2bd6';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+
+        // Підошва — тонка яскрава смуга вздовж стіни/підлоги
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = '#ff2bd6';
+        if (obs.onFloor) {
+            ctx.fillRect(obs.x, obs.y + obs.h - 3, obs.w, 3);
+        } else {
+            ctx.fillRect(obs.x, obs.y, obs.w, 3);
+        }
     }
 
     function _drawLaser(obs, ctx) {

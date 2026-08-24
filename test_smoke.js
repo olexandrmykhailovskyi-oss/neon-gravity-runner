@@ -68,6 +68,7 @@ load('core/i18n.js');
 load('core/cloud_storage.js');
 load('core/global_scores.js');
 load('core/analytics.js');
+load('gameplay/obstacle.js');
 load('gameplay/modes.js');
 load('gameplay/scoring.js');
 load('ui/ui.js');
@@ -328,6 +329,14 @@ check('бонус у стіні блокується', C.circleRectDist(1000, 16
 check('бонус під стіною вільний', C.circleRectDist(1000, 400, 46, 1000, 60, 40, 200) > 0);
 // Ворота: прохід у центрі
 check('бонус у проході воріт вільний', C.circleRectDist(1000, 360, 30, 990, 60, 36, 240) > 0 && C.circleRectDist(1000, 360, 30, 990, 420, 36, 240) > 0);
+
+// Шипи: хитбокс лише біля основи (65%), між вістрями прохід
+const spRectTop = W.Obstacle.getRects({ type: 'spikes', onFloor: false, x: 0, y: 100, w: 78, h: 44 })[0];
+const spRectFloor = W.Obstacle.getRects({ type: 'spikes', onFloor: true, x: 0, y: 556, w: 78, h: 44 })[0];
+check('хитбокс шипів (стеля) = зона біля основи 65%',
+    spRectTop.y === 100 && spRectTop.h === 44 * 0.65);
+check('хитбокс шипів (підлога) = зона біля основи 65%',
+    spRectFloor.y === 556 + 44 * 0.35 && spRectFloor.h === 44 * 0.65);
 
 // ---- Підсумок ----
 // Через короткий таймер: проміси CloudStorage резолвляться мікротасками,

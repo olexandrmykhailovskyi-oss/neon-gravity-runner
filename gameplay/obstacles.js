@@ -252,8 +252,14 @@
             id: 'chaos_mix',
             types: ['wall', 'spikes', 'pulsar'],
             build: function (x, area, rng) {
-                // Мікс: стіна → шипи → пульсар
-                const out = [{ type: 'wall', dx: 0 }, { type: 'spikes', dx: 220 }, { type: 'pulsar', dx: 440 }];
+                // Мікс: стіна → шипи на ПРОТИЛЕЖНОМУ боці (гарантований зигзаг) → пульсар
+                const out = [];
+                const wallTop = rng() < 0.5;
+                const w = window.Obstacle.create('wall', x, area, { fromTop: wallTop });
+                if (w) out.push({ obs: w, dx: 0 });
+                const sp = window.Obstacle.create('spikes', x + 220, area, { onFloor: wallTop });
+                if (sp) out.push({ obs: sp, dx: 220 });
+                out.push({ type: 'pulsar', dx: 440 });
                 return out;
             }
         }
