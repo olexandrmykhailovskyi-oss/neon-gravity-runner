@@ -626,6 +626,19 @@
         } catch (e) {}
     }
 
+    // QOL: персональний рекорд кожного режиму (для бейджів у головному меню)
+    function _recordModeBest(mode, score) {
+        try {
+            if (!mode || typeof score !== 'number' || score <= 0) return;
+            const st = window.State.getStats();
+            const byMode = Object.assign({}, st.bestByMode || {});
+            if (score > (byMode[mode] || 0)) {
+                byMode[mode] = Math.floor(score);
+                window.State.updateStats({ bestByMode: byMode });
+            }
+        } catch (e) {}
+    }
+
     // Завершение Time Attack режима — экран результатов вместо вылета в меню
     function _timeAttackComplete() {
         _state = 'victory';
@@ -636,6 +649,7 @@
         try {
             const finalScore = window.Scoring.finalScore();
             let isNewRecord = false;
+            _recordModeBest('timeattack', finalScore);
 
             const s = window.State.getStats();
             isNewRecord = finalScore > (s.bestScore || 0);
@@ -696,6 +710,8 @@
 
             window.Levels.saveProgress(_currentLevel.id, stars);
 
+            _recordModeBest('campaign', finalScore);
+
             const s = window.State.getStats();
             window.State.updateStats({
                 bestScore: Math.max(s.bestScore || 0, finalScore),
@@ -742,6 +758,7 @@
             const s = window.State.getStats();
             const finalScore = window.Scoring.finalScore();
             const isNewRecord = finalScore > (s.bestScore || 0);
+            _recordModeBest(_mode, finalScore);
 
             window.State.updateStats({
                 bestScore: Math.max(s.bestScore || 0, finalScore),

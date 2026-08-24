@@ -51,7 +51,15 @@
                 lastPlayed: 0,
                 dailyBest: 0,
                 dailyDate: '',
-                dailyStreak: 0
+                dailyStreak: 0,
+                bestByMode: {
+                    endless: 0,
+                    daily: 0,
+                    timeattack: 0,
+                    survival: 0,
+                    zen: 0,
+                    campaign: 0
+                }
             },
             achievements: [],
             tutorialDone: false,
@@ -324,6 +332,7 @@
                 prevStats[MAXIMA[i]] = (data.stats && data.stats[MAXIMA[i]]) || 0;
             }
             const prevAch = Array.isArray(data.achievements) ? data.achievements.slice() : [];
+            const prevBestByMode = Object.assign({}, (data.stats && data.stats.bestByMode) || {});
 
             // Поточний стан — база; імпорт доповнює його (налаштування — з коду)
             data = deepMerge(data, incoming);
@@ -340,6 +349,19 @@
             for (let i = 0; i < MAXIMA.length; i++) {
                 const kk = MAXIMA[i];
                 data.stats[kk] = Math.max(incS[kk] || 0, prevStats[kk] || 0);
+            }
+
+            // Рекорди за режимами — тільки вгору (імпорт не може занизити)
+            if (!data.stats.bestByMode || typeof data.stats.bestByMode !== 'object') {
+                data.stats.bestByMode = createDefaults().stats.bestByMode;
+            }
+            const incBM = (incS && incS.bestByMode) || {};
+            const bmSeen = {};
+            let bk;
+            for (bk in prevBestByMode) bmSeen[bk] = true;
+            for (bk in incBM) bmSeen[bk] = true;
+            for (bk in bmSeen) {
+                data.stats.bestByMode[bk] = Math.max(prevBestByMode[bk] || 0, incBM[bk] || 0);
             }
 
             if (!Array.isArray(data.achievements)) data.achievements = [];

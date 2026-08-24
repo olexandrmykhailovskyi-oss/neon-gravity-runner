@@ -130,6 +130,17 @@ W.State.updateStats({ bestScore: 5000 });
 W.State.importProgress(code); // у коді bestScore=1234
 check('bestScore не зменшується при імпорті (5000 > 1234)', W.State.getStats('bestScore') === 5000);
 
+// QOL-3: рекорди за режимами — дефолт і merge тільки вгору
+check('bestByMode у дефолтах state', typeof W.State.getStats('bestByMode') === 'object' && W.State.getStats('bestByMode').endless === 0);
+W.State.updateStats({ bestByMode: Object.assign({}, W.State.getStats('bestByMode'), { endless: 5000 }) });
+const bmRemote = {
+    settings: { language: 'uk' },
+    stats: { bestScore: 1, bestByMode: { endless: 100, timeattack: 700 } }
+};
+check('bestByMode: mergeRemote тримає максимум (endless 5000 проти 100)',
+    W.State.mergeRemote(bmRemote) === true && W.State.getStats('bestByMode').endless === 5000);
+check('bestByMode: mergeRemote додає новий режим (timeattack 700)', W.State.getStats('bestByMode').timeattack === 700);
+
 // Досягнення об'єднуються
 W.State.resetProgress();
 W.State.unlockAchievement('first_game');
@@ -204,6 +215,9 @@ W.State.init();
 check('налаштування gravityGuide за замовчуванням = true', W.State.getSetting('gravityGuide') === true);
 check('state.hints існує за замовчуванням', !!W.State.data.hints && typeof W.State.data.hints === 'object');
 ['cause.laser', 'hint.shield', 'pause.keys', 'btn.help', 'settings.gravityGuide', 'gameover.cause', 'help.controlsList'].forEach(function (k) {
+    check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
+});
+['menu.subBest', 'menu.subStreak', 'levels.frontier', 'achievements.progress', 'victory.totalStars', 'gameover.hint'].forEach(function (k) {
     check('ключ i18n присутній: ' + k, i18nKeys.indexOf(k) !== -1);
 });
 check('досягнень у конфігу = 17 (вкл. серії дня)', W.Config.ACHIEVEMENTS.length === 17);

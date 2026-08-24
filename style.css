@@ -731,3 +731,80 @@ input[type="range"] {
     .tile { padding: 10px 6px; }
     .tile-icon { width: 38px; height: 38px; font-size: 18px; }
 }
+
+/* ---- QOL-3: прогрес кампанії, бейджі режимів, підказки ---- */
+
+.levels-progress {
+    position: relative;
+    height: 12px;
+    width: min(420px, 78%);
+    margin: 12px auto 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.levels-progress-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #00e5ff, #ff2bd6);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.45);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.levels-progress-label {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 5px;
+}
+
+.level-tile.current {
+    border-color: var(--neon-green);
+}
+
+.level-tile.current:not(:hover) {
+    animation: currentPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes currentPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(57, 255, 20, 0.3); }
+    50% { box-shadow: 0 0 16px rgba(57, 255, 20, 0.7); }
+}
+
+.level-next {
+    position: absolute;
+    top: -9px;
+    right: -4px;
+    background: var(--neon-green);
+    color: #041004;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(57, 255, 20, 0.55);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.main-menu-grid .btn[data-sub]::after {
+    content: attr(data-sub);
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--text-dim);
+    margin-top: 2px;
+}
+
+.go-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .level-tile.current { animation: none; }
+}

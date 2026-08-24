@@ -27,6 +27,8 @@
             'menu.best': 'Рекорд',
             'menu.stars': 'Зірки',
             'menu.games': 'Ігор',
+            'menu.subBest': 'рекорд: {n}',
+            'menu.subStreak': 'серія: {n}',
 
             // Довідка
             'btn.help': '❔ Довідка',
@@ -37,6 +39,7 @@
 
             // Причина смерті
             'gameover.cause': 'Причина',
+            'gameover.hint': 'Підказка: R — миттєвий рестарт',
             'cause.wall': 'Стіна',
             'cause.gate': 'Ворота',
             'cause.moving': 'Рухомий блок',
@@ -60,8 +63,10 @@
             // Екрани
             'levels.title': 'Вибір рівня кампанії',
             'levels.description': 'Пройдіть усі 25 випробувань та зберіть максимум зірок!',
+            'levels.frontier': 'Далі',
             'victory.title': 'Рівень пройдено!',
             'victory.scoreEarned': 'Отримано очок у рівні',
+            'victory.totalStars': '⭐ Всього зірок: {x}/{y}',
             'victory.req1': '★ Вижити до кінця:',
             'victory.req3': '★★★ Без втрати щита та ≥5 Near-Miss:',
             'victory.shieldDamaged': 'Щит пошкоджено',
@@ -78,6 +83,7 @@
             'skins.locked': 'Скін заблокований',
             'skins.trail': 'Трейл',
             'achievements.title': 'Досягнення',
+            'achievements.progress': 'Розблоковано: {x}/{y}',
             'settings.title': 'Налаштування',
             'stats.title': 'Статистика пілота',
             'pause.title': 'Пауза',
@@ -324,6 +330,8 @@
             'menu.best': 'Рекорд',
             'menu.stars': 'Звезды',
             'menu.games': 'Игр',
+            'menu.subBest': 'рекорд: {n}',
+            'menu.subStreak': 'серия: {n}',
 
             // Справка
             'btn.help': '❔ Справка',
@@ -334,6 +342,7 @@
 
             // Причина смерти
             'gameover.cause': 'Причина',
+            'gameover.hint': 'Подсказка: R — мгновенный рестарт',
             'cause.wall': 'Стена',
             'cause.gate': 'Ворота',
             'cause.moving': 'Движущийся блок',
@@ -357,8 +366,10 @@
             // Экраны
             'levels.title': 'Выбор уровня кампании',
             'levels.description': 'Пройдите все 25 испытаний и соберите максимум звезд!',
+            'levels.frontier': 'Далее',
             'victory.title': 'Уровень пройден!',
             'victory.scoreEarned': 'Получено очков за уровень',
+            'victory.totalStars': '⭐ Всего звезд: {x}/{y}',
             'victory.req1': '★ Продержаться до конца:',
             'victory.req3': '★★★ Без потери щита и ≥5 Near-Miss:',
             'victory.shieldDamaged': 'Щит поврежден',
@@ -375,6 +386,7 @@
             'skins.locked': 'Скин заблокирован',
             'skins.trail': 'След',
             'achievements.title': 'Достижения',
+            'achievements.progress': 'Разблокировано: {x}/{y}',
             'settings.title': 'Настройки',
             'stats.title': 'Статистика пилота',
             'pause.title': 'Пауза',
@@ -621,6 +633,8 @@
             'menu.best': 'Record',
             'menu.stars': 'Stars',
             'menu.games': 'Games',
+            'menu.subBest': 'best: {n}',
+            'menu.subStreak': 'streak: {n}',
 
             // Help
             'btn.help': '❔ Help',
@@ -631,6 +645,7 @@
 
             // Death cause
             'gameover.cause': 'Cause',
+            'gameover.hint': 'Tip: press R for instant restart',
             'cause.wall': 'Wall',
             'cause.gate': 'Gate',
             'cause.moving': 'Moving block',
@@ -654,8 +669,10 @@
             // Screens
             'levels.title': 'Campaign Level Selection',
             'levels.description': 'Complete all 25 challenges and collect maximum stars!',
+            'levels.frontier': 'Next',
             'victory.title': 'Level Completed!',
             'victory.scoreEarned': 'Points earned in level',
+            'victory.totalStars': '⭐ Total stars: {x}/{y}',
             'victory.req1': '★ Survive until the end:',
             'victory.req3': '★★★ No shield loss and ≥5 near-misses:',
             'victory.shieldDamaged': 'Shield damaged',
@@ -672,6 +689,7 @@
             'skins.locked': 'Skin locked',
             'skins.trail': 'Trail',
             'achievements.title': 'Achievements',
+            'achievements.progress': 'Unlocked: {x}/{y}',
             'settings.title': 'Settings',
             'stats.title': 'Pilot Statistics',
             'pause.title': 'Pause',

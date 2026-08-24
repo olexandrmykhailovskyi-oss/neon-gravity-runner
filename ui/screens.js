@@ -111,6 +111,8 @@
             '<div class="panel levels-panel">' +
             '<h2 id="levels-title" data-i18n="levels.title">Вибір рівня кампанії</h2>' +
             '<p id="levels-description" style="text-align:center;" data-i18n="levels.description">Пройдіть усі 25 випробувань та зберіть максимум зірок!</p>' +
+            '<div class="levels-progress"><div class="levels-progress-fill" id="levels-progress-fill"></div></div>' +
+            '<div class="levels-progress-label" id="levels-progress-label"></div>' +
             '<div class="levels-grid" id="levels-grid"></div>' +
             '<div class="btn-grid" style="margin-top:18px;">' +
             '<button id="btn-levels-back" class="btn" data-i18n="btn.back">← Назад у меню</button>' +
@@ -134,6 +136,7 @@
             '<div class="vic-row" id="vic-req-2"><span>★★ <span data-i18n="score">Рахунок</span>:</span> <b id="vic-score-val">0 / 0</b></div>' +
             '<div class="vic-row" id="vic-req-3"><span data-i18n="victory.req3">★★★ Без втрати щита та ≥5 Near-Miss:</span> <b id="vic-shield-val" data-i18n="shield_used">—</b></div>' +
             '</div>' +
+            '<div id="vic-total-stars" style="text-align:center; font-size:14px; color:#fff36b; margin-top:6px;"></div>' +
             '<div style="text-align:center; margin: 12px 0;">' +
             '<div style="font-size:32px; color:#00e5ff; font-weight:700;" id="vic-score">0</div>' +
             '<div style="color:#8a92b2;" id="vic-score-label" data-i18n="victory.scoreEarned">Отримано очок у рівні</div>' +
@@ -178,9 +181,10 @@
     function _buildAchievementsScreen() {
         const el = window.UI.$('#screen-achievements');
         if (!el) return;
-        el.innerHTML =
+            el.innerHTML =
             '<div class="panel">' +
             '<h2 data-i18n="achievements.title">Досягнення</h2>' +
+            '<div id="ach-progress" style="text-align:center; color:#8a92b2; font-size:13px; margin-bottom:10px;"></div>' +
             '<div class="grid" id="achievements-grid"></div>' +
             '<div class="btn-grid">' +
             '<button id="btn-achievements-back" class="btn" data-i18n="btn.back">← Назад</button>' +
@@ -337,6 +341,7 @@
             '<button id="btn-gameover-levels" class="btn hidden" data-i18n="btn.levels">☰ Рівні</button>' +
             '<button id="btn-gameover-menu" class="btn" data-i18n="btn.menu">У меню</button>' +
             '</div>' +
+            '<div class="go-hint" data-i18n="gameover.hint">Підказка: R — миттєвий рестарт</div>' +
             '</div>';
     }
 
@@ -928,6 +933,21 @@
             }
             window.UI.setText('#menu-stars', totalStars + '/' + maxStars);
 
+            // QOL: бейджі з особистими рекордами на кнопках режимів (data-sub → CSS ::after)
+            const U = window.Utils;
+            const bm = (s && s.bestByMode) || {};
+            function _setSub(id, txt) {
+                const b = window.UI.$(id);
+                if (!b) return;
+                if (txt) b.setAttribute('data-sub', txt);
+                else b.removeAttribute('data-sub');
+            }
+            _setSub('#btn-endless', bm.endless > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.endless)) : null);
+            _setSub('#btn-timeattack', bm.timeattack > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.timeattack)) : null);
+            _setSub('#btn-survival', bm.survival > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.survival)) : null);
+            const streakN = (s && s.dailyStreak) || 0;
+            _setSub('#btn-daily', streakN > 0 ? _t('menu.subStreak', 'серія: {n}').replace('{n}', streakN) : null);
+
             // Напис кнопки «Кампанія» — кількість рівнів беремо з конфіга, без хардкоду
             const campBtn = window.UI.$('#btn-campaign');
             if (campBtn) {
@@ -958,11 +978,23 @@
             const levels = (window.Config && window.Config.LEVELS) || [];
             const c = window.State.data.campaign || { maxLevel: 1, stars: {} };
             const maxLvl = c.maxLevel || 1;
+            const cfgMaxLvl = (window.Config && window.Config.MAX_LEVEL) || levels.length || 1;
             let html = '';
+
+            // QOL: прогрес-бар зірок кампанії над сіткою
+            let barTotal = 0;
+            for (let k = 1; k <= cfgMaxLvl; k++) barTotal += (c.stars && c.stars[k]) || 0;
+            const maxStarsAll = (window.Config && window.Config.MAX_STARS) || (cfgMaxLvl * 3);
+            const fillEl = window.UI.$('#levels-progress-fill');
+            if (fillEl) {
+                fillEl.style.width = Math.min(100, Math.round(barTotal / maxStarsAll * 100)) + '%';
+            }
+            window.UI.setText('#levels-progress-label', '⭐ ' + barTotal + ' / ' + maxStarsAll);
 
             for (let i = 0; i < levels.length; i++) {
                 const lvl = levels[i];
                 const isUnlocked = lvl.id <= maxLvl;
+                const isFrontier = isUnlocked && lvl.id === Math.min(maxLvl, cfgMaxLvl);
                 const starsCount = (c.stars && c.stars[lvl.id]) || 0;
                 const lvlName = _t('level.' + lvl.id, lvl.name);
 
@@ -971,11 +1003,13 @@
                     starsHtml += s <= starsCount ? '<span class="star-on">★</span>' : '<span class="star-off">☆</span>';
                 }
 
-                const cls = isUnlocked ? 'level-tile unlocked' : 'level-tile locked';
+                const cls = 'level-tile' + (isUnlocked ? ' unlocked' : ' locked') + (isFrontier ? ' current' : '');
                 const lockIcon = isUnlocked ? '' : '<div class="level-lock">🔒</div>';
+                const nextBadge = isFrontier ? '<div class="level-next">▶ ' + _t('levels.frontier', 'Далі') + '</div>' : '';
 
                 html += '<div class="' + cls + '" data-level="' + lvl.id + '">' +
                     lockIcon +
+                    nextBadge +
                     '<div class="level-num">' + lvl.id + '</div>' +
                     '<div class="level-name">' + lvlName + '</div>' +
                     '<div class="level-stars">' + (isUnlocked ? starsHtml : '🔒') + '</div>' +
@@ -1032,6 +1066,20 @@
             window.UI.setText('#vic-shield-val', (data.shieldUsed ? _t('victory.shieldDamaged', 'Щит пошкоджено') : _t('victory.noDamage', 'Без шкоди')) + ', ' + (data.nearMisses || 0) + '/5 near-miss' + (shieldOk ? ' ✓' : ' ✗'));
             const req3El = window.UI.$('#vic-req-3');
             if (req3El) req3El.classList.toggle('ok', shieldOk);
+
+            // QOL: загальний баланс зірок кампанії після зарахування цих зірок
+            try {
+                const maxL = (window.Config && window.Config.MAX_LEVEL) || 15;
+                const maxSt = (window.Config && window.Config.MAX_STARS) || (maxL * 3);
+                let total = 0;
+                const cc = window.State.data.campaign;
+                if (cc && cc.stars) {
+                    for (let k = 1; k <= maxL; k++) total += cc.stars[k] || 0;
+                }
+                window.UI.setText('#vic-total-stars',
+                    _t('victory.totalStars', '⭐ Всього зірок: {x}/{y}')
+                        .replace('{x}', total).replace('{y}', maxSt));
+            } catch (e) {}
 
             // Кнопка "Наступний рівень"
             const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
@@ -1165,9 +1213,11 @@
         if (!grid) return;
         try {
             const achs = window.Achievements.list();
+            let unlockedCount = 0;
             let html = '';
             for (let i = 0; i < achs.length; i++) {
                 const a = achs[i];
+                if (a.unlocked) unlockedCount++;
                 const cls = a.unlocked ? ' active' : ' locked';
                 const icon = a.unlocked ? '🏆' : '🔒';
                 html += '<div class="tile' + cls + '">' +
@@ -1177,6 +1227,9 @@
                     '</div>';
             }
             grid.innerHTML = html;
+            window.UI.setText('#ach-progress',
+                _t('achievements.progress', 'Розблоковано: {x}/{y}')
+                    .replace('{x}', unlockedCount).replace('{y}', achs.length));
         } catch (e) {
             _log('error', 'buildAchievements', e.message);
         }
