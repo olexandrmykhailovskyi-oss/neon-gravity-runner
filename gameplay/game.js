@@ -184,9 +184,37 @@
         _startRun();
     }
 
+    // QOL-5: користувацькі рівні з редактора
+    let _lastCustomDef = null;
+    function startCustomLevel(def) {
+        try {
+            const clean = (window.Editor && typeof window.Editor.sanitize === 'function') ? window.Editor.sanitize(def) : def;
+            if (!clean) return;
+            _lastCustomDef = clean;
+            _mode = 'custom';
+            _currentLevel = {
+                id: 9001,
+                custom: true,
+                name: clean.name,
+                duration: clean.dur,
+                speedMult: clean.spd,
+                density: clean.den,
+                storm: !!clean.storm,
+                theme: clean.theme,
+                obstacles: clean.types.slice(),
+                starScore: clean.star
+            };
+        } catch (e) {
+            return;
+        }
+        _startRun();
+    }
+
     function retryCurrent() {
         if (_mode === 'campaign' && _currentLevel) {
             startCampaignLevel(_currentLevel.id);
+        } else if (_mode === 'custom' && _lastCustomDef) {
+            startCustomLevel(_lastCustomDef);
         } else if (_mode === 'daily') {
             startDaily();
         } else if (_mode === 'timeattack') {
@@ -250,7 +278,7 @@
             const ZEN_TYPES = ['wall', 'gate', 'moving', 'spikes'];
 
             // Скидання перешкод та бонусів
-            if (_mode === 'campaign' && _currentLevel) {
+            if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel) {
                 window.Obstacles.reset(_currentLevel.obstacles, _currentLevel.density || 1.0, customRng);
                 window.Bonuses.reset(customRng);
                 window.Storm.reset(_currentLevel);
@@ -285,7 +313,7 @@
             } catch (e) {}
 
             const baseSpd = _cfg('GAME', 'BASE_SPEED', 250);
-            if (_mode === 'campaign' && _currentLevel) {
+            if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel) {
                 _speed = baseSpd * (_currentLevel.speedMult || 1.0) * diffMult;
             } else {
                 _speed = baseSpd * diffMult;
@@ -303,6 +331,8 @@
             _deathCause = null;
 
             _state = 'playing';
+
+            try { if (window.Analytics) window.Analytics.track('game_start', { mode: _mode }); } catch (e) {}
 
             _hideAllScreens();
             window.HUD.show(true);
@@ -429,7 +459,7 @@
             }
         } catch (e) {}
 
-        if (_mode === 'campaign' && _currentLevel) {
+        if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel) {
             let lvlSpd = baseSpd * (_currentLevel.speedMult || 1.0);
             if (_currentLevel.speedGrowthMax) {
                 const growthFactor = Math.min(1, _elapsed / _currentLevel.duration);
@@ -453,8 +483,8 @@
         try { window.Particles.update(dt); } catch (e) {}
         try { window.FloatingTexts.update(dt); } catch (e) {}
 
-        // Перевірка завершення рівня кампанії
-        if (_mode === 'campaign' && _currentLevel && _elapsed >= _currentLevel.duration) {
+        // Перевірка завершення рівня кампанії / кастомного рівня
+        if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel && _elapsed >= _currentLevel.duration) {
             _levelComplete();
             return;
         }
@@ -548,7 +578,7 @@
             _hudTimer = 0;
             try {
                 let lvlProg = 0;
-                if (_mode === 'campaign' && _currentLevel && _currentLevel.duration > 0) {
+                if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel && _currentLevel.duration > 0) {
                     lvlProg = _elapsed / _currentLevel.duration;
                 } else if (_mode === 'timeattack' && modeDuration > 0) {
                     lvlProg = _elapsed / modeDuration;
@@ -639,6 +669,29 @@
         } catch (e) {}
     }
 
+    // QOL-5: надсилання результату у світовий лідерборд (fire-and-forget, тост лише раз)
+    let _globalToastShown = false;
+    function _submitGlobal(score, mode, levelId) {
+        try {
+            if (!window.GlobalScores || typeof score !== 'number' || score <= 0) return;
+            window.GlobalScores.submit({
+                score: score,
+                mode: mode,
+                level: levelId || null,
+                combo: window.Scoring.bestCombo()
+            }).then(function (ok) {
+                try {
+                    if (!ok) return;
+                    if (window.Analytics) window.Analytics.track('lb_submit', { mode: mode });
+                    if (!_globalToastShown && window.UI && window.I18n) {
+                        _globalToastShown = true;
+                        window.UI.showToast(window.I18n.t('toast.globalSent'), 'success');
+                    }
+                } catch (e) {}
+            });
+        } catch (e) {}
+    }
+
     // Завершение Time Attack режима — экран результатов вместо вылета в меню
     function _timeAttackComplete() {
         _state = 'victory';
@@ -671,6 +724,9 @@
                 level: null,
                 combo: window.Scoring.bestCombo()
             });
+
+            _submitGlobal(finalScore, 'timeattack', null);
+            try { if (window.Analytics) window.Analytics.track('run_end', { mode: 'timeattack', score: finalScore, dur: Math.round(_elapsed) }); } catch (e) {}
 
             try { window.Achievements.checkAll(); } catch (e) {}
             try { window.Skins.checkUnlocks(); } catch (e) {}
@@ -708,9 +764,12 @@
                 window.Scoring.nearMisses()
             );
 
-            window.Levels.saveProgress(_currentLevel.id, stars);
+            // Кастомні рівні не пишуть прогрес кампанії
+            if (!_currentLevel.custom) {
+                window.Levels.saveProgress(_currentLevel.id, stars);
+            }
 
-            _recordModeBest('campaign', finalScore);
+            _recordModeBest(_currentLevel.custom ? 'custom' : 'campaign', finalScore);
 
             const s = window.State.getStats();
             window.State.updateStats({
@@ -727,10 +786,19 @@
 
             window.State.addLeaderboardEntry({
                 score: finalScore,
-                mode: 'campaign',
+                mode: _currentLevel.custom ? 'custom' : 'campaign',
                 level: _currentLevel.id,
                 combo: window.Scoring.bestCombo()
             });
+
+            _submitGlobal(finalScore, _currentLevel.custom ? 'custom' : 'campaign',
+                _currentLevel.custom ? null : _currentLevel.id);
+            try {
+                if (window.Analytics) window.Analytics.track('level_complete', {
+                    level: _currentLevel.custom ? 0 : _currentLevel.id,
+                    stars: stars
+                });
+            } catch (e) {}
 
             try { window.Achievements.checkAll(); } catch (e) {}
             try { window.Skins.checkUnlocks(); } catch (e) {}
@@ -793,6 +861,11 @@
                 level: _currentLevel ? _currentLevel.id : null,
                 combo: window.Scoring.bestCombo()
             });
+
+            if (_mode !== 'campaign') {
+                _submitGlobal(finalScore, _mode, null);
+            }
+            try { if (window.Analytics) window.Analytics.track('run_end', { mode: _mode, score: finalScore, dur: Math.round(window.Scoring.elapsed()) }); } catch (e) {}
 
             try { window.Achievements.checkAll(); } catch (e) {}
             try { window.Skins.checkUnlocks(); } catch (e) {}

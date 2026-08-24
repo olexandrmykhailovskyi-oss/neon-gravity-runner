@@ -66,8 +66,12 @@ load('core/utils.js');
 load('core/collision.js');
 load('core/i18n.js');
 load('core/cloud_storage.js');
+load('core/global_scores.js');
+load('core/analytics.js');
 load('gameplay/modes.js');
 load('gameplay/scoring.js');
+load('ui/ui.js');
+load('ui/editor.js');
 
 const W = sandbox;
 
@@ -88,6 +92,40 @@ for (const lang of ['uk', 'ru', 'en']) {
     }
 }
 check('немає порожніх перекладів' + (emptyKeys.length ? ' (' + emptyKeys.join(',') + ')' : ''), emptyKeys.length === 0);
+
+// ---- 1b. QOL-5: нові модулі live-сервісу ----
+console.log('\n[1b] Live-сервіс (Analytics / GlobalScores / Editor):');
+check('Analytics API на місці', !!W.Analytics && typeof W.Analytics.track === 'function' && typeof W.Analytics.flush === 'function');
+check('GlobalScores API на місці', !!W.GlobalScores && typeof W.GlobalScores.submit === 'function' && typeof W.GlobalScores.top === 'function' && typeof W.GlobalScores.ready === 'function');
+check('Editor API на місці', !!W.Editor && typeof W.Editor.encodeDef === 'function' && typeof W.Editor.decodeDef === 'function');
+check('CloudStorage.getClient() без клієнта = null', W.CloudStorage.getClient() === null);
+let analyticsFlushNoClient = -1;
+W.Analytics.track('smoke_test', { a: 1 });
+W.Analytics.flush().then(function (n) { analyticsFlushNoClient = n; });
+check('analytics вимикається налаштуванням', (function () {
+    W.State.setSetting('analytics', false);
+    const off = W.Analytics.enabled() === false;
+    W.State.setSetting('analytics', true);
+    return off && W.Analytics.enabled() === true;
+})());
+
+// Кодек рівнів редактора
+const edDef = {
+    name: 'Тест Рівень',
+    dur: 75, spd: 1.65, den: 1.4, storm: true, theme: 3,
+    types: ['wall', 'laser', 'pulsar']
+};
+const edCode = W.Editor.encodeDef(edDef);
+check('encodeDef дає код NGRL1-', typeof edCode === 'string' && edCode.indexOf('NGRL1-') === 0);
+const edBack = W.Editor.decodeDef(edCode);
+check('decodeDef повертає той самий def',
+    !!edBack && edBack.name === edDef.name && edBack.dur === 75 && edBack.storm === true &&
+    edBack.theme === 3 && edBack.types.length === 3 && edBack.types.indexOf('laser') !== -1);
+const tamperedEd = edCode.slice(0, -2) + (edCode.endsWith('AA') ? 'BB' : 'AA');
+check('підмінений код рівня відхиляється', W.Editor.decodeDef(tamperedEd) === null);
+check('sanitize: порожні типи = null', W.Editor.sanitize({ name: 'x', types: [] }) === null);
+check('sanitize: clamps (spd 5 → 2.0)', W.Editor.sanitize({ name: 'x', spd: 5, types: ['wall'] }).spd === 2);
+check('sanitize: сміття = null', W.Editor.sanitize(null) === null && W.Editor.sanitize(42) === null);
 
 // ---- 2. I18n init / setLanguage ----
 console.log('\n[2] I18n init/_setLanguage:');
@@ -298,6 +336,7 @@ setTimeout(function () {
     check('init() без конфігурації завершується false', cloudInitResult === false);
     check('push без конфігурації повертає false', cloudPushResult === false);
     check('pull без конфігурації повертає null', cloudPullResult === null);
+    check('analytics flush без клієнта = 0 подій', analyticsFlushNoClient === 0);
 
     console.log('\n' + (failures === 0 ? '✅ УСІ ТЕСТИ ПРОЙДЕНО' : '❌ ПРОВАЛІВ: ' + failures));
     process.exit(failures === 0 ? 0 : 1);

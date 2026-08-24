@@ -133,6 +133,7 @@
             '<button id="btn-endless" class="btn primary" data-i18n="menu.endless">♾ Нескінченність</button>' +
             '<button id="btn-daily" class="btn accent-btn" data-i18n="menu.daily">📅 Виклик дня</button>' +
             '<button id="btn-timeattack" class="btn" data-i18n="menu.timeattack">⏱ Time Attack</button>' +
+            '<button id="btn-editor" class="btn" data-i18n="menu.editor">🛠 Редактор</button>' +
             '<button id="btn-survival" class="btn" data-i18n="menu.survival">💀 Survival</button>' +
             '<button id="btn-zen" class="btn" data-i18n="menu.zen">🧘 Zen</button>' +
             '<button id="btn-skins" class="btn" data-i18n="menu.skins">🎨 Скіни</button>' +
@@ -195,9 +196,11 @@
     function _buildLeaderboardScreen() {
         const el = window.UI.$('#screen-leaderboard');
         if (!el) return;
-        el.innerHTML =
+            el.innerHTML =
             '<div class="panel">' +
             '<h2 data-i18n="leaderboard.title">👑 ТОП-5 Рекордів</h2>' +
+            '<div class="lb-tabs" id="leaderboard-tabs"></div>' +
+            '<div class="ed-chips lb-modes hidden" id="lb-modes"></div>' +
             '<div id="leaderboard-list" style="margin: 14px 0;"></div>' +
             '<div class="btn-grid">' +
             '<button id="btn-leaderboard-back" class="btn" data-i18n="btn.back">← Назад</button>' +
@@ -279,6 +282,12 @@
             '<span class="setting-label" data-i18n="settings.language">Мова</span>' +
             '<div id="lang-btns" class="btn-grid" style="margin:0;"></div>' +
             '</div>' +
+            '<div class="setting-row">' +
+            '<span class="setting-label" data-i18n="settings.nickname">Ім’я пілота</span>' +
+            '<input type="text" id="set-nickname" maxlength="20" style="max-width:160px;"></div>' +
+            '<div class="setting-row">' +
+            '<span class="setting-label" data-i18n="settings.analytics">Анонімна статистика</span>' +
+            '<div class="switch" id="set-analytics"></div></div>' +
             '<div class="setting-row" style="flex-direction:column; align-items:stretch;">' +
             '<span class="setting-label" data-i18n="settings.data" style="margin-bottom:8px;">Дані прогресу</span>' +
             '<div class="btn-grid" style="margin:0;">' +
@@ -432,6 +441,11 @@
         UI.safeBind(UI.$('#btn-timeattack'), 'click', function () {
             _clickSound();
             try { if (window.Game) window.Game.startTimeAttack(); } catch (e) {}
+        });
+        UI.safeBind(UI.$('#btn-editor'), 'click', function () {
+            _clickSound();
+            UI.showScreen('editor');
+            try { if (window.Editor) window.Editor.build(); } catch (e) {}
         });
         UI.safeBind(UI.$('#btn-survival'), 'click', function () {
             _clickSound();
@@ -616,6 +630,28 @@
                     const cur = window.State.getSetting('gravityGuide') !== false;
                     window.State.setSetting('gravityGuide', !cur);
                     gg.classList.toggle('on', !cur);
+                } catch (e) {}
+            });
+        }
+
+        // QOL-5: ім'я пілота для світового лідерборду
+        const nick = UI.$('#set-nickname');
+        if (nick) {
+            UI.safeBind(nick, 'input', function () {
+                try {
+                    window.State.setSetting('nickname', String(this.value || '').trim().slice(0, 20));
+                } catch (e) {}
+            });
+        }
+
+        // QOL-5: тумблер анонімної телеметрії
+        const an = UI.$('#set-analytics');
+        if (an) {
+            UI.safeBind(an, 'click', function () {
+                try {
+                    const cur = window.State.getSetting('analytics') !== false;
+                    window.State.setSetting('analytics', !cur);
+                    an.classList.toggle('on', !cur);
                 } catch (e) {}
             });
         }
@@ -948,6 +984,10 @@
             if (vib) vib.classList.toggle('on', window.State.getSetting('vibration') !== false);
             const gg = window.UI.$('#set-gravity-guide');
             if (gg) gg.classList.toggle('on', window.State.getSetting('gravityGuide') !== false);
+            const nick = window.UI.$('#set-nickname');
+            if (nick) nick.value = window.State.getSetting('nickname') || '';
+            const anSw = window.UI.$('#set-analytics');
+            if (anSw) anSw.classList.toggle('on', window.State.getSetting('analytics') !== false);
             _updateDifficultyUI();
             _updateQualityUI();
             _updateThemeUI();
@@ -1157,11 +1197,106 @@
         }
     }
 
+    // QOL-5: вкладки локального та світового лідербордів
+    let _lbTab = 'local';
+    let _lbMode = '';
+    const _LB_MODES = ['', 'endless', 'daily', 'timeattack', 'survival', 'custom'];
+
+    function _renderLbTabs() {
+        const tabs = window.UI.$('#leaderboard-tabs');
+        if (!tabs) return;
+        tabs.innerHTML =
+            '<button class="btn lb-tab' + (_lbTab === 'local' ? ' primary' : '') + '" data-tab="local">' + _t('lb.tabLocal', '🏠 Локальні') + '</button>' +
+            '<button class="btn lb-tab' + (_lbTab === 'world' ? ' primary' : '') + '" data-tab="world">' + _t('lb.tabWorld', '🌍 Світ') + '</button>';
+        const btns = tabs.querySelectorAll('.lb-tab');
+        for (let i = 0; i < btns.length; i++) {
+            window.UI.safeBind(btns[i], 'click', function () {
+                _clickSound();
+                _lbTab = this.getAttribute('data-tab') || 'local';
+                buildLeaderboard();
+            });
+        }
+    }
+
+    function _renderLbModes() {
+        const box = window.UI.$('#lb-modes');
+        if (!box) return;
+        if (_lbTab !== 'world') {
+            box.classList.add('hidden');
+            box.innerHTML = '';
+            return;
+        }
+        box.classList.remove('hidden');
+        let html = '';
+        for (let i = 0; i < _LB_MODES.length; i++) {
+            const m = _LB_MODES[i];
+            const label = m === '' ? _t('lb.allModes', 'Всі') : (m === 'campaign' ? _t('hud.level', 'Рівень') : _t('lb.' + m, m));
+            html += '<button class="btn lb-mode-chip' + (_lbMode === m ? ' primary' : '') + '" data-m="' + m + '">' + label + '</button>';
+        }
+        box.innerHTML = html;
+        const chips = box.querySelectorAll('.lb-mode-chip');
+        for (let i = 0; i < chips.length; i++) {
+            window.UI.safeBind(chips[i], 'click', function () {
+                _clickSound();
+                _lbMode = this.getAttribute('data-m') || '';
+                buildLeaderboard();
+            });
+        }
+    }
+
+    function _renderWorldRows(rows) {
+        const box = window.UI.$('#leaderboard-list');
+        if (!box) return;
+        if (!rows) {
+            box.innerHTML = '<div style="text-align:center;color:#8a92b2;padding:20px;">' +
+                _t('lb.worldEmpty', 'Ще немає світових рекордів — стань першим!') + '</div>';
+            return;
+        }
+        if (!rows.length) {
+            box.innerHTML = '<div style="text-align:center;color:#8a92b2;padding:20px;">' +
+                _t('leaderboard.empty', 'Ще немає збережених рекордів. Зіграйте забіг!') + '</div>';
+            return;
+        }
+        const U = window.Utils;
+        let html = '';
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i];
+            const rank = i + 1;
+            const badge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : '#' + rank));
+            let modeText = _t('lb.' + r.mode, r.mode || '');
+            if (r.mode === 'campaign') modeText = _t('hud.level', 'Рівень') + ' ' + (r.level || '?');
+            html += '<div class="setting-row" style="padding:10px 0;">' +
+                '<span class="setting-label">' + badge + ' <b>' + String(r.player || '?').replace(/[<>&]/g, '') + '</b>' +
+                ' <span style="font-size:11px;color:#8a92b2;">· ' + modeText + '</span></span>' +
+                '<span class="setting-value" style="font-size:17px;">' + U.formatNumber(r.score || 0) + '</span>' +
+                '</div>';
+        }
+        box.innerHTML = html;
+    }
+
     // ТОП-5 Рекордів
     function buildLeaderboard() {
         const box = window.UI.$('#leaderboard-list');
         if (!box) return;
         try {
+            _renderLbTabs();
+            _renderLbModes();
+
+            if (_lbTab === 'world') {
+                if (!(window.GlobalScores && window.GlobalScores.ready())) {
+                    box.innerHTML = '<div style="text-align:center;color:#8a92b2;padding:20px;">☁ ' +
+                        _t('cloud.notConfigured', 'Не налаштовано') + '</div>';
+                    return;
+                }
+                box.innerHTML = '<div style="text-align:center;color:#8a92b2;padding:20px;">⏳ ' +
+                    _t('lb.loading', 'Завантаження…') + '</div>';
+                window.GlobalScores.top(_lbMode || null, 10).then(function (rows) {
+                    // Малюємо лише якщо користувач ще на цій вкладці
+                    if (_lbTab === 'world') _renderWorldRows(rows);
+                });
+                return;
+            }
+
             const list = window.State.getLeaderboard();
             const U = window.Utils;
             if (list.length === 0) {

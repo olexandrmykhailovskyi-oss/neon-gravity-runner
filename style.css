@@ -915,3 +915,52 @@ input[type="range"] {
         opacity: 1;
     }
 }
+
+/* ---- QOL-5: редактор рівнів, вкладки лідерборду ---- */
+
+.editor-panel {
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+.ed-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.ed-chip {
+    min-width: 0;
+    padding: 7px 10px;
+    font-size: 12px;
+}
+
+.ed-chip.primary {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.35);
+}
+
+.lb-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.lb-tab { min-width: 120px; }
+
+.lb-modes { justify-content: center; margin-bottom: 6px; }
+
+.tile-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.tile-actions .btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: 0;
+}

@@ -24,7 +24,9 @@
                 vibration: true,
                 gravityGuide: true,  // QOL: пунктирна лінія гравітації від гравця
                 difficulty: 'normal', // 'easy' | 'normal' | 'hardcore'
-                language: 'auto'     // 'auto' | 'uk' | 'ru' | 'en'
+                language: 'auto',    // 'auto' | 'uk' | 'ru' | 'en'
+                nickname: '',        // QOL-5: ім'я у світовому лідерборді
+                analytics: true      // QOL-5: анонімна телеметрія (можна вимкнути)
             },
             campaign: {
                 maxLevel: 1,

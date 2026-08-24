@@ -26,7 +26,7 @@
             'AudioSys', 'Particles', 'FloatingTexts', 'Background', 'Effects',
             'Skins', 'Achievements', 'Player', 'Obstacle', 'Obstacles',
             'Bonus', 'Bonuses', 'Storm', 'Scoring', 'Levels', 'Modes', 'UI', 'Screens',
-            'HUD', 'Game', 'Input'
+            'HUD', 'Game', 'Input', 'Editor', 'Analytics', 'GlobalScores'
         ];
         const missing = [];
         for (let i = 0; i < required.length; i++) {
@@ -92,6 +92,7 @@
             _setProgress(40, _tr('boot.ui', 'Побудова інтерфейсу…'));
             window.Screens.init();
             window.HUD.init();
+            window.Editor.build();
 
             _setProgress(60, _tr('boot.game', 'Ініціалізація гри…'));
             window.Game.init();
@@ -104,6 +105,9 @@
             try { if (window.CloudStorage) window.CloudStorage.init(); } catch (e) {
                 _log('warn', 'CloudStorage.init: ' + e.message);
             }
+
+            // QOL-5: телеметрія сесії (анонімно, вимикається в налаштуваннях)
+            try { if (window.Analytics) window.Analytics.sessionStart(); } catch (e) {}
 
             _setProgress(90, _tr('boot.update', 'Оновлення інтерфейсу…'));
             try {

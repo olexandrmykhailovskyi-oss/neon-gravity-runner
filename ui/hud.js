@@ -86,23 +86,28 @@
             // Інформація про режим / рівень кампанії
             const levelInfoEl = window.UI.$('#hud-level-info');
             const levelProgressEl = window.UI.$('#hud-level-progress-bar');
-            if (data.mode === 'campaign' && data.level) {
+            if ((data.mode === 'campaign' || data.mode === 'custom') && data.level) {
                 if (levelInfoEl) {
                     levelInfoEl.classList.remove('hidden');
                     const lvl = data.level;
                     const levelWord = _tr('hud.level', 'Рівень');
-                    let lvlName = '';
-                    try {
-                        if (window.Config && window.Config.LEVELS) {
-                            for (let i = 0; i < window.Config.LEVELS.length; i++) {
-                                if (window.Config.LEVELS[i].id === lvl.id) {
-                                    lvlName = _tr('level.' + lvl.id, window.Config.LEVELS[i].name);
-                                    break;
+                    if (data.mode === 'custom') {
+                        // Кастомний рівень з редактора — показуємо його назву
+                        window.UI.setText('#hud-level-title', '🛠 ' + (lvl.name || 'Custom'));
+                    } else {
+                        let lvlName = '';
+                        try {
+                            if (window.Config && window.Config.LEVELS) {
+                                for (let i = 0; i < window.Config.LEVELS.length; i++) {
+                                    if (window.Config.LEVELS[i].id === lvl.id) {
+                                        lvlName = _tr('level.' + lvl.id, window.Config.LEVELS[i].name);
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                    } catch (e) {}
-                    window.UI.setText('#hud-level-title', levelWord + ' ' + lvl.id + ' — ' + lvlName);
+                        } catch (e) {}
+                        window.UI.setText('#hud-level-title', levelWord + ' ' + lvl.id + ' — ' + lvlName);
+                    }
                 }
                 if (levelProgressEl && typeof data.levelProgress === 'number') {
                     levelProgressEl.classList.remove('hidden');

@@ -196,6 +196,11 @@
         return _deviceId;
     }
 
+    // Доступ до спільного supabase-клієнта для інших модулів (GlobalScores, Analytics)
+    function getClient() {
+        return _ready ? _client : null;
+    }
+
     window.CloudStorage = {
         init: init,
         pushProgress: pushProgress,
@@ -206,6 +211,7 @@
         isReady: isReady,
         getProvider: getProvider,
         getLastSyncTime: getLastSyncTime,
-        getDeviceId: getDeviceId
+        getDeviceId: getDeviceId,
+        getClient: getClient
     };
 })();
