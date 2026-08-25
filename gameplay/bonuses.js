@@ -188,7 +188,7 @@
                     break;
 
                 case 'magnet':
-                    player.magnet = 8;
+                    player.magnet = 12;
                     if (window.AudioSys) window.AudioSys.playBonus();
                     break;
 

@@ -128,7 +128,20 @@ check('підмінений код рівня відхиляється', W.Edito
 check('sanitize: порожні типи = null', W.Editor.sanitize({ name: 'x', types: [] }) === null);
 check('sanitize: clamps (spd 5 → 2.0)', W.Editor.sanitize({ name: 'x', spd: 5, types: ['wall'] }).spd === 2);
 check('sanitize: сміття = null', W.Editor.sanitize(null) === null && W.Editor.sanitize(42) === null);
-check('структур-патернів у басейні ≥ 20', typeof W.Obstacles.patternCount === 'function' && W.Obstacles.patternCount() >= 20);
+check('структур-патернів у басейні ≥ 28', typeof W.Obstacles.patternCount === 'function' && W.Obstacles.patternCount() >= 28);
+check('лазер: висота 60–80% поля (реальна загроза, не «бескорисний»)', (function () {
+    for (let i = 0; i < 24; i++) {
+        const L = W.Obstacle.create('laser', 900, { top: 60, bottom: 660, width: 1280 }, {});
+        const frac = L.h / 600;
+        if (frac < 0.6 || frac > 0.8) return false;
+    }
+    return true;
+})());
+check('магніт: тривалість 12с у конфігу бонусу', (function () {
+    // bonuses.js не в харнесі — перевіряємо через source-файл
+    const src = require('fs').readFileSync('gameplay/bonuses.js', 'utf8');
+    return src.indexOf('player.magnet = 12') !== -1;
+})());
 check('складність: швидкість і проміжки реально змінюються', (function () {
     W.State.setSetting('difficulty', 'hardcore');
     const hcSpeed = W.State.getDifficultyMultipliers().speed;

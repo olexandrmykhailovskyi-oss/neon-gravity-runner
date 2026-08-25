@@ -186,6 +186,7 @@
 
     // QOL-5: користувацькі рівні з редактора
     let _lastCustomDef = null;
+    let _diffScoreMult = 1; // для бейджа складності в HUD
     function startCustomLevel(def) {
         try {
             const clean = (window.Editor && typeof window.Editor.sanitize === 'function') ? window.Editor.sanitize(def) : def;
@@ -277,7 +278,12 @@
                 if (d === 'hardcore') diffScoreMult = 1.3;
                 else if (d === 'easy') diffScoreMult = 0.85;
             } catch (e) {}
+            _diffScoreMult = diffScoreMult;
             window.Scoring.setExternalMultiplier(modeMult * diffScoreMult);
+
+            // Щільність спавну теж залежить від складності
+            let diffDensity = 1.0;
+            try { diffDensity = window.State.getDifficultyMultipliers().density || 1.0; } catch (e) {}
             window.Particles.clear();
             window.FloatingTexts.clear();
 
@@ -286,18 +292,18 @@
 
             // Скидання перешкод та бонусів
             if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel) {
-                window.Obstacles.reset(_currentLevel.obstacles, _currentLevel.density || 1.0, customRng);
+                window.Obstacles.reset(_currentLevel.obstacles, (_currentLevel.density || 1.0) * diffDensity, customRng);
                 window.Bonuses.reset(customRng);
                 window.Storm.reset(_currentLevel);
                 if (window.Background) window.Background.setTheme(_currentLevel.theme);
             } else if (_mode === 'zen') {
-                window.Obstacles.reset(ZEN_TYPES, 0.7, customRng);
+                window.Obstacles.reset(ZEN_TYPES, 0.7 * diffDensity, customRng);
                 window.Bonuses.reset(customRng);
                 window.Storm.reset({ storm: false });
                 const t = window.State.getSetting('theme');
                 if (window.Background) window.Background.setTheme(t);
             } else {
-                window.Obstacles.reset(null, 1.0, customRng);
+                window.Obstacles.reset(null, 1.0 * diffDensity, customRng);
                 window.Bonuses.reset(customRng);
                 window.Storm.reset(null);
                 const t = window.State.getSetting('theme');
@@ -606,7 +612,8 @@
                     level: _currentLevel,
                     levelProgress: lvlProg,
                     elapsed: _elapsed,
-                    duration: modeDuration
+                    duration: modeDuration,
+                    diffMult: _diffScoreMult
                 });
             } catch (e) {}
         }

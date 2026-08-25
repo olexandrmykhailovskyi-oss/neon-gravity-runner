@@ -340,6 +340,94 @@
                 out.push({ type: 'laser', dx: 220 });
                 return out;
             }
+        },
+        {
+            id: 'laser_wall_gate',
+            types: ['laser', 'wall', 'gate'],
+            build: function (x, area, rng) {
+                // Лазер → стіна → ворота: повний набір по черзі
+                const out = [{ type: 'laser', dx: 0 }];
+                const wallTop = rng() < 0.5;
+                const w = window.Obstacle.create('wall', x + 280, area, { fromTop: wallTop });
+                if (w) out.push({ obs: w, dx: 280 });
+                out.push({ type: 'gate', dx: 560 });
+                return out;
+            }
+        },
+        {
+            id: 'spike_gauntlet',
+            types: ['spikes'],
+            build: function (x, area, rng) {
+                // Щільна гребінка: 4 блоки, сторони чергуються
+                const out = [];
+                const sides = [true, false, true, false];
+                for (let i = 0; i < sides.length; i++) {
+                    const sp = window.Obstacle.create('spikes', x + i * 150, area, { onFloor: sides[i] });
+                    if (sp) out.push({ obs: sp, dx: i * 150 });
+                }
+                return out;
+            }
+        },
+        {
+            id: 'pulsar_trio',
+            types: ['pulsar'],
+            build: function (x, area, rng) {
+                // Три пульсари — хвилі радіусу перекривають центр
+                return [{ type: 'pulsar', dx: 0 }, { type: 'pulsar', dx: 230 }, { type: 'pulsar', dx: 460 }];
+            }
+        },
+        {
+            id: 'gate_tunnel',
+            types: ['gate'],
+            build: function (x, area, rng) {
+                // Тунель із трьох воріт підряд
+                return [{ type: 'gate', dx: 0 }, { type: 'gate', dx: 310 }, { type: 'gate', dx: 620 }];
+            }
+        },
+        {
+            id: 'moving_wall_mix',
+            types: ['moving', 'wall'],
+            build: function (x, area, rng) {
+                // Стіна задає сторону, рухомий блок назустріч
+                const out = [];
+                const wallTop = rng() < 0.5;
+                const w = window.Obstacle.create('wall', x, area, { fromTop: wallTop });
+                if (w) out.push({ obs: w, dx: 0 });
+                out.push({ type: 'moving', dx: 320 });
+                return out;
+            }
+        },
+        {
+            id: 'gravity_pulsar',
+            types: ['gravity_zone', 'pulsar'],
+            build: function (x, area, rng) {
+                // Воронка перевертає гравітацію, пульсар змушує рухатись
+                return [{ type: 'gravity_zone', dx: 0 }, { type: 'pulsar', dx: 280 }];
+            }
+        },
+        {
+            id: 'laser_corridor_long',
+            types: ['laser', 'moving_laser'],
+            build: function (x, area, rng) {
+                // Довгий коридор: лазер → рухомий → лазер
+                return [{ type: 'laser', dx: 0 }, { type: 'moving_laser', dx: 320 }, { type: 'laser', dx: 640 }];
+            }
+        },
+        {
+            id: 'zigzag_spikes_wall',
+            types: ['spikes', 'wall'],
+            build: function (x, area, rng) {
+                // Стіна → шипи їй назустріч → стіна навпаки
+                const out = [];
+                const wallTop = rng() < 0.5;
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: wallTop });
+                if (w1) out.push({ obs: w1, dx: 0 });
+                const sp = window.Obstacle.create('spikes', x + 250, area, { onFloor: !wallTop });
+                if (sp) out.push({ obs: sp, dx: 250 });
+                const w2 = window.Obstacle.create('wall', x + 500, area, { fromTop: !wallTop });
+                if (w2) out.push({ obs: w2, dx: 500 });
+                return out;
+            }
         }
     ];
 

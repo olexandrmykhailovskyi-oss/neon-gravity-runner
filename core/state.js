@@ -202,12 +202,14 @@
         const diff = (data.settings && data.settings.difficulty) || 'normal';
         switch (diff) {
             case 'easy':
-                return { speed: 0.85, gravity: 0.85, gap: 1.25, name: 'Легко' };
+                // Легко: повільніше, м'якша гравітація, ширші проміжки, рідший спавн
+                return { speed: 0.80, gravity: 0.85, gap: 1.35, density: 0.85, name: 'Легко' };
             case 'hardcore':
-                return { speed: 1.15, gravity: 1.1, gap: 0.85, name: 'Хардкор' };
+                // Хардкор: швидко, різко, тісно, густо + очки ×1.3
+                return { speed: 1.25, gravity: 1.15, gap: 0.78, density: 1.15, name: 'Хардкор' };
             case 'normal':
             default:
-                return { speed: 1.0, gravity: 1.0, gap: 1.0, name: 'Нормально' };
+                return { speed: 1.0, gravity: 1.0, gap: 1.0, density: 1.0, name: 'Нормально' };
         }
     }
 

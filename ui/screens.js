@@ -341,15 +341,37 @@
                 '</div>' +
                 '</div>';
         }
+        // Заметки режимов: что такое Zen/Daily и остальные — с описанием
+        const modesInfo = [
+            ['⭐', 'mode.campaign.desc'],
+            ['♾', 'mode.endless.desc'],
+            ['📅', 'mode.daily.desc'],
+            ['⏱', 'mode.timeattack.desc'],
+            ['💀', 'mode.survival.desc'],
+            ['🧘', 'mode.zen.desc'],
+            ['🛠', 'mode.custom.desc']
+        ];
+        let modeRows = '';
+        for (let i = 0; i < modesInfo.length; i++) {
+            modeRows += '<div class="help-row">' +
+                '<span class="help-icon">' + modesInfo[i][0] + '</span>' +
+                '<div class="help-text">' +
+                '<div class="help-desc" data-i18n="' + modesInfo[i][1] + '">' + window.I18n.t(modesInfo[i][1]) + '</div>' +
+                '</div>' +
+                '</div>';
+        }
+
         el.innerHTML =
             '<div class="panel help-panel">' +
             '<h2 data-i18n="help.title">Довідка</h2>' +
             '<h3 data-i18n="help.controls">Керування</h3>' +
             '<p data-i18n-html="help.controlsList"></p>' +
+            '<h3 data-i18n="help.modes">Режими</h3>' +
+            '<div class="help-list">' + modeRows + '</div>' +
             '<h3 data-i18n="help.bonuses">Бонуси</h3>' +
             '<div class="help-list">' + rows + '</div>' +
             '<div class="btn-grid">' +
-            '<button id="btn-help-back" class="btn" data-i18n="btn.back">← Назад</button>' +
+            '<button id="btn-help-back" class="btn" data-i18n="btn.back">← Назад у меню</button>' +
             '</div>' +
             '</div>';
     }
@@ -1030,11 +1052,13 @@
                 if (txt) b.setAttribute('data-sub', txt);
                 else b.removeAttribute('data-sub');
             }
-            _setSub('#btn-endless', bm.endless > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.endless)) : null);
-            _setSub('#btn-timeattack', bm.timeattack > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.timeattack)) : null);
-            _setSub('#btn-survival', bm.survival > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.survival)) : null);
+            // Бейдж рекорду; якщо рекорду нема — короткий опис режиму (що це взагалі таке)
+            _setSub('#btn-endless', bm.endless > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.endless)) : _t('mode.endless.desc', ''));
+            _setSub('#btn-timeattack', bm.timeattack > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.timeattack)) : _t('mode.timeattack.desc', ''));
+            _setSub('#btn-survival', bm.survival > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.survival)) : _t('mode.survival.desc', ''));
             const streakN = (s && s.dailyStreak) || 0;
-            _setSub('#btn-daily', streakN > 0 ? _t('menu.subStreak', 'серія: {n}').replace('{n}', streakN) : null);
+            _setSub('#btn-daily', streakN > 0 ? _t('menu.subStreak', 'серія: {n}').replace('{n}', streakN) : _t('mode.daily.desc', ''));
+            _setSub('#btn-zen', _t('mode.zen.desc', ''));
 
             // Напис кнопки «Кампанія» — кількість рівнів беремо з конфіга, без хардкоду
             const campBtn = window.UI.$('#btn-campaign');

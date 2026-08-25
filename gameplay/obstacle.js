@@ -89,7 +89,8 @@
             case 'wall':
                 base.w = p.w || 40;
                 const fromTop = typeof p.fromTop === 'boolean' ? p.fromTop : (Math.random() < 0.5);
-                const wallH = p.h || (a.bottom - a.top) * (0.35 + Math.random() * 0.25);
+                // Фейрнес: максимум 54% поля — завжди гарантований прохід по іншій стороні
+                const wallH = p.h || (a.bottom - a.top) * (0.32 + Math.random() * 0.22);
                 if (fromTop) {
                     base.y = a.top;
                     base.h = wallH;
@@ -101,7 +102,8 @@
 
             case 'gate':
                 base.w = p.w || 36;
-                const gap = p.gap || (160 + Math.random() * 60);
+                // Фейрнес: прохід 170–240px — комфортно навіть на високій швидкості
+                const gap = p.gap || (170 + Math.random() * 70);
                 const centerY = a.top + (a.bottom - a.top) * (0.35 + Math.random() * 0.3);
                 base.gapY = centerY;
                 base.gapH = gap;
@@ -130,9 +132,9 @@
 
             case 'laser':
                 base.w = 10;
-                // UX: частковий лазер — завжди є прохід зверху/знизу, треба лише встигнути
-                // на правильну сторону. Повний лазер неможливо оминути — тому він й «бескорисний».
-                const laserH = (a.bottom - a.top) * (0.52 + Math.random() * 0.16);
+                // Баланс: лазер має бути РЕАЛЬНОЮ загрозою — 62–78% висоти поля,
+                // прохід лишаєься вузькою щілиною (32–38%), а не половиною екрана
+                const laserH = (a.bottom - a.top) * (0.62 + Math.random() * 0.16);
                 const laserFromTop = Math.random() < 0.5;
                 base.h = laserH;
                 base.y = laserFromTop ? a.top : (a.bottom - laserH);
@@ -511,42 +513,66 @@
     }
 
     function _drawLaser(obs, ctx) {
+        const cx = obs.x + obs.w / 2;
+        const y1 = obs.y;
+        const y2 = obs.y + obs.h;
+        ctx.lineCap = 'round';
+
         if (obs.phase === 'warning') {
-            ctx.globalAlpha = 0.4 + Math.sin(obs.time * 12) * 0.3;
+            // Попередження: пульсуюча пунктирна лінія + світні вузли на кінцях
+            ctx.globalAlpha = 0.45 + Math.sin(obs.time * 14) * 0.3;
             ctx.strokeStyle = obs.color;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([8, 8]);
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([7, 9]);
             ctx.beginPath();
-            ctx.moveTo(obs.x + obs.w / 2, obs.y);
-            ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
+            ctx.moveTo(cx, y1);
+            ctx.lineTo(cx, y2);
             ctx.stroke();
             ctx.setLineDash([]);
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = obs.color;
+            ctx.beginPath(); ctx.arc(cx, y1, 3.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, y2, 3.5, 0, Math.PI * 2); ctx.fill();
         } else if (obs.phase === 'active') {
-            ctx.shadowBlur = 30;
+            // Промінь: зовнішній ореол → основа → біле ядро, круглі кінці + емітери
+            ctx.shadowBlur = 26;
             ctx.shadowColor = obs.color;
+
+            ctx.globalAlpha = 0.28;
             ctx.strokeStyle = obs.color;
+            ctx.lineWidth = obs.w * 2.4;
+            ctx.beginPath(); ctx.moveTo(cx, y1); ctx.lineTo(cx, y2); ctx.stroke();
+
+            ctx.globalAlpha = 0.95;
             ctx.lineWidth = obs.w;
-            ctx.globalAlpha = 0.9;
-            ctx.beginPath();
-            ctx.moveTo(obs.x + obs.w / 2, obs.y);
-            ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, y1); ctx.lineTo(cx, y2); ctx.stroke();
+
+            ctx.shadowBlur = 0;
             ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = obs.w * 0.3;
-            ctx.globalAlpha = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(obs.x + obs.w / 2, obs.y);
-            ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
-            ctx.stroke();
+            ctx.lineWidth = obs.w * 0.34;
+            ctx.globalAlpha = 0.9;
+            ctx.beginPath(); ctx.moveTo(cx, y1); ctx.lineTo(cx, y2); ctx.stroke();
+
+            // Емітери (круглі «душки» на кінцях)
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = obs.color;
+            ctx.beginPath(); ctx.arc(cx, y1, obs.w * 0.95, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, y2, obs.w * 0.95, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffd9e0';
+            ctx.beginPath(); ctx.arc(cx, y1, obs.w * 0.4, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, y2, obs.w * 0.4, 0, Math.PI * 2); ctx.fill();
         } else {
-            ctx.globalAlpha = 0.15;
+            // Перезарядка: ледь помітний слід + тьмяні вузли
+            ctx.globalAlpha = 0.14;
             ctx.strokeStyle = obs.color;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(obs.x + obs.w / 2, obs.y);
-            ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
-            ctx.stroke();
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(cx, y1); ctx.lineTo(cx, y2); ctx.stroke();
+            ctx.globalAlpha = 0.35;
+            ctx.fillStyle = obs.color;
+            ctx.beginPath(); ctx.arc(cx, y1, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, y2, 2.5, 0, Math.PI * 2); ctx.fill();
         }
+        ctx.lineCap = 'butt';
     }
 
     function _drawGravityZone(obs, ctx) {

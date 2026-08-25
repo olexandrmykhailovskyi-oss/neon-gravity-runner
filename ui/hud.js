@@ -169,6 +169,12 @@
         if (!c) return;
         // _tr ніколи не кидає винятків, тож fallback-гілка з дублюванням бейджів не потрібна
         let html = '';
+        // Складність завжди видима: ×1.3 / ×0.85 у HUD, поки граєш
+        if (typeof data.diffMult === 'number' && Math.abs(data.diffMult - 1) > 0.01) {
+            const hard = data.diffMult > 1;
+            html += '<div class="badge ' + (hard ? 'revive' : 'shield') + '" title="' +
+                _tr('settings.difficulty', 'Складність') + '">×' + data.diffMult + '</div>';
+        }
         if (data.shield) html += '<div class="badge shield" title="' + _tr('bonus.shield', 'Щит') + '">⛨</div>';
         if (data.revive) html += '<div class="badge revive" title="' + _tr('bonus.revive', 'Друге життя') + '">♥</div>';
         if (data.phase) html += '<div class="badge phase" title="' + _tr('bonus.phase', 'Фаза') + '">⚡</div>';

@@ -96,15 +96,16 @@
         b.x -= spd * dt;
         b.y = b.baseY + Math.sin(b.time * b.floatFreq) * b.floatAmp;
 
-        // Магніт: притягуємо зірки
+        // Магніт: притягуємо зірки (радіус 420, сильний підтягуючий імпульс)
         try {
             if (player && player.magnet > 0 && b.type === 'star') {
                 const dx = player.x - b.x;
                 const dy = player.y - b.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                const MAGNET_RADIUS = 280;
+                const MAGNET_RADIUS = 420;
                 if (dist < MAGNET_RADIUS && dist > 1) {
-                    const pull = 520 * dt;
+                    // Чим ближче зірка, тим сильніше тягне (плавний захоплюючий ефект)
+                    const pull = (620 + (1 - dist / MAGNET_RADIUS) * 420) * dt;
                     b.x += (dx / dist) * pull;
                     b.y += (dy / dist) * pull;
                     b.baseY = b.y;

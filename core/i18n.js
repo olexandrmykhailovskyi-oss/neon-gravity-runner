@@ -37,6 +37,11 @@
             'help.controls': 'Керування',
             'help.controlsList': '<b>SPACE</b> / клік / тап — перемкнути гравітацію<br><b>P</b> — пауза · <b>M</b> — звук · <b>F</b> — повний екран<br><b>R</b> — швидкий рестарт · <b>ESC</b> — пауза',
             'help.bonuses': 'Бонуси',
+            'help.modes': 'Режими',
+            'mode.campaign.desc': '⭐ 35 рівнів із зірками, таймерами та штормами',
+            'mode.endless.desc': '♾ Політ без кінця — складність росте сама',
+            'mode.daily.desc': '📅 Один сид на день, однаковий для всіх гравців',
+            'mode.custom.desc': '🛠 Свій рівень із редактора або код друга',
 
             // Причина смерті
             'gameover.cause': 'Причина',
@@ -385,6 +390,11 @@
             'help.controls': 'Управление',
             'help.controlsList': '<b>SPACE</b> / клик / тап — переключить гравитацию<br><b>P</b> — пауза · <b>M</b> — звук · <b>F</b> — полный экран<br><b>R</b> — быстрый рестарт · <b>ESC</b> — пауза',
             'help.bonuses': 'Бонусы',
+            'help.modes': 'Режимы',
+            'mode.campaign.desc': '⭐ 35 уровней со звёздами, таймерами и штормами',
+            'mode.endless.desc': '♾ Полёт без конца — сложность растёт сама',
+            'mode.daily.desc': '📅 Один сид на день, одинаковый для всех игроков',
+            'mode.custom.desc': '🛠 Свой уровень из редактора или код друга',
 
             // Причина смерти
             'gameover.cause': 'Причина',
@@ -733,6 +743,11 @@
             'help.controls': 'Controls',
             'help.controlsList': '<b>SPACE</b> / click / tap — flip gravity<br><b>P</b> — pause · <b>M</b> — mute · <b>F</b> — fullscreen<br><b>R</b> — quick restart · <b>ESC</b> — pause',
             'help.bonuses': 'Bonuses',
+            'help.modes': 'Modes',
+            'mode.campaign.desc': '⭐ 35 levels with stars, timers and storms',
+            'mode.endless.desc': '♾ Endless flight — difficulty rises on its own',
+            'mode.daily.desc': '📅 One seed per day, shared by all players',
+            'mode.custom.desc': '🛠 Your own level from the editor or a friend code',
 
             // Death cause
             'gameover.cause': 'Cause',
