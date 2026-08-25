@@ -265,12 +265,19 @@
 
             // Скидання систем
             window.Scoring.reset();
-            // Множник очок режиму (Time Attack ×2, Survival ×1.5, Zen ×0)
+            // Множник очок: режим (Time Attack ×2, Survival ×1.5, Zen ×0)
+            // × складність (Easy ×0.85, Normal ×1.0, Hardcore ×1.3) — вибір складності реально важить
+            let modeMult = 1;
             if (modeSettings && typeof modeSettings.scoreMultiplier === 'number') {
-                window.Scoring.setExternalMultiplier(modeSettings.scoreMultiplier);
-            } else {
-                window.Scoring.setExternalMultiplier(1);
+                modeMult = modeSettings.scoreMultiplier;
             }
+            let diffScoreMult = 1.0;
+            try {
+                const d = window.State.getSetting('difficulty');
+                if (d === 'hardcore') diffScoreMult = 1.3;
+                else if (d === 'easy') diffScoreMult = 0.85;
+            } catch (e) {}
+            window.Scoring.setExternalMultiplier(modeMult * diffScoreMult);
             window.Particles.clear();
             window.FloatingTexts.clear();
 

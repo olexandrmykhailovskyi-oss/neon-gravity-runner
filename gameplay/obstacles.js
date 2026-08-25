@@ -262,6 +262,84 @@
                 out.push({ type: 'pulsar', dx: 440 });
                 return out;
             }
+        },
+        {
+            id: 'gate_gauntlet',
+            types: ['gate', 'moving'],
+            build: function (x, area, rng) {
+                // Ворота, а одразу за виходом — рухомий блок
+                return [{ type: 'gate', dx: 0 }, { type: 'moving', dx: 320 }];
+            }
+        },
+        {
+            id: 'laser_gate_laser',
+            types: ['laser', 'gate'],
+            build: function (x, area, rng) {
+                // Лазер → ворота → лазер: тримаємо ритм фаз
+                return [{ type: 'laser', dx: 0 }, { type: 'gate', dx: 280 }, { type: 'laser', dx: 560 }];
+            }
+        },
+        {
+            id: 'pulsar_wall_sandwich',
+            types: ['pulsar', 'wall'],
+            build: function (x, area, rng) {
+                // Стіна зверху → пульсар → стіна знизу: вертикальний коридор
+                const out = [];
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true });
+                if (w1) out.push({ obs: w1, dx: 0 });
+                out.push({ type: 'pulsar', dx: 240 });
+                const w2 = window.Obstacle.create('wall', x + 480, area, { fromTop: false });
+                if (w2) out.push({ obs: w2, dx: 480 });
+                return out;
+            }
+        },
+        {
+            id: 'gravity_teeth',
+            types: ['gravity_zone', 'spikes'],
+            build: function (x, area, rng) {
+                // Воронка перевертає гравітацію, далі — зубці з обох боків
+                const out = [{ type: 'gravity_zone', dx: 0 }];
+                const sp1 = window.Obstacle.create('spikes', x + 260, area, { onFloor: true });
+                if (sp1) out.push({ obs: sp1, dx: 260 });
+                const sp2 = window.Obstacle.create('spikes', x + 470, area, { onFloor: false });
+                if (sp2) out.push({ obs: sp2, dx: 470 });
+                return out;
+            }
+        },
+        {
+            id: 'triple_mover',
+            types: ['moving'],
+            build: function (x, area, rng) {
+                // Три рухомі блоки з природним розкидом фаз (phase випадковий у create)
+                return [{ type: 'moving', dx: 0 }, { type: 'moving', dx: 260 }, { type: 'moving', dx: 520 }];
+            }
+        },
+        {
+            id: 'spike_strip',
+            types: ['spikes'],
+            build: function (x, area, rng) {
+                // Довга смуга зубців знизу + відповідь зверху
+                const out = [];
+                const s1 = window.Obstacle.create('spikes', x, area, { onFloor: true });
+                if (s1) out.push({ obs: s1, dx: 0 });
+                const s2 = window.Obstacle.create('spikes', x + 110, area, { onFloor: true });
+                if (s2) out.push({ obs: s2, dx: 110 });
+                const s3 = window.Obstacle.create('spikes', x + 320, area, { onFloor: false });
+                if (s3) out.push({ obs: s3, dx: 320 });
+                return out;
+            }
+        },
+        {
+            id: 'spike_laser_alt',
+            types: ['spikes', 'laser'],
+            build: function (x, area, rng) {
+                // Дзеркало spike_laser: шипи зі стелі + лазер — прохід через низ
+                const out = [];
+                const sp = window.Obstacle.create('spikes', x, area, { onFloor: false });
+                if (sp) out.push({ obs: sp, dx: 0 });
+                out.push({ type: 'laser', dx: 220 });
+                return out;
+            }
         }
     ];
 
@@ -425,6 +503,7 @@
         checkNearMiss: checkNearMiss,
         count: count,
         getList: getList,
-        getBlockers: getBlockers
+        getBlockers: getBlockers,
+        patternCount: function () { return PATTERNS.length; }
     };
 })();

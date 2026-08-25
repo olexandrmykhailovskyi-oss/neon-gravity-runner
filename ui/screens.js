@@ -927,6 +927,11 @@
             try { buildSkins(); } catch (e) {}
             try { buildAchievements(); } catch (e) {}
             try { buildLevelsGrid(); } catch (e) {}
+            try {
+                if (window.Editor && window.UI.currentScreen && window.UI.currentScreen() === 'editor') {
+                    window.Editor.build();
+                }
+            } catch (e) {}
 
             _log('info', 'Language updated');
         } catch (e) {
@@ -1468,6 +1473,7 @@
             }
             const rows = [
                 [_t('pause.mode', 'Режим'), modeText],
+                [_t('settings.difficulty', 'Складність'), _t('settings.' + ((window.State.getSetting('difficulty') || 'normal')), 'Normal')],
                 [_t('score', 'Очки'), U.formatNumber(data.score || 0)],
                 [_t('time', 'Час'), U.formatTime(data.elapsed || 0)]
             ];

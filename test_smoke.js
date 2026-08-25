@@ -69,6 +69,7 @@ load('core/cloud_storage.js');
 load('core/global_scores.js');
 load('core/analytics.js');
 load('gameplay/obstacle.js');
+load('gameplay/obstacles.js');
 load('gameplay/modes.js');
 load('gameplay/scoring.js');
 load('ui/ui.js');
@@ -127,6 +128,15 @@ check('підмінений код рівня відхиляється', W.Edito
 check('sanitize: порожні типи = null', W.Editor.sanitize({ name: 'x', types: [] }) === null);
 check('sanitize: clamps (spd 5 → 2.0)', W.Editor.sanitize({ name: 'x', spd: 5, types: ['wall'] }).spd === 2);
 check('sanitize: сміття = null', W.Editor.sanitize(null) === null && W.Editor.sanitize(42) === null);
+check('структур-патернів у басейні ≥ 20', typeof W.Obstacles.patternCount === 'function' && W.Obstacles.patternCount() >= 20);
+check('складність: швидкість і проміжки реально змінюються', (function () {
+    W.State.setSetting('difficulty', 'hardcore');
+    const hcSpeed = W.State.getDifficultyMultipliers().speed;
+    W.State.setSetting('difficulty', 'easy');
+    const ez = W.State.getDifficultyMultipliers();
+    W.State.setSetting('difficulty', 'normal');
+    return hcSpeed > 1 && ez.speed < 1 && ez.gap > 1;
+})());
 
 // ---- 2. I18n init / setLanguage ----
 console.log('\n[2] I18n init/_setLanguage:');

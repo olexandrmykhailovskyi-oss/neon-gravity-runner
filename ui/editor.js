@@ -152,6 +152,13 @@
         el.innerHTML =
             '<div class="panel editor-panel">' +
             '<h2 data-i18n="editor.title">🛠 Редактор рівнів</h2>' +
+            '<div class="setting-row" style="flex-direction:column;align-items:stretch;">' +
+            '<span class="setting-label" data-i18n="editor.presets">Пресети складності</span>' +
+            '<div class="ed-chips" id="ed-presets">' +
+            '<button class="btn ed-chip ed-preset" data-p="easy">🟢 ' + _t('settings.easy', 'Легко') + '</button>' +
+            '<button class="btn ed-chip ed-preset" data-p="normal">🟡 ' + _t('settings.normal', 'Норм') + '</button>' +
+            '<button class="btn ed-chip ed-preset" data-p="hardcore">🔴 ' + _t('settings.hardcore', 'Хардкор') + '</button>' +
+            '</div></div>' +
             '<div class="setting-row"><span class="setting-label" data-i18n="editor.name">Назва</span>' +
             '<input type="text" id="ed-name" maxlength="20" style="max-width:180px;"></div>' +
 
@@ -175,8 +182,13 @@
             '<div class="setting-row" style="flex-direction:column;align-items:stretch;"><span class="setting-label" data-i18n="editor.types">Перешкоди</span>' +
             '<div class="ed-chips" id="ed-types">' + typeChips + '</div></div>' +
 
+            '<div class="setting-row" style="flex-direction:column;align-items:stretch;">' +
+            '<span class="setting-label"><span data-i18n="editor.preview">Прев’ю</span> <b id="ed-rating" style="margin-left:6px;"></b></span>' +
+            '<canvas id="ed-preview" width="380" height="120" style="width:100%;max-width:440px;height:auto;background:rgba(0,0,0,0.35);border:1px solid var(--panel-border);border-radius:8px;margin-top:6px;"></canvas></div>' +
+
             '<div class="btn-grid" style="margin-top:14px;">' +
             '<button id="ed-play" class="btn primary" data-i18n="editor.btnPlay">▶ Тест</button>' +
+            '<button id="ed-random" class="btn" data-i18n="editor.random">🎲 Випадковий</button>' +
             '<button id="ed-save" class="btn" data-i18n="editor.btnSave">💾 Зберегти</button>' +
             '<button id="ed-code" class="btn" data-i18n="editor.btnCode">📤 Код</button>' +
             '<button id="ed-import" class="btn" data-i18n="editor.btnImport">📥 Імпорт</button>' +
@@ -248,11 +260,78 @@
     }
 
     function _refreshLabels() {
-        const g = (id) => { const e = $(id); return e ? parseFloat(e.value) : 0; };
+        const g = function (id) { const e = $(id); return e ? parseFloat(e.value) : 0; };
         const durV = $('#ed-dur-val'); if (durV) durV.textContent = Math.round(g('#ed-dur')) + 'с';
         const spdV = $('#ed-spd-val'); if (spdV) spdV.textContent = '×' + g('#ed-spd').toFixed(2);
         const denV = $('#ed-den-val'); if (denV) denV.textContent = '×' + g('#ed-den').toFixed(2);
         const stV = $('#ed-star-val'); if (stV) stV.textContent = String(Math.round(g('#ed-star')));
+
+        // Індикатор складності з чинників рівня
+        const ratingEl = $('#ed-rating');
+        if (ratingEl) {
+            let r = g('#ed-spd') * g('#ed-den') * (0.7 + _selectedTypes().length * 0.15) * (g('#ed-dur') / 60);
+            const stormEl = $('#ed-storm');
+            if (stormEl && stormEl.classList.contains('on')) r *= 1.15;
+            let key = 'settings.normal';
+            let color = '#fff36b';
+            if (r < 1.15) { key = 'settings.easy'; color = '#39ff14'; }
+            else if (r > 1.9) { key = 'settings.hardcore'; color = '#ff3860'; }
+            ratingEl.textContent = '· ' + _t(key, 'Normal');
+            ratingEl.style.color = color;
+        }
+    }
+
+    // ---- Живе прев'ю: справжні Obstacle.create/draw на мініканвасі ----
+    let _previewObs = [];
+    let _previewTimer = null;
+
+    function _buildPreview() {
+        try {
+            const cv = $('#ed-preview');
+            if (!cv || !window.Obstacle) return;
+            const types = _selectedTypes().slice(0, 5);
+            const area = { top: 14, bottom: 106, width: cv.width };
+            _previewObs = [];
+            for (let i = 0; i < types.length; i++) {
+                const spacing = types.length > 1 ? (cv.width - 90) / (types.length - 1) : 0;
+                const o = window.Obstacle.create(types[i], 45 + i * spacing, area, {});
+                if (o) _previewObs.push(o);
+            }
+            if (!_previewTimer && typeof setInterval === 'function') {
+                _previewTimer = setInterval(function () {
+                    try {
+                        if (!window.UI || !window.UI.currentScreen || window.UI.currentScreen() !== 'editor') return;
+                        _drawPreview();
+                    } catch (e) {}
+                }, 90);
+            }
+            _drawPreview();
+        } catch (e) {}
+    }
+
+    function _drawPreview() {
+        const cv = $('#ed-preview');
+        if (!cv || !cv.getContext) return;
+        const ctx = cv.getContext('2d');
+        const W = cv.width;
+        const H = cv.height;
+        ctx.clearRect(0, 0, W, H);
+
+        // Тонка сітка + межі поля
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        for (let gx = 0; gx < W; gx += 24) {
+            ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(0,229,255,0.4)';
+        ctx.beginPath(); ctx.moveTo(0, 14.5); ctx.lineTo(W, 14.5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, 105.5); ctx.lineTo(W, 105.5); ctx.stroke();
+
+        for (let i = 0; i < _previewObs.length; i++) {
+            const o = _previewObs[i];
+            try { window.Obstacle.update(o, 0.09, 0); } catch (e) {} // час іде, x стоїть (spd=0)
+            try { window.Obstacle.draw(o, ctx); } catch (e) {}
+        }
     }
 
     function _bind() {
@@ -263,7 +342,44 @@
         });
         const storm = $('#ed-storm');
         if (storm) {
-            UI.safeBind(storm, 'click', function () { storm.classList.toggle('on'); });
+            UI.safeBind(storm, 'click', function () { storm.classList.toggle('on'); _refreshLabels(); });
+        }
+
+        // Фікс: чіпи типів перешкод мають бути клікабельними (тогл + оновлення прев'ю)
+        const typesBox = $('#ed-types');
+        if (typesBox) {
+            const chips = typesBox.querySelectorAll('.ed-type');
+            for (let i = 0; i < chips.length; i++) {
+                UI.safeBind(chips[i], 'click', function () {
+                    this.classList.toggle('primary');
+                    _refreshLabels();
+                    _buildPreview();
+                });
+            }
+        }
+
+        // Пресети складності — швидке заповнення слайдерів
+        const presetBox = $('#ed-presets');
+        if (presetBox) {
+            const pBtns = presetBox.querySelectorAll('.ed-preset');
+            for (let i = 0; i < pBtns.length; i++) {
+                UI.safeBind(pBtns[i], 'click', function () {
+                    const p = this.getAttribute('data-p');
+                    const set = function (id, v) { const e = $(id); if (e) e.value = v; };
+                    const stormEl = $('#ed-storm');
+                    if (p === 'easy') {
+                        set('#ed-dur', 45); set('#ed-spd', 1.0); set('#ed-den', 1.0); set('#ed-star', 1200);
+                        if (stormEl) stormEl.classList.remove('on');
+                    } else if (p === 'hardcore') {
+                        set('#ed-dur', 90); set('#ed-spd', 1.6); set('#ed-den', 1.9); set('#ed-star', 3200);
+                        if (stormEl) stormEl.classList.add('on');
+                    } else {
+                        set('#ed-dur', 60); set('#ed-spd', 1.3); set('#ed-den', 1.4); set('#ed-star', 2000);
+                        if (stormEl) stormEl.classList.remove('on');
+                    }
+                    _refreshLabels();
+                });
+            }
         }
         const themesBox = $('#ed-themes');
         if (themesBox) {
@@ -334,10 +450,38 @@
             window.UI.showToast(_t('editor.saved', 'Рівень завантажено'), 'success');
         });
 
+        // 🎲 Випадковий валідний рівень
+        UI.safeBind($('#ed-random'), 'click', function () {
+            const themes = (window.Config && window.Config.THEMES) || [];
+            const pool = TYPES.slice();
+            const picked = [];
+            const want = 2 + Math.floor(Math.random() * 4); // 2..5 типів
+            while (picked.length < want && pool.length) {
+                picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+            }
+            const def = sanitize({
+                name: _t('editor.defaultName', 'Мій рівень') + ' #' + (1 + Math.floor(Math.random() * 99)),
+                dur: 40 + Math.floor(Math.random() * 13) * 5,
+                spd: Math.round((0.9 + Math.random() * 0.9) * 100) / 100,
+                den: Math.round((0.8 + Math.random() * 1.4) * 100) / 100,
+                star: (10 + Math.floor(Math.random() * 31)) * 100,
+                storm: Math.random() < 0.35,
+                theme: Math.floor(Math.random() * Math.max(1, themes.length)),
+                types: picked
+            });
+            if (def) {
+                saveDraft(def);
+                build(); // перечитує чернетку у форму + перезбирає прев'ю
+            }
+        });
+
         UI.safeBind($('#ed-back'), 'click', function () {
             collect(); // зберігаємо чернетку
             window.UI.showScreen('main');
         });
+
+        // Живе прев'ю з поточним набором перешкод
+        _buildPreview();
     }
 
     function renderList() {
