@@ -12,7 +12,6 @@
     let spawnDistance = 0;
     let nextSpawnAt = 0;
     let difficulty = 0;
-    let totalSpawned = 0;
 
     let _allowedTypes = null;
     let _densityMult = 1.0;
@@ -27,7 +26,6 @@
         spawnDistance = 0;
         nextSpawnAt = 450;
         difficulty = 0;
-        totalSpawned = 0;
 
         _allowedTypes = Array.isArray(allowedTypes) && allowedTypes.length > 0 ? allowedTypes.slice() : null;
         _densityMult = typeof density === 'number' && density > 0 ? density : 1.0;
@@ -99,7 +97,6 @@
                 const obs = window.Obstacle.create(type, x, area, { speed: speed, rng: _rng });
                 if (obs) {
                     list.push(obs);
-                    totalSpawned++;
                 }
             }
 
@@ -478,7 +475,6 @@
                 width = Math.max(width, item.dx + (obs.w || 40));
             }
 
-            if (spawned > 0) totalSpawned += spawned;
             return spawned > 0 ? width : 0;
         } catch (e) {
             _log('error', '_spawnPattern помилка', e.message);

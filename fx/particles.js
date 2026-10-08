@@ -220,8 +220,7 @@
 
     function _drawStarShape(c, cx, cy, spikes, outerRadius, innerRadius) {
         let rot = Math.PI / 2 * 3;
-        let x = cx;
-        let y = cy;
+        let x, y;
         const step = Math.PI / spikes;
 
         c.beginPath();

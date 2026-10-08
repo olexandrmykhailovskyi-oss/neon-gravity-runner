@@ -19,10 +19,6 @@
     let _stars = 0;
     let _externalMult = 1;   // множник режиму гри (Time Attack ×2, Zen ×0 тощо)
 
-    function _log(level, msg) {
-        try { if (window.Logger) window.Logger[level]('[Scoring] ' + msg); } catch (e) {}
-    }
-
     function _getConfig(key, fallback) {
         try {
             if (window.Config && window.Config.SCORE) {

@@ -7,10 +7,6 @@
     const MAX = 40;
     const list = [];
 
-    function _log(level, msg) {
-        try { if (window.Logger) window.Logger[level]('[FloatText] ' + msg); } catch (e) {}
-    }
-
     function add(x, y, text, color) {
         if (text == null) return;
         if (typeof x !== 'number' || typeof y !== 'number') return;

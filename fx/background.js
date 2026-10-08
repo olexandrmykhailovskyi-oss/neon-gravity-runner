@@ -45,7 +45,7 @@
         if (!canvas) return;
         // Контекст уже масштабований під dpr (game.js setTransform) —
         // усі координати малювання в CSS-пікселях, тому й розміри беремо CSS
-        let dpr = 1;
+        let dpr;
         try { dpr = Math.min(window.devicePixelRatio || 1, 2); } catch (e) { dpr = 1; }
         if (!(dpr > 0)) dpr = 1;
         W = canvas.width / dpr;

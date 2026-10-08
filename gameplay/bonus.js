@@ -25,7 +25,6 @@
     }
 
     function create(type, x, y, area, rng) {
-        const a = area || { top: 60, bottom: 660 };
         // Детермінований RNG для Daily Challenge
         const R = typeof rng === 'function' ? rng : Math.random;
         const b = {

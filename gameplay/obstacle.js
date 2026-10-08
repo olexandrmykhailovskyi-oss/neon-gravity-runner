@@ -90,7 +90,7 @@
         };
 
         switch (type) {
-            case 'wall':
+            case 'wall': {
                 base.w = p.w || 40;
                 const fromTop = typeof p.fromTop === 'boolean' ? p.fromTop : (R() < 0.5);
                 // Фейрнес: максимум 54% поля — завжди гарантований прохід по іншій стороні
@@ -103,8 +103,9 @@
                     base.y = a.bottom - wallH;
                 }
                 break;
+            }
 
-            case 'gate':
+            case 'gate': {
                 base.w = p.w || 36;
                 // Фейрнес: прохід 170–240px — комфортно навіть на високій швидкості
                 const gap = p.gap || (170 + R() * 70);
@@ -115,6 +116,7 @@
                 base.bottomY = centerY + gap / 2;
                 base.h = a.bottom - a.top;
                 break;
+            }
 
             case 'moving':
                 base.w = p.w || 44;
@@ -126,15 +128,16 @@
                 base.y = base.baseY;
                 break;
 
-            case 'spikes':
+            case 'spikes': {
                 base.w = p.w || 78;
                 base.h = p.h || 44;
                 const onFloor = typeof p.onFloor === 'boolean' ? p.onFloor : (R() < 0.5);
                 base.onFloor = onFloor;
                 base.y = onFloor ? (a.bottom - base.h) : a.top;
                 break;
+            }
 
-            case 'laser':
+            case 'laser': {
                 base.w = 10;
                 // Баланс: лазер має бути РЕАЛЬНОЮ загрозою — 62–78% висоти поля,
                 // прохід лишаєься вузькою щілиною (32–38%), а не половиною екрана
@@ -153,6 +156,7 @@
                     _applyLaserPhase(base, x, a, p.speed, false, R);
                 }
                 break;
+            }
 
             case 'moving_laser':
                 base.w = 8;
@@ -238,23 +242,25 @@
                 }
                 break;
 
-            case 'pulsar':
+            case 'pulsar': {
                 // Динамічний радіус пульсара (sin)
                 const scale = 0.6 + 0.6 * (0.5 + 0.5 * Math.sin(obs.time * obs.freq * Math.PI * 2));
                 obs.radius = obs.baseRadius * scale;
                 obs.w = obs.radius * 2;
                 obs.h = obs.radius * 2;
                 break;
+            }
         }
     }
 
     function getRects(obs) {
         if (!obs) return [];
         switch (obs.type) {
-            case 'gate':
+            case 'gate': {
                 const topRect = { x: obs.x, y: obs._area.top, w: obs.w, h: obs.topH };
                 const bottomRect = { x: obs.x, y: obs.bottomY, w: obs.w, h: obs._area.bottom - obs.bottomY };
                 return [topRect, bottomRect];
+            }
 
             case 'laser':
             case 'moving_laser':
