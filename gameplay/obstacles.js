@@ -73,7 +73,19 @@
                 if (difficulty > 0.65) types.push('moving_laser');
             }
 
-            const x = area.width + 80;
+            // Не спавнимо перешкоду впритул до щойно створеного бонуса:
+            // обидва рухаються з однаковою швидкістю, тож збіг лишився б назавжди
+            let x = area.width + 80;
+            try {
+                if (window.Bonuses && typeof window.Bonuses.getList === 'function') {
+                    const bl = window.Bonuses.getList();
+                    for (let i = 0; i < bl.length; i++) {
+                        if (bl[i].x > area.width - 200) {
+                            x = Math.max(x, bl[i].x + 140);
+                        }
+                    }
+                }
+            } catch (e) {}
 
             // QOL: структури — рідше поодинокі блоки, частіше осмислені комбінації
             const patternChance = Math.min(0.34, 0.14 + _densityMult * 0.08);
@@ -84,7 +96,7 @@
 
             if (patternWidth <= 0) {
                 const type = types[Math.floor(_rng() * types.length)] || 'wall';
-                const obs = window.Obstacle.create(type, x, area, {});
+                const obs = window.Obstacle.create(type, x, area, { speed: speed, rng: _rng });
                 if (obs) {
                     list.push(obs);
                     totalSpawned++;
@@ -152,7 +164,7 @@
                 const out = [];
                 for (let i = 0; i < 3; i++) {
                     const floor = i % 2 === 0;
-                    const obs = window.Obstacle.create('spikes', x + i * 160, area, { onFloor: floor });
+                    const obs = window.Obstacle.create('spikes', x + i * 160, area, { onFloor: floor, rng: rng });
                     if (obs) out.push({ obs: obs, dx: i * 160 });
                 }
                 return out;
@@ -163,9 +175,9 @@
             types: ['wall'],
             build: function (x, area, rng) {
                 const out = [];
-                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true });
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true, rng: rng });
                 if (w1) out.push({ obs: w1, dx: 0 });
-                const w2 = window.Obstacle.create('wall', x + 280, area, { fromTop: false });
+                const w2 = window.Obstacle.create('wall', x + 280, area, { fromTop: false, rng: rng });
                 if (w2) out.push({ obs: w2, dx: 280 });
                 return out;
             }
@@ -198,7 +210,7 @@
             build: function (x, area, rng) {
                 // Шипи знизу + лазер зверху — прохід тільки через центр
                 const out = [];
-                const sp = window.Obstacle.create('spikes', x, area, { onFloor: true });
+                const sp = window.Obstacle.create('spikes', x, area, { onFloor: true, rng: rng });
                 if (sp) out.push({ obs: sp, dx: 0 });
                 out.push({ type: 'laser', dx: 220 });
                 return out;
@@ -210,10 +222,10 @@
             build: function (x, area, rng) {
                 // Стіна → воронка (перевертає гравітацію) → стіна з іншого боку
                 const out = [];
-                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true });
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true, rng: rng });
                 if (w1) out.push({ obs: w1, dx: 0 });
                 out.push({ type: 'gravity_zone', dx: 200 });
-                const w2 = window.Obstacle.create('wall', x + 420, area, { fromTop: false });
+                const w2 = window.Obstacle.create('wall', x + 420, area, { fromTop: false, rng: rng });
                 if (w2) out.push({ obs: w2, dx: 420 });
                 return out;
             }
@@ -242,7 +254,7 @@
                 const out = [];
                 const sides = [true, false, true];
                 for (let i = 0; i < sides.length; i++) {
-                    const w = window.Obstacle.create('wall', x + i * 250, area, { fromTop: sides[i] });
+                    const w = window.Obstacle.create('wall', x + i * 250, area, { fromTop: sides[i], rng: rng });
                     if (w) out.push({ obs: w, dx: i * 250 });
                 }
                 return out;
@@ -255,9 +267,9 @@
                 // Мікс: стіна → шипи на ПРОТИЛЕЖНОМУ боці (гарантований зигзаг) → пульсар
                 const out = [];
                 const wallTop = rng() < 0.5;
-                const w = window.Obstacle.create('wall', x, area, { fromTop: wallTop });
+                const w = window.Obstacle.create('wall', x, area, { fromTop: wallTop, rng: rng });
                 if (w) out.push({ obs: w, dx: 0 });
-                const sp = window.Obstacle.create('spikes', x + 220, area, { onFloor: wallTop });
+                const sp = window.Obstacle.create('spikes', x + 220, area, { onFloor: wallTop, rng: rng });
                 if (sp) out.push({ obs: sp, dx: 220 });
                 out.push({ type: 'pulsar', dx: 440 });
                 return out;
@@ -285,10 +297,10 @@
             build: function (x, area, rng) {
                 // Стіна зверху → пульсар → стіна знизу: вертикальний коридор
                 const out = [];
-                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true });
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: true, rng: rng });
                 if (w1) out.push({ obs: w1, dx: 0 });
                 out.push({ type: 'pulsar', dx: 240 });
-                const w2 = window.Obstacle.create('wall', x + 480, area, { fromTop: false });
+                const w2 = window.Obstacle.create('wall', x + 480, area, { fromTop: false, rng: rng });
                 if (w2) out.push({ obs: w2, dx: 480 });
                 return out;
             }
@@ -299,9 +311,9 @@
             build: function (x, area, rng) {
                 // Воронка перевертає гравітацію, далі — зубці з обох боків
                 const out = [{ type: 'gravity_zone', dx: 0 }];
-                const sp1 = window.Obstacle.create('spikes', x + 260, area, { onFloor: true });
+                const sp1 = window.Obstacle.create('spikes', x + 260, area, { onFloor: true, rng: rng });
                 if (sp1) out.push({ obs: sp1, dx: 260 });
-                const sp2 = window.Obstacle.create('spikes', x + 470, area, { onFloor: false });
+                const sp2 = window.Obstacle.create('spikes', x + 470, area, { onFloor: false, rng: rng });
                 if (sp2) out.push({ obs: sp2, dx: 470 });
                 return out;
             }
@@ -320,11 +332,11 @@
             build: function (x, area, rng) {
                 // Довга смуга зубців знизу + відповідь зверху
                 const out = [];
-                const s1 = window.Obstacle.create('spikes', x, area, { onFloor: true });
+                const s1 = window.Obstacle.create('spikes', x, area, { onFloor: true, rng: rng });
                 if (s1) out.push({ obs: s1, dx: 0 });
-                const s2 = window.Obstacle.create('spikes', x + 110, area, { onFloor: true });
+                const s2 = window.Obstacle.create('spikes', x + 110, area, { onFloor: true, rng: rng });
                 if (s2) out.push({ obs: s2, dx: 110 });
-                const s3 = window.Obstacle.create('spikes', x + 320, area, { onFloor: false });
+                const s3 = window.Obstacle.create('spikes', x + 320, area, { onFloor: false, rng: rng });
                 if (s3) out.push({ obs: s3, dx: 320 });
                 return out;
             }
@@ -335,7 +347,7 @@
             build: function (x, area, rng) {
                 // Дзеркало spike_laser: шипи зі стелі + лазер — прохід через низ
                 const out = [];
-                const sp = window.Obstacle.create('spikes', x, area, { onFloor: false });
+                const sp = window.Obstacle.create('spikes', x, area, { onFloor: false, rng: rng });
                 if (sp) out.push({ obs: sp, dx: 0 });
                 out.push({ type: 'laser', dx: 220 });
                 return out;
@@ -348,7 +360,7 @@
                 // Лазер → стіна → ворота: повний набір по черзі
                 const out = [{ type: 'laser', dx: 0 }];
                 const wallTop = rng() < 0.5;
-                const w = window.Obstacle.create('wall', x + 280, area, { fromTop: wallTop });
+                const w = window.Obstacle.create('wall', x + 280, area, { fromTop: wallTop, rng: rng });
                 if (w) out.push({ obs: w, dx: 280 });
                 out.push({ type: 'gate', dx: 560 });
                 return out;
@@ -362,7 +374,7 @@
                 const out = [];
                 const sides = [true, false, true, false];
                 for (let i = 0; i < sides.length; i++) {
-                    const sp = window.Obstacle.create('spikes', x + i * 150, area, { onFloor: sides[i] });
+                    const sp = window.Obstacle.create('spikes', x + i * 150, area, { onFloor: sides[i], rng: rng });
                     if (sp) out.push({ obs: sp, dx: i * 150 });
                 }
                 return out;
@@ -391,7 +403,7 @@
                 // Стіна задає сторону, рухомий блок назустріч
                 const out = [];
                 const wallTop = rng() < 0.5;
-                const w = window.Obstacle.create('wall', x, area, { fromTop: wallTop });
+                const w = window.Obstacle.create('wall', x, area, { fromTop: wallTop, rng: rng });
                 if (w) out.push({ obs: w, dx: 0 });
                 out.push({ type: 'moving', dx: 320 });
                 return out;
@@ -420,11 +432,11 @@
                 // Стіна → шипи їй назустріч → стіна навпаки
                 const out = [];
                 const wallTop = rng() < 0.5;
-                const w1 = window.Obstacle.create('wall', x, area, { fromTop: wallTop });
+                const w1 = window.Obstacle.create('wall', x, area, { fromTop: wallTop, rng: rng });
                 if (w1) out.push({ obs: w1, dx: 0 });
-                const sp = window.Obstacle.create('spikes', x + 250, area, { onFloor: !wallTop });
+                const sp = window.Obstacle.create('spikes', x + 250, area, { onFloor: !wallTop, rng: rng });
                 if (sp) out.push({ obs: sp, dx: 250 });
-                const w2 = window.Obstacle.create('wall', x + 500, area, { fromTop: !wallTop });
+                const w2 = window.Obstacle.create('wall', x + 500, area, { fromTop: !wallTop, rng: rng });
                 if (w2) out.push({ obs: w2, dx: 500 });
                 return out;
             }
@@ -450,7 +462,7 @@
                     obs = item.obs;
                     obs.x = x + item.dx;
                 } else {
-                    obs = window.Obstacle.create(item.type, x + item.dx, area, {});
+                    obs = window.Obstacle.create(item.type, x + item.dx, area, { speed: speed, rng: _rng });
                 }
                 if (!obs) continue;
 
@@ -458,7 +470,7 @@
                 // синхронізований з підльотом, решта — з випадковою фазою (менш механічно)
                 if (obs.type === 'laser' && typeof speed === 'number' && speed > 60) {
                     const alwaysSync = pat.id === 'laser_line' && i === 0;
-                    window.Obstacle.applyLaserPhase(obs, obs.x, area, speed, alwaysSync);
+                    window.Obstacle.applyLaserPhase(obs, obs.x, area, speed, alwaysSync, _rng);
                 }
 
                 list.push(obs);
@@ -485,11 +497,19 @@
 
     function hit(player) {
         if (!player || !player.alive) return null;
+        let zoneTriggeredThisFrame = false;
         for (let i = 0; i < list.length; i++) {
             const obs = list[i];
             try {
+                // Дві зони в одному кадрі = подвійна інверсія (ефект нульовий) —
+                // дозволяємо спрацювати лише одній gravity_zone за кадр
+                if (obs.type === 'gravity_zone' && zoneTriggeredThisFrame && !obs.triggered) continue;
+                const wasTriggered = obs.triggered;
                 if (window.Obstacle && window.Obstacle.hitTest(obs, player)) {
                     return obs;
+                }
+                if (obs.type === 'gravity_zone' && !wasTriggered && obs.triggered) {
+                    zoneTriggeredThisFrame = true;
                 }
             } catch (e) {}
         }

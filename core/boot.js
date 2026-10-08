@@ -86,6 +86,10 @@
             _setProgress(20, _tr('boot.state', 'Ініціалізація стану…'));
             window.State.init();
 
+            // Фіксуємо відомі на старті розблоковані скіни — щоб перший
+            // зароблений за сесію скін показав тост, а старі — ні
+            try { if (window.Skins && typeof window.Skins.syncKnown === 'function') window.Skins.syncKnown(); } catch (e) {}
+
             _setProgress(30, _tr('boot.lang', 'Ініціалізація мови…'));
             window.I18n.init();
 
@@ -117,6 +121,10 @@
             }
 
             _setProgress(100, _tr('boot.ready', 'Готово!'));
+
+            // Boot завершено — глобальний onerror більше не показує
+            // фатальний екран на кожну неспійману помилку (див. main.js)
+            window.__ngrBooted = true;
 
             try {
                 const reloadBtn = document.getElementById('error-reload');

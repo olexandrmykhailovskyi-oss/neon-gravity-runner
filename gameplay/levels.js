@@ -29,7 +29,8 @@
         for (let i = 0; i < all.length; i++) {
             if (all[i].id === numId) return all[i];
         }
-        return all[0] || null;
+        // Невалідний id — не підміняємо тихо рівнем 1
+        return null;
     }
 
     function isUnlocked(id) {
@@ -96,7 +97,7 @@
             }
 
             // Розблоковуємо наступний рівень
-            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
             if (numId >= (c.maxLevel || 1) && numId < maxLvl) {
                 c.maxLevel = numId + 1;
             }

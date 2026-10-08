@@ -111,7 +111,7 @@
             // Краще пропустити спавн, ніж видати бонус усередині перешкоди
             if (!freeFound) return;
 
-            const b = window.Bonus.create(type, x, y, area);
+            const b = window.Bonus.create(type, x, y, area, _rng);
             if (b) list.push(b);
         } catch (e) {
             _log('error', '_spawn помилка', e.message);
@@ -264,11 +264,16 @@
         return list.length;
     }
 
+    function getList() {
+        return list.slice();
+    }
+
     window.Bonuses = {
         reset: reset,
         update: update,
         draw: draw,
         collect: collect,
-        count: count
+        count: count,
+        getList: getList
     };
 })();

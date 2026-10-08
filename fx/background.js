@@ -43,8 +43,14 @@
 
     function resize() {
         if (!canvas) return;
-        W = canvas.width;
-        H = canvas.height;
+        // Контекст уже масштабований під dpr (game.js setTransform) —
+        // усі координати малювання в CSS-пікселях, тому й розміри беремо CSS
+        let dpr = 1;
+        try { dpr = Math.min(window.devicePixelRatio || 1, 2); } catch (e) { dpr = 1; }
+        if (!(dpr > 0)) dpr = 1;
+        W = canvas.width / dpr;
+        H = canvas.height / dpr;
+        if (!(W > 0) || !(H > 0)) { W = canvas.width; H = canvas.height; }
         _generate();
     }
 
@@ -140,7 +146,9 @@
             if (drawNebulae) {
                 for (let i = 0; i < nebulae.length; i++) {
                     const n = nebulae[i];
-                    const nx = ((n.x - offset * 0.1) % (W + n.r * 2)) - n.r;
+                    // Коректне обгортання: JS-модем зберігає знак, тому ((x % m) + m) % m
+                    const wrap = W + n.r * 2;
+                    const nx = ((((n.x - offset * 0.1) % wrap) + wrap) % wrap) - n.r;
                     const rGrad = ctx.createRadialGradient(nx, n.y, 0, nx, n.y, n.r);
                     const rgba = _hexRgba(n.color, n.alpha);
                     rGrad.addColorStop(0, rgba);

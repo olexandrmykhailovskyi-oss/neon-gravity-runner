@@ -5,7 +5,7 @@
  * 2. shield — захисний щит від 1 удару
  * 3. slow — сповільнення часу на 3с
  * 4. double — подвоєння очок на 8с
- * 5. magnet — магніт для зірок на 8с
+ * 5. magnet — магніт для зірок на 12с
  * 6. ghost — привид на 5с (прохід крізь стіни)
  * 7. revive — друге життя (воскресіння при смерті з 2с невразливості)
  * 8. phase — фаза на 0.8с (миттєвий прохід крізь перешкоди + спідлайни)
@@ -24,8 +24,10 @@
         try { if (window.Logger) window.Logger[level]('[Bonus] ' + msg, data); } catch (e) {}
     }
 
-    function create(type, x, y, area) {
+    function create(type, x, y, area, rng) {
         const a = area || { top: 60, bottom: 660 };
+        // Детермінований RNG для Daily Challenge
+        const R = typeof rng === 'function' ? rng : Math.random;
         const b = {
             id: _uid(),
             type: type,
@@ -35,9 +37,9 @@
             radius: 14,
             active: true,
             collected: false,
-            time: Math.random() * Math.PI * 2,
-            floatAmp: 8 + Math.random() * 6,
-            floatFreq: 1.5 + Math.random(),
+            time: R() * Math.PI * 2,
+            floatAmp: 8 + R() * 6,
+            floatFreq: 1.5 + R(),
             color: '#ffffff',
             symbol: '?'
         };

@@ -26,6 +26,11 @@
         }
     }
 
+    // Екранування для вставки в innerHTML (назви рівнів — користувацький ввід)
+    function _esc(v) {
+        return String(v == null ? '' : v).replace(/[<>&"']/g, '');
+    }
+
     // ---- Кодек NGRL1 (Unicode-safe base64 + djb2-подібна сума, як у State) ----
 
     function _b64Encode(str) {
@@ -70,7 +75,7 @@
                 spd: Math.round(clamp(raw.spd || raw.speedMult, 0.8, 2.0, 1.2) * 100) / 100,
                 den: Math.round(clamp(raw.den || raw.density, 0.5, 2.5, 1.2) * 100) / 100,
                 storm: !!raw.storm,
-                theme: Math.round(clamp(raw.theme, 0, 6, 0)),
+                theme: Math.round(clamp(raw.theme, 0, 5, 0)),
                 star: Math.round(clamp(raw.star || raw.starScore, 500, 6000, 2000) / 100) * 100,
                 types: types
             };
@@ -101,30 +106,31 @@
         }
     }
 
-    // ---- Сховище чернетки та бібліотеки ----
+    // ---- Сховище чернетки та бібліотеки (SafeStorage: працює й без localStorage) ----
 
     function loadDraft() {
         try {
-            const raw = localStorage.getItem(DRAFT_KEY);
+            const raw = window.SafeStorage ? window.SafeStorage.get(DRAFT_KEY) : null;
             if (!raw) return null;
-            return sanitize(JSON.parse(raw));
+            return sanitize(typeof raw === 'string' ? JSON.parse(raw) : raw);
         } catch (e) { return null; }
     }
 
     function saveDraft(def) {
-        try { localStorage.setItem(DRAFT_KEY, JSON.stringify(def)); } catch (e) {}
+        try { if (window.SafeStorage) window.SafeStorage.set(DRAFT_KEY, def); } catch (e) {}
     }
 
     function getList() {
         try {
-            const arr = JSON.parse(localStorage.getItem(LIST_KEY) || '[]');
+            let arr = window.SafeStorage ? window.SafeStorage.get(LIST_KEY) : null;
+            if (typeof arr === 'string') arr = JSON.parse(arr || '[]');
             if (!Array.isArray(arr)) return [];
             return arr.map(sanitize).filter(Boolean);
         } catch (e) { return []; }
     }
 
     function saveList(list) {
-        try { localStorage.setItem(LIST_KEY, JSON.stringify(list.slice(0, MAX_SAVED))); } catch (e) {}
+        try { if (window.SafeStorage) window.SafeStorage.set(LIST_KEY, list.slice(0, MAX_SAVED)); } catch (e) {}
     }
 
     // ---- DOM ----
@@ -300,7 +306,13 @@
             if (!_previewTimer && typeof setInterval === 'function') {
                 _previewTimer = setInterval(function () {
                     try {
-                        if (!window.UI || !window.UI.currentScreen || window.UI.currentScreen() !== 'editor') return;
+                        if (!window.UI || !window.UI.currentScreen || window.UI.currentScreen() !== 'editor') {
+                            // Поза екраном редактора таймер зупиняється;
+                            // наступний відкрит перезапустить його через build()
+                            clearInterval(_previewTimer);
+                            _previewTimer = null;
+                            return;
+                        }
                         _drawPreview();
                     } catch (e) {}
                 }, 90);
@@ -329,7 +341,8 @@
 
         for (let i = 0; i < _previewObs.length; i++) {
             const o = _previewObs[i];
-            try { window.Obstacle.update(o, 0.09, 0); } catch (e) {} // час іде, x стоїть (spd=0)
+            // silent=true: прев'ю не повинно програвати звук лазера
+            try { window.Obstacle.update(o, 0.09, 0, true); } catch (e) {} // час іде, x стоїть (spd=0)
             try { window.Obstacle.draw(o, ctx); } catch (e) {}
         }
     }
@@ -430,7 +443,10 @@
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(code).then(function () {
                         window.UI.showToast(_t('settings.exportCopied', 'Код скопійовано в буфер обміну'), 'success');
-                    }, function () {});
+                    }, function () {
+                        // Відмова clipboard (iframe/дозволи) — показуємо код у prompt
+                        window.prompt(_t('editor.promptExport', 'Код рівня:'), code);
+                    });
                     copied = true;
                 }
             } catch (e) {}
@@ -447,7 +463,7 @@
             }
             saveDraft(def);
             build(); // перебудова форми з новою чернеткою
-            window.UI.showToast(_t('editor.saved', 'Рівень завантажено'), 'success');
+            window.UI.showToast(_t('editor.imported', 'Рівень завантажено'), 'success');
         });
 
         // 🎲 Випадковий валідний рівень
@@ -497,7 +513,7 @@
         for (let i = 0; i < list.length; i++) {
             const d = list[i];
             html += '<div class="tile" data-i="' + i + '">' +
-                '<div class="tile-label">' + d.name + '</div>' +
+                '<div class="tile-label">' + _esc(d.name) + '</div>' +
                 '<div class="tile-label" style="font-size:10px;color:#8a92b2;">⏱' + d.dur + 'с · ×' + d.spd.toFixed(2) + ' · ' + d.types.length + '🔒</div>' +
                 '<div class="tile-actions">' +
                 '<button class="btn ed-play-saved" data-i="' + i + '">▶</button>' +

@@ -107,15 +107,46 @@
         return skin && skin.trailShape ? skin.trailShape : 'circle';
     }
 
+    // Знімок уже розблокованих скінів — щоб checkUnlocks реально знаходив
+    // НОВІ розблокування, а не порівнював значення з самим собою
+    let _knownUnlocked = null;
+
+    function _snapshotUnlocked() {
+        const set = {};
+        try {
+            const cfg = window.Config && window.Config.SKINS ? window.Config.SKINS : [];
+            for (let i = 0; i < cfg.length; i++) {
+                if (isUnlocked(cfg[i].id)) set[cfg[i].id] = true;
+            }
+        } catch (e) {}
+        return set;
+    }
+
+    /** Зафіксувати поточний стан розблокувань (викликається Boot після State.init) */
+    function syncKnown() {
+        _knownUnlocked = _snapshotUnlocked();
+    }
+
     function checkUnlocks() {
         const newly = [];
         try {
-            const all = list();
-            for (let i = 0; i < all.length; i++) {
-                const s = all[i];
-                if (!s.unlocked && isUnlocked(s.id)) {
-                    newly.push(s);
+            const now = _snapshotUnlocked();
+            if (_knownUnlocked) {
+                for (const id in now) {
+                    if (Object.prototype.hasOwnProperty.call(now, id) && !_knownUnlocked[id]) {
+                        const skin = get(id);
+                        if (skin) newly.push(skin);
+                    }
                 }
+            }
+            _knownUnlocked = now;
+            for (let i = 0; i < newly.length; i++) {
+                try {
+                    if (window.UI && window.I18n) {
+                        window.UI.showToast('🎨 ' + window.I18n.t('skins.unlocked') + ' ' + newly[i].name, 'success');
+                    }
+                    if (window.AudioSys) window.AudioSys.playAchievement();
+                } catch (e) {}
             }
         } catch (e) {}
         return newly;
@@ -129,6 +160,7 @@
         select: select,
         getColor: getColor,
         getTrailShape: getTrailShape,
+        syncKnown: syncKnown,
         checkUnlocks: checkUnlocks
     };
 })();

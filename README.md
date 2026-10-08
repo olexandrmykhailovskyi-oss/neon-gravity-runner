@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-00e5ff.svg)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JavaScript-fff36b.svg)](https://developer.mozilla.org/uk/docs/Web/JavaScript)
 [![Canvas 2D](https://img.shields.io/badge/Canvas-2D-ff2bd6.svg)](https://developer.mozilla.org/uk/docs/Web/API/Canvas_API)
-[![Tests](https://img.shields.io/badge/smoke_tests-104_✔-39ff14.svg)](test_smoke.js)
+[![Tests](https://img.shields.io/badge/smoke_tests-120_✔-39ff14.svg)](test_smoke.js)
 
 **▶ [ГРАТИ ОНЛАЙН](https://neon-gravity-runner.vercel.app)** — без реєстрації, встановлюється як PWA та працює офлайн після першого візиту.
 

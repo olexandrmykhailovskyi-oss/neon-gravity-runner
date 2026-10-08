@@ -31,8 +31,8 @@
             campaign: {
                 maxLevel: 1,
                 stars: (function () {
-                    // Config завантажується пізніше за state — на старті фоллбек 25
-                    const maxL = (typeof window !== 'undefined' && window.Config && window.Config.MAX_LEVEL) || 25;
+                    // Config завантажується пізніше за state — на старті фоллбек 35
+                    const maxL = (typeof window !== 'undefined' && window.Config && window.Config.MAX_LEVEL) || 35;
                     const s = {};
                     for (let k = 1; k <= maxL; k++) s[k] = 0;
                     return s;
@@ -224,20 +224,41 @@
 
     function addLeaderboardEntry(entry) {
         try {
+            const clean = _sanitizeEntry(entry);
+            if (!clean) return getLeaderboard();
             const list = getLeaderboard();
-            list.push({
-                score: entry.score || 0,
-                mode: entry.mode || 'endless',
-                level: entry.level || null,
-                combo: entry.combo || 0,
-                date: entry.date || new Date().toLocaleDateString('uk-UA')
-            });
+            list.push(clean);
             list.sort(function (a, b) { return b.score - a.score; });
             const top5 = list.slice(0, 5);
             window.SafeStorage.set(LEADERBOARD_KEY, top5);
             return top5;
         } catch (e) {
             return [];
+        }
+    }
+
+    // Захист від XSS/сміття: поля рекордів жорстко нормалізуються
+    // (дата й режим можуть потрапляти в innerHTML екрана рекордів)
+    function _sanitizeEntry(raw) {
+        try {
+            if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+            const score = Math.floor(Number(raw.score));
+            if (!isFinite(score) || score < 0 || score >= 100000000) return null;
+            const mode = String(raw.mode || 'endless').replace(/[<>&"']/g, '').slice(0, 16) || 'endless';
+            const lvlNum = Math.floor(Number(raw.level));
+            const level = (raw.level != null && isFinite(lvlNum) && lvlNum > 0) ? lvlNum : null;
+            const comboNum = Math.floor(Number(raw.combo));
+            const combo = isFinite(comboNum) && comboNum > 0 ? Math.min(comboNum, 100000) : 0;
+            const date = String(raw.date || '').replace(/[<>&"']/g, '').slice(0, 24);
+            return {
+                score: score,
+                mode: mode,
+                level: level,
+                combo: combo,
+                date: date || new Date().toLocaleDateString('uk-UA')
+            };
+        } catch (e) {
+            return null;
         }
     }
 
@@ -311,15 +332,31 @@
         }
     }
 
+    function _isPlainObject(v) {
+        return !!v && typeof v === 'object' && !Array.isArray(v);
+    }
+
     function _applyPayload(payloadRaw) {
         try {
             if (!payloadRaw || typeof payloadRaw !== 'object' || !payloadRaw.state) return false;
 
-            const incoming = payloadRaw.state;
-            if (typeof incoming !== 'object' || !incoming.settings || !incoming.stats) return false;
+            const rawState = payloadRaw.state;
+            if (typeof rawState !== 'object' || !rawState.settings || !rawState.stats) return false;
+
+            // Не даємо битим/шкідливим секціям зіпсути in-memory стан:
+            // campaign:null чи не-об'єктні settings/stats відкидаються ДО злиття
+            const incoming = {};
+            for (const ik in rawState) {
+                if (Object.prototype.hasOwnProperty.call(rawState, ik)) incoming[ik] = rawState[ik];
+            }
+            if ('campaign' in incoming && !_isPlainObject(incoming.campaign)) delete incoming.campaign;
+            if ('settings' in incoming && !_isPlainObject(incoming.settings)) delete incoming.settings;
+            if ('stats' in incoming && !_isPlainObject(incoming.stats)) delete incoming.stats;
+            if ('achievements' in incoming && !Array.isArray(incoming.achievements)) delete incoming.achievements;
+            if (!_isPlainObject(incoming.settings) || !_isPlainObject(incoming.stats)) return false;
 
             // Захоплюємо ЛОКАЛЬНІ значення до злиття — вони не мають зникнути
-            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 25;
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
             const prevStars = {};
             const prevC = data.campaign || {};
             if (prevC.stars) {
@@ -327,13 +364,13 @@
             }
             const prevMaxLevel = prevC.maxLevel || 1;
             const MAXIMA = [
-                'bestScore', 'bestCombo', 'longestGame', 'dailyBest',
+                'bestScore', 'bestCombo', 'longestGame', 'dailyBest', 'dailyStreak',
                 'totalGames', 'totalDeaths', 'starsCollected', 'stormsSurvived',
                 'nearMisses', 'ghostPasses', 'totalPlaytime'
             ];
             const prevStats = {};
             for (let i = 0; i < MAXIMA.length; i++) {
-                prevStats[MAXIMA[i]] = (data.stats && data.stats[MAXIMA[i]]) || 0;
+                prevStats[MAXIMA[i]] = Number(data.stats && data.stats[MAXIMA[i]]) || 0;
             }
             const prevAch = Array.isArray(data.achievements) ? data.achievements.slice() : [];
             const prevBestByMode = Object.assign({}, (data.stats && data.stats.bestByMode) || {});
@@ -342,44 +379,54 @@
             data = deepMerge(data, incoming);
 
             // Зірки, maxLevel, статистика, досягнення — тільки вгору/об'єднання
+            if (!_isPlainObject(data.campaign)) data.campaign = createDefaults().campaign;
+            if (!_isPlainObject(data.campaign.stars)) data.campaign.stars = {};
             const c = data.campaign;
-            const incC = incoming.campaign || {};
+            const incC = _isPlainObject(incoming.campaign) ? incoming.campaign : {};
             for (let k = 1; k <= maxLvl; k++) {
-                c.stars[k] = Math.max((incC.stars && incC.stars[k]) || 0, prevStars[k] || 0);
+                c.stars[k] = Math.max(Number(incC.stars && incC.stars[k]) || 0, prevStars[k] || 0);
             }
-            c.maxLevel = Math.max(typeof incC.maxLevel === 'number' ? incC.maxLevel : 1, prevMaxLevel);
+            c.maxLevel = Math.max(Number(incC.maxLevel) || 1, prevMaxLevel);
 
-            const incS = incoming.stats || {};
+            if (!_isPlainObject(data.stats)) data.stats = createDefaults().stats;
+            const incS = _isPlainObject(incoming.stats) ? incoming.stats : {};
             for (let i = 0; i < MAXIMA.length; i++) {
                 const kk = MAXIMA[i];
-                data.stats[kk] = Math.max(incS[kk] || 0, prevStats[kk] || 0);
+                data.stats[kk] = Math.max(Number(incS[kk]) || 0, prevStats[kk] || 0);
+            }
+            // dailyDate — тільки рядок (інакше потрапить у innerHTML статистики)
+            if (typeof data.stats.dailyDate !== 'string') {
+                data.stats.dailyDate = (typeof incS.dailyDate === 'string') ? incS.dailyDate : '';
             }
 
             // Рекорди за режимами — тільки вгору (імпорт не може занизити)
             if (!data.stats.bestByMode || typeof data.stats.bestByMode !== 'object') {
                 data.stats.bestByMode = createDefaults().stats.bestByMode;
             }
-            const incBM = (incS && incS.bestByMode) || {};
+            const incBM = (incS && _isPlainObject(incS.bestByMode)) ? incS.bestByMode : {};
             const bmSeen = {};
             let bk;
             for (bk in prevBestByMode) bmSeen[bk] = true;
             for (bk in incBM) bmSeen[bk] = true;
             for (bk in bmSeen) {
-                data.stats.bestByMode[bk] = Math.max(prevBestByMode[bk] || 0, incBM[bk] || 0);
+                data.stats.bestByMode[bk] = Math.max(Number(prevBestByMode[bk]) || 0, Number(incBM[bk]) || 0);
             }
 
             if (!Array.isArray(data.achievements)) data.achievements = [];
             const allAch = prevAch.concat(Array.isArray(incoming.achievements) ? incoming.achievements : []);
             for (let i = 0; i < allAch.length; i++) {
-                if (data.achievements.indexOf(allAch[i]) === -1) {
+                if (typeof allAch[i] === 'string' && data.achievements.indexOf(allAch[i]) === -1) {
                     data.achievements.push(allAch[i]);
                 }
             }
 
-            // Рекорди — мержимо та залишаємо ТОП-5
+            // Рекорди — мержимо та залишаємо ТОП-5 (записи санітизуються)
             if (Array.isArray(payloadRaw.leaderboard) && payloadRaw.leaderboard.length > 0) {
                 const merged = getLeaderboard();
-                for (let i = 0; i < payloadRaw.leaderboard.length; i++) merged.push(payloadRaw.leaderboard[i]);
+                for (let i = 0; i < payloadRaw.leaderboard.length; i++) {
+                    const clean = _sanitizeEntry(payloadRaw.leaderboard[i]);
+                    if (clean) merged.push(clean);
+                }
                 merged.sort(function (a, b) { return b.score - a.score; });
                 window.SafeStorage.set(LEADERBOARD_KEY, merged.slice(0, 5));
             }

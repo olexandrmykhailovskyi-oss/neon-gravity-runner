@@ -15,7 +15,9 @@
                     stack: err && err.stack ? err.stack : ''
                 });
             }
-            if (window.Boot && window.Boot.showError) {
+            // Фатальний екран — лише якщо гра ще не стартувала:
+            // одноразова помилка в UI-обробнику не повинна вбивати забіг
+            if (window.Boot && window.Boot.showError && !window.__ngrBooted) {
                 window.Boot.showError(err || msg);
             }
         } catch (e) {}

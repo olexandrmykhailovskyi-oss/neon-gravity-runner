@@ -38,9 +38,11 @@
 
     // Розумна фаза лазера: частина синхронізується з підльотом (стріле «в дотик»),
     // частина отримує випадкову фазу — інакше всі лазери стріляють однаково механічно.
-    function _applyLaserPhase(base, x, a, speed, alwaysSync) {
+    // rng — опційний детермінований генератор (Daily Challenge)
+    function _applyLaserPhase(base, x, a, speed, alwaysSync, rng) {
+        const R = typeof rng === 'function' ? rng : Math.random;
         const travel = (typeof speed === 'number' && speed > 60) ? _predictTravel(x, a, speed) : 0;
-        const doSync = travel > 0 && (alwaysSync === true || Math.random() < 0.6);
+        const doSync = travel > 0 && (alwaysSync === true || R() < 0.6);
 
         if (doSync) {
             if (travel > 1.3) {
@@ -52,13 +54,13 @@
                 base.cooldown = Math.max(0.3, 1.0 - travel);
             }
         } else if (travel > 0) {
-            const r = Math.random();
+            const r = R();
             if (r < 0.35) {
                 // вже відстріляв — гравець пройде вільно
                 base.phase = 'cooldown';
-                base.cooldown = 0.3 + Math.random() * 0.8;
+                base.cooldown = 0.3 + R() * 0.8;
             } else {
-                base.warning = 0.2 + Math.random() * 1.2;
+                base.warning = 0.2 + R() * 1.2;
             }
         }
     }
@@ -70,6 +72,8 @@
     function create(type, x, area, params) {
         const a = area || { top: 60, bottom: 660, width: 1280 };
         const p = params || {};
+        // Детермінований RNG для Daily Challenge: вся геометрія через p.rng
+        const R = typeof p.rng === 'function' ? p.rng : Math.random;
         const base = {
             id: _uid(),
             type: type,
@@ -88,9 +92,9 @@
         switch (type) {
             case 'wall':
                 base.w = p.w || 40;
-                const fromTop = typeof p.fromTop === 'boolean' ? p.fromTop : (Math.random() < 0.5);
+                const fromTop = typeof p.fromTop === 'boolean' ? p.fromTop : (R() < 0.5);
                 // Фейрнес: максимум 54% поля — завжди гарантований прохід по іншій стороні
-                const wallH = p.h || (a.bottom - a.top) * (0.32 + Math.random() * 0.22);
+                const wallH = p.h || (a.bottom - a.top) * (0.32 + R() * 0.22);
                 if (fromTop) {
                     base.y = a.top;
                     base.h = wallH;
@@ -103,8 +107,8 @@
             case 'gate':
                 base.w = p.w || 36;
                 // Фейрнес: прохід 170–240px — комфортно навіть на високій швидкості
-                const gap = p.gap || (170 + Math.random() * 70);
-                const centerY = a.top + (a.bottom - a.top) * (0.35 + Math.random() * 0.3);
+                const gap = p.gap || (170 + R() * 70);
+                const centerY = a.top + (a.bottom - a.top) * (0.35 + R() * 0.3);
                 base.gapY = centerY;
                 base.gapH = gap;
                 base.topH = Math.max(10, centerY - gap / 2 - a.top);
@@ -117,15 +121,15 @@
                 base.h = p.h || 80;
                 base.baseY = a.top + (a.bottom - a.top) * 0.5 - base.h / 2;
                 base.amp = p.amp || (a.bottom - a.top) * 0.25;
-                base.freq = p.freq || (1.2 + Math.random() * 0.8);
-                base.phase = Math.random() * Math.PI * 2;
+                base.freq = p.freq || (1.2 + R() * 0.8);
+                base.phase = R() * Math.PI * 2;
                 base.y = base.baseY;
                 break;
 
             case 'spikes':
                 base.w = p.w || 78;
                 base.h = p.h || 44;
-                const onFloor = typeof p.onFloor === 'boolean' ? p.onFloor : (Math.random() < 0.5);
+                const onFloor = typeof p.onFloor === 'boolean' ? p.onFloor : (R() < 0.5);
                 base.onFloor = onFloor;
                 base.y = onFloor ? (a.bottom - base.h) : a.top;
                 break;
@@ -134,8 +138,8 @@
                 base.w = 10;
                 // Баланс: лазер має бути РЕАЛЬНОЮ загрозою — 62–78% висоти поля,
                 // прохід лишаєься вузькою щілиною (32–38%), а не половиною екрана
-                const laserH = (a.bottom - a.top) * (0.62 + Math.random() * 0.16);
-                const laserFromTop = Math.random() < 0.5;
+                const laserH = (a.bottom - a.top) * (0.62 + R() * 0.16);
+                const laserFromTop = R() < 0.5;
                 base.h = laserH;
                 base.y = laserFromTop ? a.top : (a.bottom - laserH);
                 base.warning = 0.5;
@@ -146,7 +150,7 @@
                 base.color = '#ff3860';
                 // Розумна фаза першого спрацювання (квадратичне передбачення + варіативність)
                 if (typeof p.speed === 'number' && p.speed > 60) {
-                    _applyLaserPhase(base, x, a, p.speed, false);
+                    _applyLaserPhase(base, x, a, p.speed, false, R);
                 }
                 break;
 
@@ -167,7 +171,7 @@
                 base.radius = p.radius || 32;
                 base.w = base.radius * 2;
                 base.h = base.radius * 2;
-                base.y = a.top + 60 + Math.random() * (a.bottom - a.top - 120);
+                base.y = a.top + 60 + R() * Math.max(1, a.bottom - a.top - 120);
                 base.color = '#a855f7';
                 base.triggered = false;
                 break;
@@ -177,8 +181,8 @@
                 base.radius = base.baseRadius;
                 base.w = base.radius * 2;
                 base.h = base.radius * 2;
-                base.y = a.top + 60 + Math.random() * (a.bottom - a.top - 120);
-                base.freq = p.freq || (2.5 + Math.random() * 1.5);
+                base.y = a.top + 60 + R() * Math.max(1, a.bottom - a.top - 120);
+                base.freq = p.freq || (2.5 + R() * 1.5);
                 base.color = '#f59e0b';
                 break;
 
@@ -191,11 +195,15 @@
         return base;
     }
 
-    function update(obs, dt, speed) {
+    // silent=true — без звуків (живе прев'ю редактора)
+    function update(obs, dt, speed, silent) {
         if (!obs) return;
         obs.time += dt;
         const spd = typeof speed === 'number' ? speed : 250;
         obs.x -= spd * dt;
+        // Пройдений за кадр шлях — для sweep-колізій (захист від тунелювання
+        // тонких перешкод на високих швидкостях/великих dt)
+        obs._sweepDx = (spd + (obs.type === 'moving_laser' ? (obs.moveSpeed || 0) : 0)) * dt;
 
         switch (obs.type) {
             case 'moving':
@@ -209,7 +217,7 @@
                     if (obs.warning <= 0) {
                         obs.phase = 'active';
                         obs.active = true;
-                        try { if (window.AudioSys) window.AudioSys.playLaser(); } catch (e) {}
+                        try { if (!silent && window.AudioSys) window.AudioSys.playLaser(); } catch (e) {}
                     }
                 } else if (obs.phase === 'active') {
                     obs.activeTime -= dt;
@@ -331,11 +339,18 @@
             if (!obs.active) return false;
         }
 
-        // 4. Прямокутні перешкоди — м'який хітбокс
+        // 4. Прямокутні перешкоди — м'який хітбокс.
+        // Sweep: прямокутник розширюється праворуч на шлях, пройдений за кадр,
+        // щоб тонкі перешкоди (лазери) не «перестрибували» гравця між кадрами
+        const sweep = (typeof obs._sweepDx === 'number' && obs._sweepDx > 0) ? obs._sweepDx : 0;
         const rects = getRects(obs);
         for (let i = 0; i < rects.length; i++) {
             try {
-                if (window.Collision && window.Collision.circleRect(soft, rects[i])) {
+                const r = rects[i];
+                const hitRect = sweep > 0
+                    ? { x: r.x, y: r.y, w: r.w + sweep, h: r.h }
+                    : r;
+                if (window.Collision && window.Collision.circleRect(soft, hitRect)) {
                     return true;
                 }
             } catch (e) {}

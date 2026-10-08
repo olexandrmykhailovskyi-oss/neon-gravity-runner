@@ -22,7 +22,11 @@
     function _playerName() {
         try {
             const n = window.State && window.State.getSetting('nickname');
-            if (typeof n === 'string' && n.trim()) return n.trim().slice(0, 24);
+            // Нік потрапляє у світовий лідерборд і рендериться в інших гравців —
+            // прибираємо HTML-символи вже на етапі відправки (захист від stored-XSS)
+            if (typeof n === 'string' && n.trim()) {
+                return n.trim().replace(/[<>&"']/g, '').slice(0, 24) || 'Пілот';
+            }
         } catch (e) {}
         return 'Пілот';
     }

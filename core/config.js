@@ -108,7 +108,7 @@
                 check: function () {
                     try {
                         const c = window.State && window.State.data && window.State.data.campaign;
-                        const maxL = (window.Config && window.Config.MAX_LEVEL) || 15;
+                        const maxL = (window.Config && window.Config.MAX_LEVEL) || 35;
                         return !!(c && c.stars && c.stars[maxL] > 0);
                     } catch (e) { return false; }
                 }
@@ -121,8 +121,9 @@
                     try {
                         const c = window.State && window.State.data && window.State.data.campaign;
                         if (!c || !c.stars) return false;
+                        const maxL = (window.Config && window.Config.MAX_LEVEL) || 35;
                         let sum = 0;
-                        for (let k = 1; k <= 15; k++) sum += (c.stars[k] || 0);
+                        for (let k = 1; k <= maxL; k++) sum += (c.stars[k] || 0);
                         return sum >= 15;
                     } catch (e) { return false; }
                 }

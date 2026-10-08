@@ -25,10 +25,12 @@
 
     function _generateDeviceId() {
         try {
-            let did = localStorage.getItem('ngr_device_id');
-            if (!did) {
+            // SafeStorage: працює й коли localStorage заблоковано
+            const S = window.SafeStorage;
+            let did = S ? S.get('ngr_device_id') : null;
+            if (!did || typeof did !== 'string') {
                 did = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 11);
-                localStorage.setItem('ngr_device_id', did);
+                if (S) S.set('ngr_device_id', did);
             }
             return did;
         } catch (e) {
@@ -174,8 +176,12 @@
         _log('info', 'Online status: ' + isOnline);
         if (isOnline && _ready) {
             setTimeout(function () {
-                pushProgress();
-                pullFromCloud();
+                // Послідовно: спершу pull і злиття «тільки вгору», потім push
+                // об'єднаного стану — інакше паралельні запити можуть
+                // відкотити локальні налаштування до старих хмарних
+                pullFromCloud().then(function () {
+                    pushProgress();
+                });
             }, 1000);
         }
     }

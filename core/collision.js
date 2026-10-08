@@ -7,12 +7,15 @@
 (function () {
     'use strict';
 
+    // Відстань-зазор між колом і прямокутником: 0 = дотик/перетин,
+    // >0 — вільний простір між поверхнями (cr — радіус кола)
     function circleRectDist(cx, cy, cr, rx, ry, rw, rh) {
         const closestX = (cx < rx) ? rx : (cx > rx + rw ? rx + rw : cx);
         const closestY = (cy < ry) ? ry : (cy > ry + rh ? ry + rh : cy);
         const dx = cx - closestX;
         const dy = cy - closestY;
-        return Math.sqrt(dx * dx + dy * dy);
+        const r = (typeof cr === 'number' && cr > 0) ? cr : 0;
+        return Math.sqrt(dx * dx + dy * dy) - r;
     }
 
     function circleRect(circle, rect) {

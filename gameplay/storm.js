@@ -16,6 +16,7 @@
         _notified: false,
         _stormQueue: [],
         _mode: 'endless',
+        _levelTime: 0, // час від старту рівня (для абсолютних позначок кампанії)
 
         reset: function (levelConfig) {
             this.active = false;
@@ -24,6 +25,7 @@
             this.duration = 0;
             this._notified = false;
             this._stormQueue = [];
+            this._levelTime = 0;
 
             try {
                 if (window.AudioSys) window.AudioSys.setStormMusic(false);
@@ -31,6 +33,8 @@
 
             if (levelConfig && levelConfig.storm) {
                 this._mode = 'campaign';
+                // Абсолютні секунди від старту рівня — не відносні від попереднього шторму,
+                // інакше «double»-шторми припадають на фініш рівня
                 if (levelConfig.storm === 'double') {
                     this._stormQueue = [14, 38];
                 } else if (levelConfig.storm === 'boss') {
@@ -38,7 +42,7 @@
                 } else if (levelConfig.storm === true) {
                     this._stormQueue = [15];
                 }
-                this.timer = this._stormQueue.length > 0 ? this._stormQueue.shift() : 9999;
+                this.timer = 99999;
             } else if (levelConfig && levelConfig.storm === false) {
                 this._mode = 'campaign';
                 this.timer = 99999;
@@ -55,18 +59,39 @@
         update: function (dt, playerAlive) {
             if (dt <= 0) return;
 
+            if (this._mode === 'campaign') this._levelTime += dt;
+
             if (!this.active) {
-                this.timer -= dt;
-                if (this.timer <= 3 && !this._notified && this.timer > 0) {
-                    this._notified = true;
-                    try {
-                        if (window.UI && window.I18n) {
-                            window.UI.showToast('⚡ ' + window.I18n.t('storm.warning'), 'warn');
+                if (this._mode === 'campaign') {
+                    const nextAt = this._stormQueue.length > 0 ? this._stormQueue[0] : Infinity;
+                    if (nextAt !== Infinity) {
+                        const remain = nextAt - this._levelTime;
+                        if (remain <= 3 && remain > 0 && !this._notified) {
+                            this._notified = true;
+                            try {
+                                if (window.UI && window.I18n) {
+                                    window.UI.showToast('⚡ ' + window.I18n.t('storm.warning'), 'warn');
+                                }
+                            } catch (e) {}
                         }
-                    } catch (e) {}
-                }
-                if (this.timer <= 0 && this.timer > -100) {
-                    this._activate();
+                        if (this._levelTime >= nextAt) {
+                            this._stormQueue.shift();
+                            this._activate();
+                        }
+                    }
+                } else {
+                    this.timer -= dt;
+                    if (this.timer <= 3 && !this._notified && this.timer > 0) {
+                        this._notified = true;
+                        try {
+                            if (window.UI && window.I18n) {
+                                window.UI.showToast('⚡ ' + window.I18n.t('storm.warning'), 'warn');
+                            }
+                        } catch (e) {}
+                    }
+                    if (this.timer <= 0 && this.timer > -100) {
+                        this._activate();
+                    }
                 }
             } else {
                 this.elapsed += dt;
@@ -107,13 +132,7 @@
                 if (window.AudioSys) window.AudioSys.setStormMusic(false);
             } catch (e) {}
 
-            if (this._mode === 'campaign') {
-                if (this._stormQueue.length > 0) {
-                    this.timer = this._stormQueue.shift();
-                } else {
-                    this.timer = 99999;
-                }
-            } else {
+            if (this._mode !== 'campaign') {
                 let interval = 45;
                 try {
                     if (window.Config && window.Config.GAME) interval = window.Config.GAME.STORM_INTERVAL || 45;

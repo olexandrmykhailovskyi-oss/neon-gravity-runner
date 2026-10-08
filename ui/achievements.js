@@ -78,7 +78,21 @@
                     _log('info', 'розблоковано: ' + a.name);
                     try { if (window.AudioSys) window.AudioSys.playAchievement(); } catch (e) {}
                     if (_toastCb) {
-                        try { _toastCb('🏆 ' + a.name + ' — ' + a.desc, 'success'); } catch (e) {}
+                        // Ім'я й опис беремо з i18n (всі 3 мови), а не з
+                        // хардкоджених українських рядків Config
+                        let nm = a.name;
+                        let ds = a.desc;
+                        try {
+                            if (window.I18n) {
+                                const nk = 'ach.' + a.id + '.name';
+                                const dk = 'ach.' + a.id + '.desc';
+                                const nv = window.I18n.t(nk);
+                                const dv = window.I18n.t(dk);
+                                if (nv && nv !== nk) nm = nv;
+                                if (dv && dv !== dk) ds = dv;
+                            }
+                        } catch (e) {}
+                        try { _toastCb('🏆 ' + nm + ' — ' + ds, 'success'); } catch (e) {}
                     }
                     try { if (window.Skins) window.Skins.checkUnlocks(); } catch (e) {}
                 }

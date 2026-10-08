@@ -70,9 +70,15 @@ load('core/global_scores.js');
 load('core/analytics.js');
 load('gameplay/obstacle.js');
 load('gameplay/obstacles.js');
+load('gameplay/bonus.js');
+load('gameplay/bonuses.js');
+load('gameplay/storm.js');
+load('gameplay/levels.js');
 load('gameplay/modes.js');
 load('gameplay/scoring.js');
 load('ui/ui.js');
+load('ui/skins.js');
+load('ui/achievements.js');
 load('ui/editor.js');
 
 const W = sandbox;
@@ -360,6 +366,66 @@ check('хитбокс шипів (стеля) = зона біля основи 6
     spRectTop.y === 100 && spRectTop.h === 44 * 0.65);
 check('хитбокс шипів (підлога) = зона біля основи 65%',
     spRectFloor.y === 556 + 44 * 0.35 && spRectFloor.h === 44 * 0.65);
+
+// ---- 7. Фікси рев'ю: колізії, детермінізм, шторми, безпека ----
+console.log('\n[7] Фікси рев\'ю:');
+const AREA6 = { top: 60, bottom: 660, width: 1280 };
+
+// circleRectDist тепер повертає зазор з урахуванням радіуса
+check('circleRectDist: дотик кола до стіни = 0', Math.abs(C.circleRectDist(1000, 306, 46, 1000, 60, 40, 200)) < 0.001);
+check('circleRectDist: зазор 4px > 0', C.circleRectDist(1000, 310, 46, 1000, 60, 40, 200) > 0);
+
+// Sweep-колізія: тонкий лазер не «перестрибує» гравця на великому dt
+const sweepLaser = W.Obstacle.create('laser', 500, AREA6, {});
+sweepLaser.phase = 'active';
+sweepLaser.active = true;
+W.Obstacle.update(sweepLaser, 0.05, 1200); // за кадр лазер пройшов 60px
+check('sweep-колізія лазерів (без тунелювання)',
+    W.Obstacle.hitTest(sweepLaser, { x: 480, y: sweepLaser.y + 10, radius: 12, ghost: 0, phase: 0, alive: true }) === true);
+
+// Daily: геометрія детермінована сидованим RNG
+const rngA = W.Utils.createRng(42);
+const rngB = W.Utils.createRng(42);
+const gateA = W.Obstacle.create('gate', 900, AREA6, { rng: rngA });
+const gateB = W.Obstacle.create('gate', 900, AREA6, { rng: rngB });
+check('daily: геометрія воріт детермінована rng', gateA.gapY === gateB.gapY && gateA.gapH === gateB.gapH);
+
+// Шторм 'double': обидва шторми встигають до кінця рівня (60с)
+W.Storm.reset({ storm: 'double' });
+let stormActivations = 0;
+let stormPrevActive = false;
+for (let t = 0; t < 60; t++) {
+    W.Storm.update(1, true);
+    if (W.Storm.active && !stormPrevActive) stormActivations++;
+    stormPrevActive = W.Storm.active;
+}
+check('storm double: два шторми за рівень 60с', stormActivations === 2);
+
+// mergeRemote з campaign:null не псує локальний прогрес
+W.State.resetProgress();
+W.State.data.campaign.stars[3] = 2;
+check('mergeRemote: campaign:null не псує зірки',
+    W.State.mergeRemote({ settings: {}, stats: {}, campaign: null }) === true &&
+    W.State.data.campaign.stars[3] === 2);
+
+// Рекорди: XSS-поля санітизуються перед збереженням
+W.State.resetProgress();
+W.State.addLeaderboardEntry({ score: 100, mode: '<img src=x onerror=alert(1)>', date: '<svg onload=alert(1)>', combo: 5 });
+const lbSan = W.State.getLeaderboard();
+check('рекорди: XSS-поля санітизуються',
+    lbSan.length === 1 && lbSan[0].mode.indexOf('<') === -1 && lbSan[0].date.indexOf('<') === -1);
+
+// Скіни: checkUnlocks реально знаходить нові розблокування
+W.State.resetProgress();
+W.State.updateStats({ bestScore: 0 });
+W.Skins.syncKnown();
+W.State.updateStats({ bestScore: 350 });
+const newSkins = W.Skins.checkUnlocks();
+check('checkUnlocks знаходить новий скін (pink за 300)', newSkins.some(function (s) { return s.id === 'pink'; }));
+check('checkUnlocks вдруге — без дублів', W.Skins.checkUnlocks().length === 0);
+
+// Редактор: верхня межа теми = 5 (6 тем, індекси 0..5)
+check('sanitize: theme 6 → 5', W.Editor.sanitize({ name: 'x', theme: 6, types: ['wall'] }).theme === 5);
 
 // ---- Підсумок ----
 // Через короткий таймер: проміси CloudStorage резолвляться мікротасками,

@@ -44,6 +44,12 @@
         }
     }
 
+    // Екранування перед вставкою в innerHTML: дані з хмари/імпорт-кодів
+    // можуть містити довільні рядки (захист від stored-XSS)
+    function _esc(v) {
+        return String(v == null ? '' : v).replace(/[<>&"']/g, '');
+    }
+
     // QOL-4: плавний відлік чисел (рекорди/рахунки) із easeOutCubic; поважає reducedMotion
     const _numState = {};
     function _nowMs() {
@@ -152,7 +158,7 @@
         el.innerHTML =
             '<div class="panel levels-panel">' +
             '<h2 id="levels-title" data-i18n="levels.title">Вибір рівня кампанії</h2>' +
-            '<p id="levels-description" style="text-align:center;" data-i18n="levels.description">Пройдіть усі 25 випробувань та зберіть максимум зірок!</p>' +
+            '<p id="levels-description" style="text-align:center;" data-i18n="levels.description">Пройдіть усі 35 випробувань та зберіть максимум зірок!</p>' +
             '<div class="levels-progress"><div class="levels-progress-fill" id="levels-progress-fill"></div></div>' +
             '<div class="levels-progress-label" id="levels-progress-label"></div>' +
             '<div class="levels-grid" id="levels-grid"></div>' +
@@ -442,7 +448,7 @@
         UI.safeBind(UI.$('#btn-continue'), 'click', function () {
             _clickSound();
             try {
-                const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+                const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
                 const c = window.State.data.campaign || {};
                 const target = Math.min(maxLvl, Math.max(1, c.maxLevel || 1));
                 buildLevelsGrid();
@@ -1028,7 +1034,7 @@
     function updateMenuStats() {
         try {
             const s = window.State.getStats();
-            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
             const maxStars = (window.Config && window.Config.MAX_STARS) || (maxLvl * 3);
             _animateNumber('#menu-best', s.bestScore || 0, function (v) { return window.Utils.formatNumber(v); });
             _animateNumber('#menu-games', s.totalGames || 0, function (v) { return String(v); });
@@ -1070,7 +1076,7 @@
             // Кнопка «Продовжити кампанію» — лише коли є прогрес
             const contBtn = window.UI.$('#btn-continue');
             if (contBtn) {
-                const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+                const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
                 const nextLvl = Math.min(maxLvl, Math.max(1, (c && c.maxLevel) || 1));
                 const showIt = nextLvl > 1;
                 contBtn.classList.toggle('hidden', !showIt);
@@ -1157,6 +1163,7 @@
             // Режим рівня кампанії: показуємо зірки та вимоги
             window.UI.toggle('#vic-stars-box', true);
             window.UI.toggle('#vic-details', true);
+            window.UI.toggle('#vic-total-stars', true);
             window.UI.toggle('#btn-vic-levels', true);
             window.UI.toggle('#vic-newrecord', false);
 
@@ -1181,7 +1188,7 @@
 
             // QOL: загальний баланс зірок кампанії після зарахування цих зірок
             try {
-                const maxL = (window.Config && window.Config.MAX_LEVEL) || 15;
+                const maxL = (window.Config && window.Config.MAX_LEVEL) || 35;
                 const maxSt = (window.Config && window.Config.MAX_STARS) || (maxL * 3);
                 let total = 0;
                 const cc = window.State.data.campaign;
@@ -1194,7 +1201,7 @@
             } catch (e) {}
 
             // Кнопка "Наступний рівень"
-            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
             const nextBtn = window.UI.$('#btn-vic-next');
             if (nextBtn) {
                 nextBtn.classList.toggle('hidden', lvl.id >= maxLvl);
@@ -1216,6 +1223,8 @@
 
             window.UI.toggle('#vic-stars-box', false);
             window.UI.toggle('#vic-details', false);
+            // Прибираємо залишений кампанією рядок «Всього зірок»
+            window.UI.toggle('#vic-total-stars', false);
             window.UI.toggle('#btn-vic-next', false);
             window.UI.toggle('#btn-vic-levels', false);
             window.UI.toggle('#btn-vic-retry', true);
@@ -1231,7 +1240,7 @@
     // QOL-5: вкладки локального та світового лідербордів
     let _lbTab = 'local';
     let _lbMode = '';
-    const _LB_MODES = ['', 'endless', 'daily', 'timeattack', 'survival', 'custom'];
+    const _LB_MODES = ['', 'endless', 'daily', 'timeattack', 'survival', 'campaign', 'custom'];
 
     function _renderLbTabs() {
         const tabs = window.UI.$('#leaderboard-tabs');
@@ -1261,7 +1270,7 @@
         let html = '';
         for (let i = 0; i < _LB_MODES.length; i++) {
             const m = _LB_MODES[i];
-            const label = m === '' ? _t('lb.allModes', 'Всі') : (m === 'campaign' ? _t('hud.level', 'Рівень') : _t('lb.' + m, m));
+            const label = m === '' ? _t('lb.allModes', 'Всі') : _t('lb.' + m, m);
             html += '<button class="btn lb-mode-chip' + (_lbMode === m ? ' primary' : '') + '" data-m="' + m + '">' + label + '</button>';
         }
         box.innerHTML = html;
@@ -1294,10 +1303,11 @@
             const r = rows[i];
             const rank = i + 1;
             const badge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : '#' + rank));
-            let modeText = _t('lb.' + r.mode, r.mode || '');
-            if (r.mode === 'campaign') modeText = _t('hud.level', 'Рівень') + ' ' + (r.level || '?');
+            // r.mode/r.level приходять із Supabase — fallback екранується
+            let modeText = _t('lb.' + r.mode, _esc(r.mode));
+            if (r.mode === 'campaign') modeText = _t('hud.level', 'Рівень') + ' ' + _esc(r.level != null ? r.level : '?');
             html += '<div class="setting-row" style="padding:10px 0;">' +
-                '<span class="setting-label">' + badge + ' <b>' + String(r.player || '?').replace(/[<>&]/g, '') + '</b>' +
+                '<span class="setting-label">' + badge + ' <b>' + _esc(r.player || '?') + '</b>' +
                 ' <span style="font-size:11px;color:#8a92b2;">· ' + modeText + '</span></span>' +
                 '<span class="setting-value" style="font-size:17px;">' + U.formatNumber(r.score || 0) + '</span>' +
                 '</div>';
@@ -1341,10 +1351,10 @@
                 const badge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : '#' + rank));
                 let modeText = _t('lb.' + item.mode, _t('lb.endless', 'Нескінченність'));
                 if (item.mode === 'campaign') {
-                    modeText = _t('hud.level', 'Рівень') + ' ' + (item.level || '?');
+                    modeText = _t('hud.level', 'Рівень') + ' ' + _esc(item.level != null ? item.level : '?');
                 }
                 html += '<div class="setting-row" style="padding:10px 0;">' +
-                    '<span class="setting-label">' + badge + ' ' + modeText + ' <span style="font-size:11px;color:#8a92b2;">(' + (item.date || '') + ')</span></span>' +
+                    '<span class="setting-label">' + badge + ' ' + modeText + ' <span style="font-size:11px;color:#8a92b2;">(' + _esc(item.date) + ')</span></span>' +
                     '<span class="setting-value" style="font-size:17px;">' + U.formatNumber(item.score) + '</span>' +
                     '</div>';
             }
@@ -1448,7 +1458,7 @@
         try {
             const s = window.State.getStats();
             const U = window.Utils;
-            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+            const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
             const maxStars = (window.Config && window.Config.MAX_STARS) || (maxLvl * 3);
             let totalStars = 0;
             const c = window.State.data.campaign;
@@ -1459,7 +1469,7 @@
             const rows = [
                 [_t('stats.bestScore', '🏆 Найкращий рахунок'), U.formatNumber(s.bestScore || 0)],
                 [_t('stats.campaignStars', '⭐ Зірок у кампанії'), totalStars + ' / ' + maxStars],
-                [_t('stats.dailyStreak', '🔥 Серія викликів дня'), (s.dailyStreak || 0) + ' 🔥'],
+                [_t('stats.dailyStreak', '🔥 Серія викликів дня'), _esc(s.dailyStreak || 0) + ' 🔥'],
                 [_t('stats.bestCombo', '🔥 Найкраще комбо'), s.bestCombo || 0],
                 [_t('stats.totalGames', '🎮 Всього ігор'), s.totalGames || 0],
                 [_t('stats.totalDeaths', '💀 Всього смертей'), s.totalDeaths || 0],

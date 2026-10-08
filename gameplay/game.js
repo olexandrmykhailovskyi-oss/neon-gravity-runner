@@ -17,6 +17,7 @@
 
     let _lastTime = 0;
     let _rafId = null;
+    let _initialized = false;
     let _speed = 0;
     let _elapsed = 0;
     let _bounds = { top: 60, bottom: 660 };
@@ -53,6 +54,8 @@
 
     function init() {
         try {
+            if (_initialized) return;
+            _initialized = true;
             _canvas = document.getElementById('game-canvas');
             if (!_canvas) throw new Error('Canvas не знайдено');
             _ctx = _canvas.getContext('2d');
@@ -95,8 +98,10 @@
             const margin = _cfg('CANVAS', 'TUNNEL_MARGIN', 60);
             _bounds.top = margin;
             _bounds.bottom = h - margin;
-            _area.top = margin;
-            _area.bottom = h - margin;
+            // Дуже низьке вікно: не даємо зоні гри стати від'ємною/виродженою
+            if (_bounds.bottom < _bounds.top + 120) _bounds.bottom = _bounds.top + 120;
+            _area.top = _bounds.top;
+            _area.bottom = _bounds.bottom;
             _area.width = w;
 
             try { if (window.Background) window.Background.resize(); } catch (e) {}
@@ -110,11 +115,18 @@
     }
 
     // ---- Wake Lock (екран не гасне під час гри; де не підтримується — тихо ігнорується) ----
+    let _wakeToken = 0;
     function _acquireWakeLock() {
         try {
             if (!(navigator && navigator.wakeLock && typeof navigator.wakeLock.request === 'function')) return;
             if (_wakeLock) return;
+            const token = ++_wakeToken;
             navigator.wakeLock.request('screen').then(function (lock) {
+                // Якщо за час запиту вже відбувся release/вихід — лок не потрібен
+                if (token !== _wakeToken) {
+                    try { lock.release(); } catch (e) {}
+                    return;
+                }
                 _wakeLock = lock;
                 try {
                     lock.addEventListener('release', function () { _wakeLock = null; });
@@ -126,6 +138,7 @@
 
     function _releaseWakeLock() {
         try {
+            _wakeToken++;
             if (_wakeLock) {
                 _wakeLock.release();
                 _wakeLock = null;
@@ -146,13 +159,18 @@
     }
 
     function startCampaignLevel(levelId) {
+        const lvl = window.Levels.get(levelId);
+        if (!lvl) {
+            _log('warn', 'startCampaignLevel: рівень не знайдено', levelId);
+            return;
+        }
         _mode = 'campaign';
-        _currentLevel = window.Levels.get(levelId);
+        _currentLevel = lvl;
         _startRun();
     }
 
     function startNextLevel() {
-        const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 15;
+        const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
         if (_currentLevel && _currentLevel.id < maxLvl) {
             startCampaignLevel(_currentLevel.id + 1);
         } else {
@@ -361,7 +379,40 @@
         }
     }
 
+    // Zen не має смерті чи перемоги — забіг завершується лише виходом у меню.
+    // Фіксуємо статистику й локальний рекорд, інакше zen-ігри губляться
+    function _finalizeZen() {
+        try {
+            const s = window.State.getStats();
+            const finalScore = window.Scoring.finalScore();
+            _recordModeBest('zen', finalScore);
+            window.State.updateStats({
+                bestCombo: Math.max(s.bestCombo || 0, window.Scoring.bestCombo()),
+                totalGames: (s.totalGames || 0) + 1,
+                starsCollected: (s.starsCollected || 0) + window.Scoring.stars(),
+                nearMisses: (s.nearMisses || 0) + window.Scoring.nearMisses(),
+                longestGame: Math.max(s.longestGame || 0, window.Scoring.elapsed()),
+                totalPlaytime: (s.totalPlaytime || 0) + window.Scoring.elapsed(),
+                lastPlayed: Date.now()
+            });
+            window.State.addLeaderboardEntry({
+                score: finalScore,
+                mode: 'zen',
+                level: null,
+                combo: window.Scoring.bestCombo()
+            });
+            try { if (window.Achievements) window.Achievements.checkAll(); } catch (e) {}
+            try { window.Skins.checkUnlocks(); } catch (e) {}
+            try { if (window.CloudStorage) window.CloudStorage.pushProgress(); } catch (e) {}
+        } catch (e) {
+            _log('error', '_finalizeZen', e.message);
+        }
+    }
+
     function goMenu() {
+        if ((_state === 'playing' || _state === 'paused') && _mode === 'zen') {
+            _finalizeZen();
+        }
         _state = 'menu';
         window.HUD.show(false);
         _releaseWakeLock();
@@ -466,7 +517,9 @@
             if (window.Modes && (_mode === 'timeattack' || _mode === 'survival' || _mode === 'zen')) {
                 const modeConfig = window.Modes.getModeConfig(_mode);
                 if (modeConfig) {
-                    modeGrowth = growth * (modeConfig.difficultyGrowth || 1.0);
+                    // typeof-перевірка: zen має difficultyGrowth === 0 (стала швидкість),
+                    // а «|| 1.0» з'їло б нуль
+                    modeGrowth = growth * (typeof modeConfig.difficultyGrowth === 'number' ? modeConfig.difficultyGrowth : 1.0);
                     modeDuration = modeConfig.duration || Infinity;
                 }
             }
@@ -491,10 +544,27 @@
         try { window.Player.update(dt, _bounds, timeScale, _speed); } catch (e) {}
         try { window.Obstacles.update(realDt, _speed, _area); } catch (e) {}
         try { window.Bonuses.update(realDt, _speed, _area, window.Player); } catch (e) {}
-        try { window.Storm.update(dt, window.Player.alive); } catch (e) {}
+        // Шторм іде в масштабованому часі — інакше під час slow-mo він
+        // настає вдвічі швидше відносно ігрового часу рівня
+        try { window.Storm.update(realDt, window.Player.alive); } catch (e) {}
         try { window.Scoring.update(realDt); } catch (e) {}
         try { window.Particles.update(dt); } catch (e) {}
         try { window.FloatingTexts.update(dt); } catch (e) {}
+
+        // Очки та комбо за пройдені перешкоди
+        try {
+            if (window.Player.alive) {
+                const obsList = window.Obstacles.getList();
+                const passX = window.Player.x - window.Player.radius;
+                for (let i = 0; i < obsList.length; i++) {
+                    const o = obsList[i];
+                    if (!o.passed && o.x + o.w < passX) {
+                        o.passed = true;
+                        window.Scoring.addObstacle();
+                    }
+                }
+            }
+        } catch (e) {}
 
         // Перевірка завершення рівня кампанії / кастомного рівня
         if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel && _elapsed >= _currentLevel.duration) {
@@ -728,6 +798,7 @@
                 stormsSurvived: (s.stormsSurvived || 0) + _stormsThisRun,
                 nearMisses: (s.nearMisses || 0) + window.Scoring.nearMisses(),
                 ghostPasses: (s.ghostPasses || 0) + _ghostThisRun,
+                longestGame: Math.max(s.longestGame || 0, _elapsed),
                 totalPlaytime: (s.totalPlaytime || 0) + _elapsed,
                 lastPlayed: Date.now()
             });
@@ -794,6 +865,7 @@
                 stormsSurvived: (s.stormsSurvived || 0) + _stormsThisRun,
                 nearMisses: (s.nearMisses || 0) + window.Scoring.nearMisses(),
                 ghostPasses: (s.ghostPasses || 0) + _ghostThisRun,
+                longestGame: Math.max(s.longestGame || 0, _elapsed),
                 totalPlaytime: (s.totalPlaytime || 0) + _elapsed,
                 lastPlayed: Date.now()
             });

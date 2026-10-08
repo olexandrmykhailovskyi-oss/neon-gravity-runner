@@ -29,11 +29,13 @@
     function _getAnonId() {
         if (_anonId) return _anonId;
         try {
-            _anonId = localStorage.getItem('ngr_anon_id');
-            if (!_anonId) {
+            // SafeStorage: не падає, коли localStorage заблоковано
+            const S = window.SafeStorage;
+            _anonId = S ? S.get('ngr_anon_id') : null;
+            if (!_anonId || typeof _anonId !== 'string') {
                 _anonId = 'an_' +
                     (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().slice(0, 13) : Math.random().toString(36).slice(2, 15));
-                localStorage.setItem('ngr_anon_id', _anonId);
+                if (S) S.set('ngr_anon_id', _anonId);
             }
         } catch (e) {
             _anonId = 'an_' + Date.now().toString(36);
@@ -104,6 +106,32 @@
         });
     }
 
+    /**
+     * Миттєвий flush при закритті/згортанні вкладки: fetch з keepalive
+     * переживає unload, на відміну від звичайного запиту через SDK.
+     */
+    function _beaconFlush() {
+        try {
+            if (!_queue.length || !enabled()) return;
+            const cfg = window.NGR_CLOUD_CONFIG;
+            if (!cfg || !cfg.supabaseUrl || !cfg.supabaseKey) return;
+            if (typeof fetch !== 'function') return;
+            const batch = _queue.splice(0, _queue.length);
+            const url = String(cfg.supabaseUrl).replace(/\/+$/, '') + '/rest/v1/' + TABLE;
+            fetch(url, {
+                method: 'POST',
+                keepalive: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': cfg.supabaseKey,
+                    'Authorization': 'Bearer ' + cfg.supabaseKey,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(batch)
+            }).catch(function () {});
+        } catch (e) {}
+    }
+
     function sessionStart() {
         track('session_start', {});
     }
@@ -112,11 +140,11 @@
         try {
             if (typeof document !== 'undefined' && document.addEventListener) {
                 document.addEventListener('visibilitychange', function () {
-                    if (document.visibilityState === 'hidden') flush();
+                    if (document.visibilityState === 'hidden') _beaconFlush();
                 });
             }
             if (typeof window !== 'undefined' && window.addEventListener) {
-                window.addEventListener('beforeunload', function () { flush(); });
+                window.addEventListener('beforeunload', function () { _beaconFlush(); });
                 window.addEventListener('online', function () { flush(); });
             }
         } catch (e) {}
