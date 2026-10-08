@@ -67,6 +67,7 @@
             'mode.zen.name': 'Zen',
             'mode.zen.desc': 'Спокійний політ без очок і смертей',
             'mode.zen.hud': '🧘 Zen',
+            'mode.endless.hud': '♾ Нескінченний',
 
             // Екрани
             'levels.title': 'Вибір рівня кампанії',
@@ -424,6 +425,7 @@
             'mode.zen.name': 'Zen',
             'mode.zen.desc': 'Спокойный полет без очков и смертей',
             'mode.zen.hud': '🧘 Zen',
+            'mode.endless.hud': '♾ Бесконечный',
 
             // Экраны
             'levels.title': 'Выбор уровня кампании',
@@ -781,6 +783,7 @@
             'mode.zen.name': 'Zen',
             'mode.zen.desc': 'A calm flight without score or deaths',
             'mode.zen.hud': '🧘 Zen',
+            'mode.endless.hud': '♾ Endless',
 
             // Screens
             'levels.title': 'Campaign Level Selection',

@@ -152,6 +152,13 @@
                     window.UI.setText('#hud-level-title', _tr('mode.zen.hud', '🧘 Zen'));
                 }
                 if (levelProgressEl) levelProgressEl.classList.add('hidden');
+            } else if (data.mode === 'endless') {
+                // QOL: таймер виживання для нескінченного режиму (раніше видно було лише очки)
+                if (levelInfoEl) {
+                    levelInfoEl.classList.remove('hidden');
+                    window.UI.setText('#hud-level-title', _tr('mode.endless.hud', '♾ Нескінченний') + ' — ' + U.formatTime(data.elapsed || 0));
+                }
+                if (levelProgressEl) levelProgressEl.classList.add('hidden');
             } else {
                 if (levelInfoEl) levelInfoEl.classList.add('hidden');
                 if (levelProgressEl) levelProgressEl.classList.add('hidden');
