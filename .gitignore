@@ -26,5 +26,6 @@ scratch/
 # Local AI tooling (not part of the game)
 .opencode/
 .zcode/
+.playwright-mcp/
 
 .vercel

@@ -6,6 +6,7 @@
     <meta name="description" content="Neon Gravity Runner — неон-аркада з перемиканням гравітації: 35 рівнів кампанії, редактор рівнів та світовий лідерборд.">
     <meta name="theme-color" content="#05010f">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
     <meta property="og:type" content="website">
@@ -13,9 +14,14 @@
     <meta property="og:title" content="Neon Gravity Runner">
     <meta property="og:description" content="Неон-аркада з перемиканням гравітації: 35 рівнів кампанії, редактор рівнів, світовий лідерборд, зірки, бонуси та Neon Storm. Грається прямо в браузері.">
     <meta property="og:url" content="https://neon-gravity-runner.vercel.app/">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:image" content="https://neon-gravity-runner.vercel.app/docs/media/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Neon Gravity Runner — неонова аркада з перемиканням гравітації">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Neon Gravity Runner">
     <meta name="twitter:description" content="Неон-аркада з перемиканням гравітації: 35 рівнів, редактор рівнів, світовий лідерборд. Грається прямо в браузері.">
+    <meta name="twitter:image" content="https://neon-gravity-runner.vercel.app/docs/media/og-image.jpg">
     <title>Neon Gravity Runner</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -90,7 +96,7 @@
         </div>
 
         <!-- Тости сповіщень -->
-        <div id="toast-container" class="toast-container"></div>
+        <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
     </div>
 
     <!-- ===================================================== -->

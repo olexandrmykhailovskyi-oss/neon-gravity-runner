@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, initial-scale=1.0">
+<title>Neon Gravity Runner — OG Card</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; }
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #05010f 0%, #0c0628 100%);
+    position: relative;
+  }
+
+  /* ---------- perspective grid ---------- */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.07) 1px, transparent 1px);
+    background-size: 60px 60px;
+    transform: perspective(600px) rotateX(35deg) scale(1.6);
+    transform-origin: 50% 100%;
+    mask-image: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.25) 55%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.25) 55%, transparent 85%);
+  }
+
+  /* ---------- glow orbs ---------- */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.55;
+  }
+  .orb-1 { width: 420px; height: 420px; background: #00e5ff; top: -140px; left: -120px; }
+  .orb-2 { width: 380px; height: 380px; background: #ff2bd6; bottom: -120px; right: -100px; }
+  .orb-3 { width: 260px; height: 260px; background: #fff36b; top: 40%; left: 55%; opacity: 0.18; }
+
+  /* ---------- neon obstacle bars ---------- */
+  .bar {
+    position: absolute;
+    border-radius: 4px;
+  }
+  .bar-1 {
+    width: 340px; height: 10px;
+    background: #00e5ff;
+    box-shadow: 0 0 18px #00e5ff, 0 0 46px rgba(0,229,255,0.55);
+    top: 120px; left: 90px;
+    transform: rotate(-14deg);
+  }
+  .bar-2 {
+    width: 260px; height: 8px;
+    background: #ff2bd6;
+    box-shadow: 0 0 16px #ff2bd6, 0 0 40px rgba(255,43,214,0.5);
+    top: 470px; right: 110px;
+    transform: rotate(10deg);
+  }
+  .bar-3 {
+    width: 180px; height: 6px;
+    background: #fff36b;
+    box-shadow: 0 0 14px #fff36b, 0 0 34px rgba(255,243,107,0.45);
+    top: 250px; right: 180px;
+    transform: rotate(-8deg);
+  }
+  .bar-4 {
+    width: 140px; height: 6px;
+    background: #00e5ff;
+    box-shadow: 0 0 12px #00e5ff, 0 0 30px rgba(0,229,255,0.45);
+    bottom: 130px; left: 200px;
+    transform: rotate(16deg);
+  }
+
+  /* ---------- glowing dots ---------- */
+  .dot {
+    position: absolute;
+    border-radius: 50%;
+    background: #00e5ff;
+    box-shadow: 0 0 10px #00e5ff, 0 0 22px rgba(0,229,255,0.7);
+  }
+  .dot-1 { width: 10px; height: 10px; top: 180px; left: 480px; }
+  .dot-2 { width: 8px;  height: 8px;  top: 380px; left: 120px; background: #ff2bd6; box-shadow: 0 0 10px #ff2bd6, 0 0 22px rgba(255,43,214,0.7); }
+  .dot-3 { width: 12px; height: 12px; top: 90px;  right: 260px; background: #fff36b; box-shadow: 0 0 12px #fff36b, 0 0 26px rgba(255,243,107,0.7); }
+  .dot-4 { width: 7px;  height: 7px;  top: 520px; right: 340px; }
+  .dot-5 { width: 9px;  height: 9px;  top: 300px; left: 700px; background: #ff2bd6; box-shadow: 0 0 10px #ff2bd6, 0 0 22px rgba(255,43,214,0.7); }
+
+  /* ---------- content ---------- */
+  .content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 80px;
+  }
+
+  .title {
+    font-size: 84px;
+    font-weight: 800;
+    letter-spacing: 6px;
+    line-height: 1.05;
+    color: #ffffff;
+    text-shadow:
+      0 0 12px rgba(0,229,255,0.9),
+      0 0 42px rgba(0,229,255,0.55),
+      0 0 90px rgba(0,229,255,0.35),
+      0 2px 0 rgba(255,43,214,0.6);
+  }
+  .title .accent {
+    color: #00e5ff;
+    text-shadow:
+      0 0 14px rgba(0,229,255,1),
+      0 0 50px rgba(0,229,255,0.7),
+      0 0 110px rgba(0,229,255,0.45);
+  }
+
+  .subtitle {
+    margin-top: 26px;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    color: #e8e4ff;
+    text-shadow: 0 0 10px rgba(255,43,214,0.65), 0 0 28px rgba(255,43,214,0.35);
+  }
+
+  .url {
+    position: absolute;
+    bottom: 42px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: #fff36b;
+    text-shadow: 0 0 12px rgba(255,243,107,0.8), 0 0 34px rgba(255,243,107,0.4);
+  }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="bar bar-1"></div>
+  <div class="bar bar-2"></div>
+  <div class="bar bar-3"></div>
+  <div class="bar bar-4"></div>
+
+  <div class="dot dot-1"></div>
+  <div class="dot dot-2"></div>
+  <div class="dot dot-3"></div>
+  <div class="dot dot-4"></div>
+  <div class="dot dot-5"></div>
+
+  <div class="content">
+    <div class="title">NEON <span class="accent">GRAVITY</span> RUNNER</div>
+    <div class="subtitle">Gravity-flip arcade &bull; 35 levels &bull; level editor &bull; world leaderboard</div>
+    <div class="url">neon-gravity-runner.vercel.app</div>
+  </div>
+</body>
+</html>

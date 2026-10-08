@@ -1,15 +1,31 @@
 # 🎮 Neon Gravity Runner
 
+[![▶ Play online](https://img.shields.io/badge/%E2%96%B6_Play_online-00e5ff?style=for-the-badge)](https://neon-gravity-runner.vercel.app)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Folexandrmykhailovskyi-oss%2Fneon-gravity-runner)
 [![License: MIT](https://img.shields.io/badge/License-MIT-00e5ff.svg)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla-JavaScript-fff36b.svg)](https://developer.mozilla.org/uk/docs/Web/JavaScript)
 [![Canvas 2D](https://img.shields.io/badge/Canvas-2D-ff2bd6.svg)](https://developer.mozilla.org/uk/docs/Web/API/Canvas_API)
-[![Tests](https://img.shields.io/badge/smoke_tests-120_✔-39ff14.svg)](test_smoke.js)
+[![no build](https://img.shields.io/badge/build-none-39ff14.svg)](.)
+[![Tests](https://img.shields.io/badge/smoke_tests-passing-39ff14.svg)](test_smoke.js)
 
-**▶ [ГРАТИ ОНЛАЙН](https://neon-gravity-runner.vercel.app)** — без реєстрації, встановлюється як PWA та працює офлайн після першого візиту.
+![Neon Gravity Runner — геймплей](docs/media/screen-gameplay.png)
+
+**▶ [Грати онлайн](https://neon-gravity-runner.vercel.app)** — без реєстрації, встановлюється як PWA та працює офлайн після першого візиту.
 
 > **Neon Gravity Runner** — браузерна неон-аркада на чистому JavaScript (Canvas 2D, без зовнішніх бібліотек та бандлерів).  
 > Керуй неоновою частинкою, що мчить крізь кібер-тунель: перемикай гравітацію, долай усі 35 рівнів кампанії, збирай зірки, бонуси та тримай комбо!
+
+---
+
+## 📸 Скриншоти
+
+| Головне меню | Кампанія — 35 рівнів | Редактор рівнів |
+|---|---|---|
+| ![Меню](docs/media/screen-main.png) | ![Рівні](docs/media/screen-levels.png) | ![Редактор](docs/media/screen-editor.png) |
+
+| Світовий лідерборд | Досягнення |
+|---|---|
+| ![Лідерборд](docs/media/screen-leaderboard.png) | ![Досягнення](docs/media/screen-achievements.png) |
 
 ---
 
@@ -67,6 +83,10 @@ neon_gravity_runner/
 ├── style.css                   # Неоновий кіберпанк дизайн, адаптивні стилі
 ├── vercel.json                 # Конфіг деплою Vercel (статика + безпекові заголовки)
 ├── test_smoke.js               # Смоук-тести логіки (node test_smoke.js)
+├── supabase/
+│   └── schema.sql              # Схема БД: user_progress, scores (+submit_score), analytics
+├── docs/
+│   └── media/                  # Скриншоти гри та og:image
 ├── LICENSE                     # Ліцензія MIT
 ├── .gitignore                  # Ігнорування службових файлів
 ├── core/
@@ -96,7 +116,8 @@ neon_gravity_runner/
 │   ├── storm.js                # Neon Storm (одиничні, подвійні, бос-шторми)
 │   ├── scoring.js              # Очки, комбо, спецефекти кожні 5 комбо
 │   ├── levels.js               # Менеджер 35 рівнів Кампанії та розрахунок зірок
-│   └── game.js                 # Головний ігровий цикл (кампанія, endless, daily)
+│   ├── modes.js                # Конфіги режимів: Time Attack, Survival, Zen
+│   └── game.js                 # Головний ігровий цикл (кампанія, endless, daily, custom)
 └── ui/
     ├── ui.js                   # Безпечний DOM-маніпулятор
     ├── screens.js              # Екрани меню, вибір 35 рівнів, перемога із зірками, ТОП-5
