@@ -63,6 +63,21 @@ vercel --prod
 
 ---
 
+## 🧰 Розробка та якість коду
+
+Гра не має runtime-залежностей; для розробки потрібен лише Node 20+.
+
+```bash
+npm install      # devDependencies: ESLint + Prettier
+npm test         # смоук-тести логіки (node test_smoke.js)
+npm run lint     # ESLint (flat config), 0 warnings
+npm run format   # Prettier за .prettierrc
+```
+
+CI (`.github/workflows/test.yml`) на кожен push/PR ганяє **лінт і смоук-тести**.
+
+---
+
 ## 🎯 Керування
 
 | Дія | Клавіша / Жест |
@@ -82,6 +97,9 @@ neon_gravity_runner/
 ├── index.html                  # Головна сторінка, HUD, екрани, порядок скриптів
 ├── style.css                   # Неоновий кіберпанк дизайн, адаптивні стилі
 ├── vercel.json                 # Конфіг деплою Vercel (статика + безпекові заголовки)
+├── package.json                # Скрипти (test/lint/format) + devDependencies
+├── eslint.config.mjs           # ESLint (flat config) для класичного браузерного JS
+├── .prettierrc / .editorconfig # Єдиний стиль коду, .nvmrc = Node 20
 ├── test_smoke.js               # Смоук-тести логіки (node test_smoke.js)
 ├── supabase/
 │   └── schema.sql              # Схема БД: user_progress, scores (+submit_score), analytics

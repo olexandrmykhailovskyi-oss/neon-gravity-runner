@@ -1,9 +1,19 @@
 {
     "name": "neon-gravity-runner",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "private": true,
     "description": "Neon Gravity Runner — неонова аркада з перемиканням гравітації (vanilla JS, Canvas 2D)",
     "scripts": {
-        "test": "node test_smoke.js"
+        "test": "node test_smoke.js",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.12.0",
+        "globals": "^17.13.0",
+        "prettier": "^3.9.9"
     }
 }
