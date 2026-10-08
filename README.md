@@ -136,7 +136,7 @@ neon_gravity_runner/
 - **👑 ТОП-5 локальних рекордів** та повна статистика польотів.
 - **🔥 Серія викликів дня** (daily streak) — грайте щодня та підтримуйте серію.
 - **☁ Хмарна синхронізація прогресу** через Supabase (опційно, див. розділ нижче).
-- **🌍 Світовий лідерборд** — результати надсилаються у глобальний ТОП-10 (Supabase), у рекордах є вкладки «Локальні / Світ» з фільтром за режимами.
+- **🌍 Світовий лідерборд** — результати надсилаються у глобальний ТОП-10 (Supabase) і валідуються на сервері (`submit_score`), у рекордах є вкладки «Локальні / Світ» з фільтром за режимами.
 - **🛠 Редактор рівнів** — конструктор власних випробувань (тривалість, швидкість, щільність, шторм, тема, набір перешкод) з миттєвим плейтестом, бібліотекою «Мої рівні» та **шаринг-кодами NGRL1** з контрольною сумою.
 - **📊 Анонімна телеметрія** — батч-події сесій у Supabase для розуміння ретеншену; вимикається однією кнопкою в налаштуваннях.
 - **✨ Плавні анімації** — переходи екранів, каскадна поява меню та плиток, пружні зірки перемоги, відлік рекордів; поважає `reducedMotion`.
@@ -152,44 +152,9 @@ neon_gravity_runner/
 ### Підключення за 4 кроки
 
 1. **Створіть проєкт** на [supabase.com](https://supabase.com) → **New project**.
-2. **Створіть таблиці** — SQL Editor → виконайте:
-   ```sql
-   -- Прогрес (хмарна синхронізація)
-   create table if not exists user_progress (
-     device_id text primary key,
-     data jsonb not null,
-     updated_at timestamptz not null default now()
-   );
-   alter table user_progress enable row level security;
-   create policy "anon device progress" on user_progress
-     for all using (true) with check (true);
+2. **Створіть таблиці** — SQL Editor → вставте вміст [`supabase/schema.sql`](supabase/schema.sql) і виконайте (скрипт ідемпотентний, можна запускати повторно).
 
-   -- Світовий лідерборд
-   create table if not exists scores (
-     id bigint generated always as identity primary key,
-     player text not null default 'Пілот',
-     score bigint not null check (score >= 0 and score < 100000000),
-     mode text not null default 'endless',
-     level int,
-     combo int not null default 0,
-     device_id text,
-     created_at timestamptz not null default now()
-   );
-   alter table scores enable row level security;
-   create policy "scores_read" on scores for select using (true);
-   create policy "scores_insert" on scores for insert with check (char_length(player) <= 24);
-
-   -- Анонімна телеметрія
-   create table if not exists analytics_events (
-     id bigint generated always as identity primary key,
-     anon_id text not null,
-     event text not null,
-     props jsonb not null default '{}'::jsonb,
-     ts timestamptz not null default now()
-   );
-   alter table analytics_events enable row level security;
-   create policy "analytics_insert" on analytics_events for insert with check (true);
-   ```
+   Файл створює `user_progress`, `scores` і `analytics_events`. Світовий лідерборд захищено: **прямого `INSERT` у `scores` для anon немає** — запис іде лише через функцію `submit_score`, яка перевіряє межі очок, правдоподібність темпу набору, режим, нік (чистить HTML-символи) і частоту (не більше 6 результатів/хв з пристрою). Тож накрутити топ простим `insert` із консолі браузера вже не вийде.
 3. **Скопіюйте ключі**: Settings → API → `Project URL` та anon-ключ (`service_role` НЕ брати, лише `anon public` / publishable).
 4. **Вставте їх в `index.html`** у скрипт `window.NGR_CLOUD_CONFIG = { supabaseUrl: '...', supabaseKey: '...' }`.
 
@@ -199,7 +164,7 @@ neon_gravity_runner/
 - **🌍 Світовий лідерборд** — задайте «Ім'я пілота» в налаштуваннях, і результати кожного забігу летять у глобальний ТОП (вкладка «Світ» у рекордах);
 - **📊 Телеметрія** — анонімні події сесій; вимикається тумблером «Анонімна статистика».
 
-> ⚠ **Безпека**: політики RLS вище дозволяють анонімний запис — для аркади це свідомий компроміс. Політики видалення відсутні, тож чистити дані можна лише з дашборду. Для серйозного проєкту додайте Supabase Auth та rate-limiting через Edge Functions.
+> ⚠ **Безпека**: результати валідуються на сервері через `submit_score` (межі, темп, режим, частота) — пряма вставка в `scores` заборонена на рівні RLS, тож накрутити рейтинг тривіальним `insert` неможливо. Але це не повний анти-чит: клієнт усе ще надсилає свої очки, тож для змагального режиму варто додати Supabase Auth і серверний підрахунок через Edge Function. `user_progress` і `analytics_events` усе ще приймають анонімний запис — для аркади це свідомий компроміс. Політик видалення немає, чистити дані можна з дашборду.
 
 ---
 

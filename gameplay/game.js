@@ -754,15 +754,17 @@
     }
 
     // QOL-5: надсилання результату у світовий лідерборд (fire-and-forget, тост лише раз)
+    // duration (сек) потрібна серверній валідації правдоподібності очок
     let _globalToastShown = false;
-    function _submitGlobal(score, mode, levelId) {
+    function _submitGlobal(score, mode, levelId, duration) {
         try {
             if (!window.GlobalScores || typeof score !== 'number' || score <= 0) return;
             window.GlobalScores.submit({
                 score: score,
                 mode: mode,
                 level: levelId || null,
-                combo: window.Scoring.bestCombo()
+                combo: window.Scoring.bestCombo(),
+                duration: typeof duration === 'number' ? duration : window.Scoring.elapsed()
             }).then(function (ok) {
                 try {
                     if (!ok) return;
@@ -810,7 +812,7 @@
                 combo: window.Scoring.bestCombo()
             });
 
-            _submitGlobal(finalScore, 'timeattack', null);
+            _submitGlobal(finalScore, 'timeattack', null, _elapsed);
             try { if (window.Analytics) window.Analytics.track('run_end', { mode: 'timeattack', score: finalScore, dur: Math.round(_elapsed) }); } catch (e) {}
 
             try { window.Achievements.checkAll(); } catch (e) {}
@@ -878,7 +880,7 @@
             });
 
             _submitGlobal(finalScore, _currentLevel.custom ? 'custom' : 'campaign',
-                _currentLevel.custom ? null : _currentLevel.id);
+                _currentLevel.custom ? null : _currentLevel.id, _elapsed);
             try {
                 if (window.Analytics) window.Analytics.track('level_complete', {
                     level: _currentLevel.custom ? 0 : _currentLevel.id,
@@ -949,7 +951,7 @@
             });
 
             if (_mode !== 'campaign') {
-                _submitGlobal(finalScore, _mode, null);
+                _submitGlobal(finalScore, _mode, null, window.Scoring.elapsed());
             }
             try { if (window.Analytics) window.Analytics.track('run_end', { mode: _mode, score: finalScore, dur: Math.round(window.Scoring.elapsed()) }); } catch (e) {}
 

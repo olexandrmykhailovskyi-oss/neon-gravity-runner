@@ -1,7 +1,10 @@
 /**
  * GlobalScores.js — світовий лідерборд через Supabase.
  * - Таблиця scores(player, score, mode, level, combo, device_id, created_at)
- * - submit після кожного забігу (fire-and-forget), top(mode, limit) для UI
+ * - submit після кожного забігу (fire-and-forget) через RPC submit_score:
+ *   прямого INSERT для anon немає, тому клієнт не може вставити довільний
+ *   рядок у таблицю — усі очки валідуються на сервері (межі, темп, частота).
+ * - top(mode, limit) для UI
  * - Graceful: без клієнта/таблиці повертає false/null і ніколи не падає
  */
 (function () {
@@ -31,25 +34,31 @@
         return 'Пілот';
     }
 
-    /** Надіслати результат. Promise<boolean> */
+    /** Надіслати результат. Promise<boolean>
+     *  entry: { score, mode, level?, combo?, duration? } — duration це тривалість
+     *  забігу в секундах; сервер використовує її для перевірки правдоподібності.
+     */
     function submit(entry) {
         return new Promise(function (resolve) {
             try {
-                if (!ready() || !entry || typeof entry.score !== 'number' || entry.score <= 0) {
+                const client = ready() ? window.CloudStorage.getClient() : null;
+                if (!client || !entry || typeof entry.score !== 'number' || entry.score <= 0) {
                     resolve(false);
                     return;
                 }
-                const client = window.CloudStorage.getClient();
-                client.from(TABLE).insert({
-                    player: _playerName(),
-                    score: Math.min(MAX_SCORE, Math.max(1, Math.floor(entry.score))),
-                    mode: String(entry.mode || 'endless').slice(0, 16),
-                    level: typeof entry.level === 'number' ? entry.level : null,
-                    combo: Math.max(0, entry.combo | 0),
-                    device_id: window.CloudStorage.getDeviceId()
-                }).then(function (res) {
+                const params = {
+                    p_player: _playerName(),
+                    p_score: Math.min(MAX_SCORE, Math.max(1, Math.floor(entry.score))),
+                    p_mode: String(entry.mode || 'endless').slice(0, 16),
+                    p_level: typeof entry.level === 'number' ? Math.floor(entry.level) : null,
+                    p_combo: Math.max(0, Math.floor(Number(entry.combo) || 0)),
+                    p_device_id: window.CloudStorage.getDeviceId(),
+                    p_duration: Math.max(0, Math.floor(Number(entry.duration) || 0))
+                };
+                // Не insert у таблицю, а RPC: сервер сам вирішує, чи приймати результат
+                client.rpc('submit_score', params).then(function (res) {
                     if (res && res.error) {
-                        if (!_warned) { _log('warn', 'submit: ' + res.error.message + ' (потрібна SQL-міграція таблиці scores)'); _warned = true; }
+                        if (!_warned) { _log('warn', 'submit: ' + res.error.message + ' (потрібна SQL-міграція submit_score)'); _warned = true; }
                         resolve(false);
                         return;
                     }
