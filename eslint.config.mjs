@@ -39,6 +39,32 @@ export default [
         }
     },
     {
+        // page.evaluate-колбеки виконуються в браузері — потрібні обидва набори глобалів
+        files: ['e2e/**/*.js'],
+        languageOptions: {
+            sourceType: 'script',
+            ecmaVersion: 'latest',
+            globals: { ...globals.node, ...globals.browser }
+        }
+    },
+    {
+        files: ['playwright.config.js'],
+        languageOptions: {
+            sourceType: 'script',
+            ecmaVersion: 'latest',
+            globals: globals.node
+        }
+    },
+    {
+        // page.evaluate-колбеки виконуються в браузері — потрібні обидва набори глобалів
+        files: ['scripts/**/*.mjs'],
+        languageOptions: {
+            sourceType: 'module',
+            ecmaVersion: 'latest',
+            globals: { ...globals.node, ...globals.browser }
+        }
+    },
+    {
         rules: {
             'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }],
             'no-empty': ['error', { allowEmptyCatch: true }],

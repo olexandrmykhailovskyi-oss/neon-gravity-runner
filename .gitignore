@@ -27,4 +27,9 @@ scratch/
 .zcode/
 .playwright-mcp/
 
+# Playwright artifacts
+test-results/
+playwright-report/
+docs/media/_video/
+
 .vercel
