@@ -3,6 +3,19 @@
 Усі помітні зміни **Neon Gravity Runner**.
 Формат — [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/), версіонування — [SemVer](https://semver.org/lang/uk/).
 
+## [Unreleased]
+
+### Added
+- E2E-тести на Playwright (`e2e/`, `playwright.config.js`) та окрема джоба в CI; власний статичний сервер для тестів без залежностей.
+- `docs/ARCHITECTURE.md` — карта модулів, порядок завантаження скриптів, ігровий цикл, точки розширення.
+- `docs/SUPABASE.md` — таблиці, RLS, розбір `submit_score`, приклади перевірки через REST.
+- JSDoc на публічних API (`State`, `Game`, `Obstacles`, `Editor`, `GlobalScores`) + `jsconfig.json` для IntelliSense.
+- GIF-демо геймплею в README (`docs/media/demo.gif`) і скрипт запису `scripts/record-demo.mjs` (`npm run demo:record`).
+
+### Changed
+- ESLint-конфіг покриває `e2e/`, `playwright.config.js` і `scripts/` (Node + browser globals).
+- README: посилання на docs, оновлене дерево проєкту.
+
 ## [1.1.0] — 2026-10-08
 
 ### Added

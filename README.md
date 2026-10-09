@@ -8,7 +8,7 @@
 [![no build](https://img.shields.io/badge/build-none-39ff14.svg)](.)
 [![Tests](https://img.shields.io/badge/smoke_tests-passing-39ff14.svg)](test_smoke.js)
 
-![Neon Gravity Runner — геймплей](docs/media/screen-gameplay.png)
+![Neon Gravity Runner — геймплей](docs/media/demo.gif)
 
 **▶ [Грати онлайн](https://neon-gravity-runner.vercel.app)** — без реєстрації, встановлюється як PWA та працює офлайн після першого візиту.
 
@@ -68,13 +68,14 @@ vercel --prod
 Гра не має runtime-залежностей; для розробки потрібен лише Node 20+.
 
 ```bash
-npm install      # devDependencies: ESLint + Prettier
-npm test         # смоук-тести логіки (node test_smoke.js)
-npm run lint     # ESLint (flat config), 0 warnings
-npm run format   # Prettier за .prettierrc
+npm install         # devDependencies: ESLint, Prettier, Playwright
+npm test            # смоук-тести логіки (node test_smoke.js)
+npm run test:e2e    # E2E у справжньому браузері (Playwright)
+npm run lint        # ESLint (flat config), 0 problems
+npm run format      # Prettier за .prettierrc
 ```
 
-CI (`.github/workflows/test.yml`) на кожен push/PR ганяє **лінт і смоук-тести**.
+CI (`.github/workflows/test.yml`) на кожен push/PR ганяє **три джоби: лінт, смоук-тести та E2E**.
 
 ---
 
@@ -92,18 +93,25 @@ CI (`.github/workflows/test.yml`) на кожен push/PR ганяє **лінт 
 
 Модульна структура на чистому JS (без модульних бандлерів, працює навіть через протокол `file://`):
 
+> 📚 Детальніше: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — модулі, порядок скриптів, ігровий цикл, точки розширення.
+
 ```
 neon_gravity_runner/
 ├── index.html                  # Головна сторінка, HUD, екрани, порядок скриптів
 ├── style.css                   # Неоновий кіберпанк дизайн, адаптивні стилі
 ├── vercel.json                 # Конфіг деплою Vercel (статика + безпекові заголовки)
-├── package.json                # Скрипти (test/lint/format) + devDependencies
+├── package.json                # Скрипти (test/lint/format/e2e) + devDependencies
 ├── eslint.config.mjs           # ESLint (flat config) для класичного браузерного JS
 ├── .prettierrc / .editorconfig # Єдиний стиль коду, .nvmrc = Node 20
+├── jsconfig.json               # IntelliSense з JSDoc (без TypeScript)
+├── playwright.config.js        # Конфіг E2E-тестів
 ├── test_smoke.js               # Смоук-тести логіки (node test_smoke.js)
+├── e2e/                        # Playwright: статичний сервер + сценарії
 ├── supabase/
 │   └── schema.sql              # Схема БД: user_progress, scores (+submit_score), analytics
 ├── docs/
+│   ├── ARCHITECTURE.md         # Архітектура: модулі, порядок скриптів, ігровий цикл
+│   ├── SUPABASE.md             # Серверна частина: таблиці, RLS, submit_score
 │   └── media/                  # Скриншоти гри та og:image
 ├── LICENSE                     # Ліцензія MIT
 ├── .gitignore                  # Ігнорування службових файлів
@@ -187,6 +195,8 @@ neon_gravity_runner/
 ## ☁ Хмара (Supabase): прогрес, світовий рейтинг, телеметрія
 
 Гра опційно інтегрується з [Supabase](https://supabase.com) (безкоштовний тариф вистачає). Без налаштування все працює суто локально.
+
+> 📚 Детальніше: [docs/SUPABASE.md](docs/SUPABASE.md) — таблиці, RLS, валідація `submit_score`, приклади перевірки через REST.
 
 ### Підключення за 4 кроки
 
