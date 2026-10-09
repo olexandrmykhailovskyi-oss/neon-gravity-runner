@@ -21,6 +21,11 @@
         try { if (window.Logger) window.Logger[level]('[Obstacles] ' + msg, data); } catch (e) {}
     }
 
+    /**
+     * @param {string[]|null} allowedTypes Дозволені типи перешкод (напр. ['wall','spikes']); null — авто-набір за складністю
+     * @param {number} density Множник густини (>0): 1.0 — базово, 2.0 — вдвічі частіше
+     * @param {Function} [customRng] Випадкова функция ()=>0..1 для детермінізму (Daily Challenge)
+     */
     function reset(allowedTypes, density, customRng) {
         list.length = 0;
         spawnDistance = 0;
@@ -32,6 +37,12 @@
         _rng = typeof customRng === 'function' ? customRng : Math.random;
     }
 
+    /**
+     * Оновлює рух і спавн перешкод за кадр
+     * @param {number} dt Час з попереднього кадру (секунди)
+     * @param {number} [speed] Швидкість сцени (px/сек); за замовчуванням 250
+     * @param {Object} [area] Область гри {top,bottom,width}; за замовчуванням {top:60,bottom:660,width:1280}
+     */
     function update(dt, speed, area) {
         if (dt <= 0) return;
         const spd = typeof speed === 'number' ? speed : 250;
@@ -482,6 +493,10 @@
         }
     }
 
+    /**
+     * Малює всі активні перешкоди на канвісі
+     * @param {CanvasRenderingContext2D} ctx
+     */
     function draw(ctx) {
         if (!ctx) return;
         for (let i = 0; i < list.length; i++) {
@@ -491,6 +506,11 @@
         }
     }
 
+    /**
+     * Перевіряє зіткнення гравця з перешкодами за кадр
+     * @param {Object} player Об'єкт гравця (має поле alive)
+     * @returns {Object|null} Перешкода, що зіткнулась, або null
+     */
     function hit(player) {
         if (!player || !player.alive) return null;
         let zoneTriggeredThisFrame = false;
@@ -512,6 +532,11 @@
         return null;
     }
 
+    /**
+     * Near-miss детекція: перешкода, яку гравець щойно минув близько
+     * @param {Object} player Об'єкт гравця (має поле alive)
+     * @returns {{obs:Object, dist:number}|null}
+     */
     function checkNearMiss(player) {
         if (!player || !player.alive) return null;
         let NEAR_MISS_DIST = 28;
@@ -538,10 +563,18 @@
         return null;
     }
 
+    /**
+     * Поточна кількість активних перешкод у списку
+     * @returns {number}
+     */
     function count() {
         return list.length;
     }
 
+    /**
+     * Копія списку активних перешкод
+     * @returns {Object[]}
+     */
     function getList() {
         return list.slice();
     }
@@ -599,15 +632,77 @@
         return result;
     }
 
+    /**
+     * Менеджер перешкод (window.Obstacles)
+     * Керує спавном, рухом, зіткненнями та near-miss детекцією перешкод.
+     *
+     * Що таке «паттерни» (структури):
+     * Паттерн — це структурний шаблон спавна, який об'єднує кілька перешкод
+     * в єдину комбінацію (напр. «стіна → шипи → стіна» або «лазер → ворота → лазер»).
+     * Кожен паттерн має id, список дозволених типів та build-функцію, яка
+     * повертає масив елементів {type або obs, dx} (dx — зміщення відносно точки спавну).
+     * При спавні паттерни обираються випадково серед тих, чиї типи присутні в _allowedTypes.
+     * Паттерни збільшують різноманітність рівнів і роблять їх більш передбачуваними
+     * порівняно з повністю випадковим спавном поодиноких блоків.
+     *
+     * Вплив density (множника густини):
+     * - Більший density → частіше спавн перешкод (інтервал між ними менший)
+     * - Більший density → вища ймовірність спавну паттерна замість поодинокого блока
+     * - Менший density → рідкі перешкоди, більше простору для проходження
+     */
     window.Obstacles = {
+        /**
+         * Скидає стан і задає параметри рівня
+         * @param {string[]|null} allowedTypes Дозволені типи перешкод; null — авто-набір за складністю
+         * @param {number} density Множник густини (>0): 1.0 — базово, 2.0 — вдвічі частіше
+         * @param {Function} [customRng] Випадкова функция ()=>0..1 для детермінізму (Daily Challenge)
+         */
         reset: reset,
+        /**
+         * Оновлює рух і спавн перешкод за кадр
+         * @param {number} dt Час з попереднього кадру (секунди)
+         * @param {number} [speed] Швидкість сцени (px/сек); за замовчуванням 250
+         * @param {Object} [area] Область гри {top,bottom,width}; за замовчуванням {top:60,bottom:660,width:1280}
+         */
         update: update,
+        /**
+         * Малює всі активні перешкоди на канвісі
+         * @param {CanvasRenderingContext2D} ctx
+         */
         draw: draw,
+        /**
+         * Перевіряє зіткнення гравця з перешкодами за кадр
+         * @param {Object} player Об'єкт гравця (має поле alive)
+         * @returns {Object|null} Перешкода, що зіткнулась, або null
+         */
         hit: hit,
+        /**
+         * Near-miss детекція: перешкода, яку гравець щойно минув близько
+         * @param {Object} player Об'єкт гравця (має поле alive)
+         * @returns {{obs:Object, dist:number}|null}
+         */
         checkNearMiss: checkNearMiss,
+        /**
+         * Поточна кількість активних перешкод у списку
+         * @returns {number}
+         */
         count: count,
+        /**
+         * Копія списку активних перешкод
+         * @returns {Object[]}
+         */
         getList: getList,
+        /**
+         * Прямокутники та кола, які перешкоди займають у діапазоні X — для перевірки безпечного спавну бонусів
+         * @param {number} xMin Ліва межа діапазону (px)
+         * @param {number} xMax Права межа діапазону (px)
+         * @returns {{rects:Object[], circles:Object[]}}
+         */
         getBlockers: getBlockers,
+        /**
+         * Кількість структурних шаблонів (паттернів) спавн-патернів
+         * @returns {number}
+         */
         patternCount: function () { return PATTERNS.length; }
     };
 })();

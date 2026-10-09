@@ -4,6 +4,32 @@
  * - Глибоке злиття збережених даних з дефолтами
  * - Підтримка кампанії (35 рівнів + зірки), складності, локальних рекордів ТОП-5
  */
+
+/**
+ * @typedef {Object} LeaderboardEntry
+ * @property {number} score — очки (0..99999999)
+ * @property {string} mode — режим гри (до 16 символів)
+ * @property {number|null} level — рівень кампанії або null
+ * @property {number} combo — максимальне комбо
+ * @property {string} date — дата запису (локальний формат)
+ */
+
+/**
+ * @typedef {Object} GameSettings
+ * @property {number} sfxVolume — гучність ефектів (0..1)
+ * @property {number} musicVolume — гучність музики (0..1)
+ * @property {number} quality — якість графіки (0=LOW, 1=MED, 2=HIGH, 3=ULTRA)
+ * @property {number} theme — індекс теми
+ * @property {string} skin — скін гравця
+ * @property {boolean} reducedMotion — зменшений рух
+ * @property {boolean} mute — повне вимкнення звуку
+ * @property {boolean} vibration — вібрація (мобільні)
+ * @property {boolean} gravityGuide — пунктирна лінія гравітації
+ * @property {string} difficulty — 'easy' | 'normal' | 'hardcore'
+ * @property {string} language — 'auto' | 'uk' | 'ru' | 'en'
+ * @property {string} nickname — ім'я у світовому лідерборді
+ * @property {boolean} analytics — анонімна телеметрія
+ */
 (function () {
     'use strict';
 
@@ -106,6 +132,11 @@
         return result;
     }
 
+    /**
+     * Ініціалізація стану: зчитує збережені дані з SafeStorage,
+     * глибоко зливає з дефолтами, виправляє пошкоджені секції.
+     * Побічний ефект: одразу викликає save().
+     */
     function init() {
         try {
             if (window.Logger) window.Logger.info('State.init');
@@ -138,6 +169,10 @@
         }
     }
 
+    /**
+     * Зберігає поточний стан у SafeStorage.
+     * @returns {boolean} true при успіху, false при помилці
+     */
     function save() {
         try {
             return window.SafeStorage.set(STORAGE_KEY, data);
@@ -151,22 +186,41 @@
         }
     }
 
+    /**
+     * Повертає значення налаштування.
+     * @param {string} key — ключ налаштування
+     * @returns {*} значення або undefined
+     */
     function getSetting(key) {
         if (!data.settings) return undefined;
         return data.settings[key];
     }
 
+    /**
+     * Встановлює значення налаштування і зберігає стан.
+     * @param {string} key — ключ налаштування
+     * @param {*} value — нове значення
+     */
     function setSetting(key, value) {
         if (!data.settings) data.settings = {};
         data.settings[key] = value;
         save();
     }
 
+    /**
+     * Повертає статистику гри.
+     * @param {string} [key] — ключ статистики; без аргумента весь об'єкт
+     * @returns {Object|*} об'єкт статистики або значення ключа
+     */
     function getStats(key) {
         if (!data.stats) return key ? undefined : data.stats;
         return key ? data.stats[key] : data.stats;
     }
 
+    /**
+     * Оновлює статистику гри і зберігає стан.
+     * @param {Object|Function} updater — об'єкт з новими значеннями або функція-мутатор
+     */
     function updateStats(updater) {
         if (!data.stats) data.stats = createDefaults().stats;
         if (typeof updater === 'function') {
@@ -184,6 +238,11 @@
         save();
     }
 
+    /**
+     * Розблоковує досягнення (якщо ще не розблоковане).
+     * @param {string} id — ідентифікатор досягнення
+     * @returns {boolean} true якщо було розблоковане зараз, false якщо вже було
+     */
     function unlockAchievement(id) {
         if (!Array.isArray(data.achievements)) data.achievements = [];
         if (data.achievements.indexOf(id) === -1) {
@@ -194,10 +253,19 @@
         return false;
     }
 
+    /**
+     * Перевіряє, чи розблоковане досягнення.
+     * @param {string} id — ідентифікатор досягнення
+     * @returns {boolean}
+     */
     function isAchievementUnlocked(id) {
         return Array.isArray(data.achievements) && data.achievements.indexOf(id) !== -1;
     }
 
+    /**
+     * Повертає множники складності для поточного налаштування difficulty.
+     * @returns {{speed: number, gravity: number, gap: number, density: number, name: string}}
+     */
     function getDifficultyMultipliers() {
         const diff = (data.settings && data.settings.difficulty) || 'normal';
         switch (diff) {
@@ -213,7 +281,10 @@
         }
     }
 
-    // ТОП-5 локальних рекордів
+    /**
+     * Повертає локальний лідерборд (ТОП-5).
+     * @returns {LeaderboardEntry[]}
+     */
     function getLeaderboard() {
         try {
             const raw = window.SafeStorage.get(LEADERBOARD_KEY);
@@ -222,6 +293,11 @@
         return [];
     }
 
+    /**
+     * Додає запис у локальний лідерборд (ТОП-5).
+     * @param {LeaderboardEntry} entry — запис результату
+     * @returns {LeaderboardEntry[]} оновлений ТОП-5
+     */
     function addLeaderboardEntry(entry) {
         try {
             const clean = _sanitizeEntry(entry);
@@ -277,6 +353,10 @@
         }).join(''));
     }
 
+    /**
+     * Експортує прогрес у код формату 'NGR1-<hash>-<base64>'.
+     * @returns {string|null} код експорту або null при помилці
+     */
     function exportProgress() {
         try {
             const payload = { state: data, leaderboard: getLeaderboard(), exportedAt: Date.now() };
@@ -298,6 +378,12 @@
         return (hash >>> 0).toString(36);
     }
 
+    /**
+     * Імпортує прогрес з коду формату 'NGR1-<hash>-<base64>'.
+     * Зливає з поточним станом (максимуми, зірки, досягнення).
+     * @param {string} code — код експорту
+     * @returns {boolean} true при успіху
+     */
     function importProgress(code) {
         try {
             if (typeof code !== 'string' || code.indexOf('NGR1-') !== 0) return false;
@@ -320,7 +406,11 @@
         }
     }
 
-    // Злиття стану з хмари (той самий формат, що всередині експорт-коду)
+    /**
+     * Зливає віддалений стан (той самий формат, що в експорт-коді).
+     * @param {Object} remoteState — об'єкт стану з полями settings і stats
+     * @returns {boolean} true при успіху
+     */
     function mergeRemote(remoteState) {
         try {
             if (!remoteState || typeof remoteState !== 'object' ||
@@ -439,6 +529,10 @@
         }
     }
 
+    /**
+     * Скидає весь прогрес: видаляє дані з SafeStorage і створює дефолтний стан.
+     * @returns {boolean} true при успіху
+     */
     function resetProgress() {
         try {
             window.SafeStorage.remove(STORAGE_KEY);
@@ -451,9 +545,31 @@
         }
     }
 
+    /**
+     * @typedef {Object} StateAPI
+     * @property {Function} init — ініціалізація зі сховища
+     * @property {Function} save — зберегти стан
+     * @property {Object} data — поточний стан (тільки читання)
+     * @property {Function} getSetting — отримати налаштування
+     * @property {Function} setSetting — встановити налаштування
+     * @property {Function} getStats — отримати статистику
+     * @property {Function} updateStats — оновити статистику
+     * @property {Function} unlockAchievement — розблокувати досягнення
+     * @property {Function} isAchievementUnlocked — перевірити досягнення
+     * @property {Function} getDifficultyMultipliers — множники складності
+     * @property {Function} getLeaderboard — локальний ТОП-5
+     * @property {Function} addLeaderboardEntry — додати запис у ТОП-5
+     * @property {Function} exportProgress — експорт у код NGR1
+     * @property {Function} importProgress — імпорт з коду NGR1
+     * @property {Function} mergeRemote — злиття віддаленого стану
+     * @property {Function} resetProgress — скидання прогресу
+     */
+
+    /** @type {StateAPI} */
     window.State = {
         init: init,
         save: save,
+        /** Поточний стан гри (тільки читання). Ніколи не null. */
         get data() { return data; },
         getSetting: getSetting,
         setSetting: setSetting,

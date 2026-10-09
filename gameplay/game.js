@@ -52,6 +52,11 @@
         return fallback;
     }
 
+    /**
+     * Ініціалізація ігрового движка: підключення canvas, фону, частинок,
+     * налаштування розмірів та запуск циклу requestAnimationFrame.
+     * Викликається один раз при завантаженні сторінки.
+     */
     function init() {
         try {
             if (_initialized) return;
@@ -110,6 +115,10 @@
         }
     }
 
+    /**
+     * Перевірка, чи зараз іде гра (стан 'playing').
+     * @returns {boolean} true, якщо гра активна
+     */
     function isPlaying() {
         return _state === 'playing';
     }
@@ -148,16 +157,27 @@
         }
     }
 
+    /**
+     * Швидкий старт гри — запускає endless-режим.
+     * Використовується для кнопки «Грати» у головному меню.
+     */
     function tryStart() {
         startEndless();
     }
 
+    /**
+     * Запуск режиму «Нескінченність» — гра без зупинки до зіткнення.
+     */
     function startEndless() {
         _mode = 'endless';
         _currentLevel = null;
         _startRun();
     }
 
+    /**
+     * Запуск рівня кампанії за вказаним ID.
+     * @param {number|string} levelId — ID рівня (1..MAX_LEVEL)
+     */
     function startCampaignLevel(levelId) {
         const lvl = window.Levels.get(levelId);
         if (!lvl) {
@@ -169,6 +189,10 @@
         _startRun();
     }
 
+    /**
+     * Запуск наступного рівня кампанії.
+     * Якщо поточний рівень — останній, повертає в меню.
+     */
     function startNextLevel() {
         const maxLvl = (window.Config && window.Config.MAX_LEVEL) || 35;
         if (_currentLevel && _currentLevel.id < maxLvl) {
@@ -178,24 +202,36 @@
         }
     }
 
+    /**
+     * Запуск щоденного виклику — однакова генерація перешкод для всіх гравців.
+     */
     function startDaily() {
         _mode = 'daily';
         _currentLevel = null;
         _startRun();
     }
 
+    /**
+     * Запуск режиму «Time Attack» — обмежений час, подвійні очки.
+     */
     function startTimeAttack() {
         _mode = 'timeattack';
         _currentLevel = null;
         _startRun();
     }
 
+    /**
+     * Запуск режиму «Survival» — виживання з множником очок ×1.5.
+     */
     function startSurvival() {
         _mode = 'survival';
         _currentLevel = null;
         _startRun();
     }
 
+    /**
+     * Запуск режиму «Дзен» — спокійна гра без смерті та зірочок.
+     */
     function startZen() {
         _mode = 'zen';
         _currentLevel = null;
@@ -229,6 +265,9 @@
         _startRun();
     }
 
+    /**
+     * Повторити поточний забіг — перезапуск з тим самим режимом і рівнем.
+     */
     function retryCurrent() {
         if (_mode === 'campaign' && _currentLevel) {
             startCampaignLevel(_currentLevel.id);
@@ -247,6 +286,9 @@
         }
     }
 
+    /**
+     * Завершити навчання — зберігає прапорець і запускає endless-режим.
+     */
     function finishTutorial() {
         try {
             window.State.data.tutorialDone = true;
@@ -255,6 +297,11 @@
         startEndless();
     }
 
+    /**
+     * Внутрішня функція запуску забігу: скидання систем, налаштування
+     * складності, ініціалізація гравця, перешкод, бонусів та фону.
+     * Якщо навчання ще не пройдено — показує екран туторіалу.
+     */
     function _startRun() {
         try {
             let tutorialDone = false;
@@ -409,6 +456,10 @@
         }
     }
 
+    /**
+     * Вихід у головне меню — зупиняє гру, ховає HUD, показує екран меню.
+     * У режимі «Дзен» фіксує статистику перед виходом.
+     */
     function goMenu() {
         if ((_state === 'playing' || _state === 'paused') && _mode === 'zen') {
             _finalizeZen();
@@ -421,6 +472,9 @@
         try { window.Screens.updateMenuStats(); } catch (e) {}
     }
 
+    /**
+     * Перемкнення паузи: якщо гра йде — ставить на паузу, інакше — продовжує.
+     */
     function togglePause() {
         if (_state === 'playing') {
             pause();
@@ -429,6 +483,9 @@
         }
     }
 
+    /**
+     * Поставити гру на паузу — показує екран паузи з інформацією про режим.
+     */
     function pause() {
         if (_state !== 'playing') return;
         _state = 'paused';
@@ -447,6 +504,9 @@
         window.UI.showScreen('pause');
     }
 
+    /**
+     * Продовжити гру після паузи — ховає екран паузи і відновлює рух.
+     */
     function resume() {
         if (_state !== 'paused') return;
         _state = 'playing';
@@ -455,6 +515,11 @@
         _acquireWakeLock();
     }
 
+    /**
+     * Обробка натискання кнопки дії залежно від поточного стану гри:
+     * menu — старт гри, tutorial — завершення навчання, playing — стрибок,
+     * paused — продовження гри.
+     */
     function pressAction() {
         try { if (window.AudioSys) window.AudioSys.ensure(); } catch (e) {}
         switch (_state) {
@@ -485,6 +550,11 @@
         } catch (e) {}
     }
 
+    /**
+     * Оновлення ігрової логіки за один кадр: рух гравця, перешкод,
+     * бонусів, шторму, підрахунок очок, перевірка зіткнень та завершення рівня.
+     * @param {number} dt — час між кадрами в секундах
+     */
     function update(dt) {
         try { window.Effects.update(dt); } catch (e) {}
 
@@ -689,6 +759,10 @@
         }
     }
 
+    /**
+     * Відображення одного кадру: очищення canvas, фон, перешкоди,
+     * бонуси, гравець, частинки, ефекти та HUD.
+     */
     function render() {
         if (!_ctx) return;
         try {
@@ -756,6 +830,13 @@
     // QOL-5: надсилання результату у світовий лідерборд (fire-and-forget, тост лише раз)
     // duration (сек) потрібна серверній валідації правдоподібності очок
     let _globalToastShown = false;
+    /**
+     * Внутрішня функція надсилання результату у глобальний лідерборд.
+     * @param {number} score — фінальний рахунок
+     * @param {string} mode — режим гри
+     * @param {number|null} levelId — ID рівня (або null)
+     * @param {number} duration — тривалість забігу в секундах (потрібна серверній валідації очок)
+     */
     function _submitGlobal(score, mode, levelId, duration) {
         try {
             if (!window.GlobalScores || typeof score !== 'number' || score <= 0) return;
@@ -836,6 +917,10 @@
     }
 
     // Перемога в рівні Кампанії
+    /**
+     * Внутрішня функція завершення рівня кампанії: розрахунок зірок,
+     * збереження прогресу, статистики та показ екрану перемоги.
+     */
     function _levelComplete() {
         _state = 'victory';
         window.HUD.show(false);
@@ -904,6 +989,10 @@
         }
     }
 
+    /**
+     * Внутрішня функція завершення гри по смерті: фіксація статистики,
+     * рекордів, перевірка досягнень та показ екрану Game Over.
+     */
     function _gameOver() {
         _state = 'gameover';
         window.HUD.show(false);

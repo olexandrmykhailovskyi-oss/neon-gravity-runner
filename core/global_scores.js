@@ -7,6 +7,15 @@
  * - top(mode, limit) для UI
  * - Graceful: без клієнта/таблиці повертає false/null і ніколи не падає
  */
+
+/**
+ * @typedef {Object} ScoreEntry
+ * @property {number} score — очки (>0, ≤99999999)
+ * @property {string} mode — режим гри ('endless', 'daily', 'timeattack', 'survival', 'zen', 'campaign')
+ * @property {number} [level] — рівень кампанії
+ * @property {number} [combo] — максимальне комбо
+ * @property {number} [duration] — тривалість забігу в секундах
+ */
 (function () {
     'use strict';
 
@@ -18,6 +27,10 @@
         try { if (window.Logger) window.Logger[level]('[GlobalScores] ' + msg); } catch (e) {}
     }
 
+    /**
+     * Перевіряє готовність хмарного сховища.
+     * @returns {boolean} true якщо клієнт Supabase готовий до запитів
+     */
     function ready() {
         try { return !!(window.CloudStorage && window.CloudStorage.isReady() && window.CloudStorage.getClient()); } catch (e) { return false; }
     }
@@ -37,6 +50,8 @@
     /** Надіслати результат. Promise<boolean>
      *  entry: { score, mode, level?, combo?, duration? } — duration це тривалість
      *  забігу в секундах; сервер використовує її для перевірки правдоподібності.
+     * @param {ScoreEntry} entry — дані результату забігу
+     * @returns {Promise<boolean>} true якщо сервер прийняв результат, false при помилці
      */
     function submit(entry) {
         return new Promise(function (resolve) {
@@ -74,7 +89,11 @@
         });
     }
 
-    /** ТОП результатів. mode=null → всі режими. Promise<Array|null> */
+    /** ТОП результатів. mode=null → всі режими. Promise<Array|null>
+     * @param {string} [mode] — фільтр за режимом; null/undefined — всі режими
+     * @param {number} [limit] — кількість записів (1..50, за замовчуванням 10)
+     * @returns {Promise<Array|null>} масив записів або null при помилці/відсутності клієнта
+     */
     function top(mode, limit) {
         return new Promise(function (resolve) {
             try {
@@ -100,6 +119,14 @@
         });
     }
 
+    /**
+     * @typedef {Object} GlobalScoresAPI
+     * @property {Function} submit — надіслати результат (RPC submit_score)
+     * @property {Function} top — отримати ТОП результатів
+     * @property {Function} ready — перевірити готовність клієнта
+     */
+
+    /** @type {GlobalScoresAPI} */
     window.GlobalScores = {
         submit: submit,
         top: top,
