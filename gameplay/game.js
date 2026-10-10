@@ -30,6 +30,14 @@
     let _errorCount = 0;
     let _errorTimer = 0;
 
+    // Перф-моніторинг: скользяще середнє FPS за ~1 секунду + авто-якість
+    const AUTO_QUALITY_THRESHOLD = 45; // поріг середнього FPS
+    const AUTO_QUALITY_LOW_TIME = 3;    // секунд поспіль нижче порогу
+    let _fpsFrames = 0;
+    let _fpsTime = 0;
+    let _avgFps = 60;
+    let _lowFpsTime = 0; // скільки секунд поспіль середній FPS нижче порогу
+
     // QOL: рекорд на початку забігу (для HUD і моменту «новий рекорд»)
     let _bestAtRunStart = 0;
     let _recordBeaten = false;
@@ -765,7 +773,8 @@
                     levelProgress: lvlProg,
                     elapsed: _elapsed,
                     duration: modeDuration,
-                    diffMult: _diffScoreMult
+                    diffMult: _diffScoreMult,
+                    fps: Math.round(_avgFps)
                 });
             } catch (e) {}
         }
@@ -1062,7 +1071,17 @@
             if (_mode !== 'campaign') {
                 _submitGlobal(finalScore, _mode, null, window.Scoring.elapsed());
             }
-            try { if (window.Analytics) window.Analytics.track('run_end', { mode: _mode, score: finalScore, dur: Math.round(window.Scoring.elapsed()) }); } catch (e) {}
+            // level потрібен для звіту reporting.level_failures (де саме гинуть гравці)
+            try {
+                if (window.Analytics) {
+                    window.Analytics.track('run_end', {
+                        mode: _mode,
+                        score: finalScore,
+                        dur: Math.round(window.Scoring.elapsed()),
+                        level: _currentLevel ? _currentLevel.id : null
+                    });
+                }
+            } catch (e) {}
 
             try { window.Achievements.checkAll(); } catch (e) {}
             try { window.Skins.checkUnlocks(); } catch (e) {}
@@ -1089,6 +1108,52 @@
         }
     }
 
+    /**
+     * Авто-зниження якості: якщо середній FPS нижче порогу три секунди
+     * поспіль — зменшуємо налаштування якості на 1, застосовуємо його
+     * (частинки; фон сам читає налаштування кожен кадр) і показуємо тост.
+     * Лічильник «поганих» секунд скидається, коли FPS відновлюється,
+     * а також після зниження — щоб не спамити тостами кожну секунду.
+     */
+    function _checkAutoQuality() {
+        try {
+            if (window.State.getSetting('autoQuality') === false) return;
+            if (_avgFps < AUTO_QUALITY_THRESHOLD) {
+                _lowFpsTime += 1;
+                if (_lowFpsTime >= AUTO_QUALITY_LOW_TIME) {
+                    const q = window.State.getSetting('quality');
+                    if (typeof q === 'number' && q > 0) {
+                        const nq = q - 1;
+                        window.State.setSetting('quality', nq);
+                        try {
+                            if (window.Particles && typeof window.Particles.setQuality === 'function') {
+                                window.Particles.setQuality(nq);
+                            }
+                        } catch (e) {}
+                        let toastText = 'Якість знижено для стабільності';
+                        try {
+                            if (window.I18n && typeof window.I18n.t === 'function') {
+                                const tr = window.I18n.t('toast.lowQuality');
+                                if (tr && tr !== 'toast.lowQuality') toastText = tr;
+                            }
+                        } catch (e) {}
+                        try {
+                            if (window.UI && typeof window.UI.showToast === 'function') {
+                                window.UI.showToast(toastText);
+                            }
+                        } catch (e) {}
+                        _log('warn', 'autoQuality: якість знижено', { from: q, to: nq, avgFps: Math.round(_avgFps) });
+                    }
+                    _lowFpsTime = 0;
+                }
+            } else {
+                _lowFpsTime = 0;
+            }
+        } catch (e) {
+            _log('error', '_checkAutoQuality', e.message);
+        }
+    }
+
     function _loop(timestamp) {
         _rafId = requestAnimationFrame(_loop);
         try {
@@ -1097,6 +1162,16 @@
             _lastTime = timestamp;
             if (dt > 0.05) dt = 0.05;
             if (dt <= 0) return;
+
+            // Перф-моніторинг: рахуємо скользяще середнє FPS за ~1 секунду
+            _fpsFrames++;
+            _fpsTime += dt;
+            if (_fpsTime >= 1) {
+                _avgFps = _fpsFrames / _fpsTime;
+                _fpsFrames = 0;
+                _fpsTime = 0;
+                if (_state === 'playing') _checkAutoQuality();
+            }
 
             if (_state === 'playing') {
                 update(dt);

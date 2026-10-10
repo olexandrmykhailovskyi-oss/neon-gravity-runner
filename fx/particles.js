@@ -57,21 +57,45 @@
         _log('info', 'init OK, pool=' + POOL_SIZE);
     }
 
-    function _applyQuality() {
+    /**
+     * Застосовує множник частинок і сяйво для заданого рівня якості.
+     * Тихо ігнорується, якщо Config.QUALITY недоступний або рівень не знайдено.
+     * @param {number} level — індекс рівня якості (0..QUALITY.length-1)
+     */
+    function _applyLevel(level) {
         try {
-            if (window.State && window.Config) {
-                const q = window.State.getSetting('quality');
-                const cfg = window.Config.QUALITY[q] || window.Config.QUALITY[1];
+            if (window.Config && window.Config.QUALITY) {
+                const cfg = window.Config.QUALITY[level] || window.Config.QUALITY[1];
                 qualityScale = cfg.particles;
                 glowEnabled = cfg.glow;
-            } else {
-                qualityScale = 1;
-                glowEnabled = true;
             }
-        } catch (e) {
+        } catch (e) { /* тиха деградація: залишаємо поточні значення */ }
+    }
+
+    function _applyQuality() {
+        let applied = false;
+        try {
+            if (window.State && window.Config) {
+                _applyLevel(window.State.getSetting('quality'));
+                applied = true;
+            }
+        } catch (e) { /* тиха деградація */ }
+        if (!applied) {
             qualityScale = 1;
             glowEnabled = true;
         }
+    }
+
+    /**
+     * Вручну застосовує заданий рівень якості частинок.
+     * Нічого не робить, якщо Config.QUALITY недоступний.
+     * @param {number} level — індекс рівня якості (0..QUALITY.length-1)
+     */
+    function setQuality(level) {
+        try {
+            if (!window.Config || !window.Config.QUALITY) return;
+            _applyLevel(level);
+        } catch (e) { /* тиха деградація */ }
     }
 
     function clear() {
@@ -247,6 +271,7 @@
         trail: trail,
         explosion: explosion,
         update: update,
-        draw: draw
+        draw: draw,
+        setQuality: setQuality
     };
 })();

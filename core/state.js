@@ -29,6 +29,8 @@
  * @property {string} language — 'auto' | 'uk' | 'ru' | 'en'
  * @property {string} nickname — ім'я у світовому лідерборді
  * @property {boolean} analytics — анонімна телеметрія
+ * @property {boolean} showFps — показувати лічильник FPS у HUD
+ * @property {boolean} autoQuality — автоматично знижувати якість при просадці FPS
  */
 (function () {
     'use strict';
@@ -52,7 +54,9 @@
                 difficulty: 'normal', // 'easy' | 'normal' | 'hardcore'
                 language: 'auto',    // 'auto' | 'uk' | 'ru' | 'en'
                 nickname: '',        // QOL-5: ім'я у світовому лідерборді
-                analytics: true      // QOL-5: анонімна телеметрія (можна вимкнути)
+                analytics: true,     // QOL-5: анонімна телеметрія (можна вимкнути)
+                showFps: false,      // лічильник FPS у HUD (перф-моніторинг)
+                autoQuality: true    // авто-зниження якості при просадці FPS
             },
             campaign: {
                 maxLevel: 1,

@@ -41,6 +41,52 @@
         }
     }
 
+    // Лічильник FPS: елемент .hud-fps створюється один раз, видимість
+    // перемикається налаштуванням showFps (оформлення — у CSS)
+    let _fpsEl = null;
+
+    /**
+     * Створює елемент .hud-fps у блоці .hud-right (поруч з бейджами),
+     * якщо його ще немає. Тихо нічого не робить, якщо контейнер відсутній.
+     * @returns {Element|null} елемент лічильника FPS або null
+     */
+    function _ensureFpsEl() {
+        if (_fpsEl) return _fpsEl;
+        try {
+            const wrap = document.querySelector('.hud-right');
+            if (!wrap) return null;
+            const el = document.createElement('div');
+            el.className = 'hud-fps';
+            el.textContent = '— FPS';
+            el.classList.add('hidden');
+            const pauseBtn = wrap.querySelector('#hud-pause');
+            if (pauseBtn) wrap.insertBefore(el, pauseBtn);
+            else wrap.appendChild(el);
+            _fpsEl = el;
+        } catch (e) {
+            _log('error', '_ensureFpsEl: ' + e.message);
+        }
+        return _fpsEl;
+    }
+
+    /**
+     * Оновлює лічильник FPS: показує/ховає елемент за налаштуванням
+     * showFps і виводить поточне значення.
+     * @param {number} fps — поточне середнє FPS
+     */
+    function _updateFps(fps) {
+        try {
+            if (!window.State || window.State.getSetting('showFps') !== true) {
+                if (_fpsEl) _fpsEl.classList.add('hidden');
+                return;
+            }
+            const el = _ensureFpsEl();
+            if (!el) return;
+            el.classList.remove('hidden');
+            el.textContent = Math.round(fps || 0) + ' FPS';
+        } catch (e) { /* тиха деградація */ }
+    }
+
     function update(data) {
         if (!data) return;
         try {
@@ -163,6 +209,9 @@
                 if (levelInfoEl) levelInfoEl.classList.add('hidden');
                 if (levelProgressEl) levelProgressEl.classList.add('hidden');
             }
+
+            // Лічильник FPS (лише якщо увімкнено в налаштуваннях)
+            _updateFps(data.fps);
 
             // Бейджі активних бонусів
             _updateBadges(data);
