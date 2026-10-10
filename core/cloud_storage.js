@@ -74,6 +74,15 @@
         if (!_client || !_client.auth || typeof _client.auth.getSession !== 'function') {
             return Promise.resolve(false);
         }
+        // Якщо сесія помре (протух refresh-токен, користувача видалено) —
+        // скидаємо user_id, щоб клієнт не вважав себе авторизованим даремно
+        try {
+            if (typeof _client.auth.onAuthStateChange === 'function') {
+                _client.auth.onAuthStateChange(function (event) {
+                    if (event === 'SIGNED_OUT') _userId = null;
+                });
+            }
+        } catch (e) {}
         return _client.auth.getSession().then(function (res) {
             const session = res && res.data ? res.data.session : null;
             if (session && session.user) {
