@@ -37,6 +37,10 @@
     let _wakeLock = null;
     // QOL: тип перешкоди, в яку врізалися (для екрана Game Over)
     let _deathCause = null;
+    // Сид поточного забігу (для серверної валідації результатів)
+    let _runSeed = 0;
+    // Лог флипів: час кожного натискання в мс від старту забігу
+    let _inputLog = [];
 
     function _log(level, msg, data) {
         try { if (window.Logger) window.Logger[level]('[Game] ' + msg, data); } catch (e) {}
@@ -313,10 +317,15 @@
             }
 
             let customRng = Math.random;
+            _inputLog = [];
             if (_mode === 'daily') {
                 const todayStr = window.Utils.getTodayString();
                 const seed = window.Utils.seedFromString(todayStr);
+                _runSeed = seed;
                 customRng = window.Utils.createRng(seed);
+            } else {
+                _runSeed = (Math.random() * 0x7fffffff) | 0;
+                customRng = window.Utils.createRng(_runSeed);
             }
 
             // Применение настроек режима
@@ -530,6 +539,9 @@
                 finishTutorial();
                 break;
             case 'playing':
+                if (_inputLog.length <= 5000) {
+                    _inputLog.push(Math.round(_elapsed * 1000));
+                }
                 try { window.Player.flip(); } catch (e) {}
                 break;
             case 'paused':
@@ -832,6 +844,9 @@
     let _globalToastShown = false;
     /**
      * Внутрішня функція надсилання результату у глобальний лідерборд.
+     * Передає сид забігу та лог флипів — це потрібно серверній валідації
+     * (Edge Function verify-run), яка відтворює генерацію перешкод за сидом
+     * і звіряє часові мітки введення з фізичною можливістю проходження.
      * @param {number} score — фінальний рахунок
      * @param {string} mode — режим гри
      * @param {number|null} levelId — ID рівня (або null)
@@ -845,7 +860,12 @@
                 mode: mode,
                 level: levelId || null,
                 combo: window.Scoring.bestCombo(),
-                duration: typeof duration === 'number' ? duration : window.Scoring.elapsed()
+                duration: typeof duration === 'number' ? duration : window.Scoring.elapsed(),
+                seed: _runSeed,
+                inputs: _inputLog,
+                stars: window.Scoring.stars(),
+                obstaclesPassed: window.Scoring.obstaclesPassed(),
+                nearMisses: window.Scoring.nearMisses()
             }).then(function (ok) {
                 try {
                     if (!ok) return;
