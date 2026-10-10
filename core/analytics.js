@@ -26,6 +26,14 @@
         try { return window.State && window.State.getSetting && window.State.getSetting('analytics') !== false; } catch (e) { return true; }
     }
 
+    // Прив'язка події до акаунта (коли доступний anonymous auth); інакше null
+    function _userId() {
+        try {
+            const cs = window.CloudStorage;
+            return (cs && typeof cs.getUserId === 'function') ? (cs.getUserId() || null) : null;
+        } catch (e) { return null; }
+    }
+
     function _getAnonId() {
         if (_anonId) return _anonId;
         try {
@@ -50,6 +58,7 @@
             if (_queue.length >= QUEUE_CAP) _queue.shift();
             _queue.push({
                 anon_id: _getAnonId(),
+                user_id: _userId(),
                 event: String(event || '').slice(0, 40),
                 props: (props && typeof props === 'object') ? _shallow(props) : {},
                 ts: new Date().toISOString()

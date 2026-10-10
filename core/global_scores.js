@@ -1,9 +1,9 @@
 /**
  * GlobalScores.js — світовий лідерборд через Supabase.
  * - Таблиця scores(player, score, mode, level, combo, device_id, created_at)
- * - submit після кожного забігу (fire-and-forget) через RPC submit_score:
+ * - submit після кожного забігу (fire-and-forget) через Edge Function verify-run:
  *   прямого INSERT для anon немає, тому клієнт не може вставити довільний
- *   рядок у таблицю — усі очки валідуються на сервері (межі, темп, частота).
+ *   рядок у таблицю — усі очки валідуються на сервері (A5-lite: межі, темп, частота).
  * - top(mode, limit) для UI
  * - Graceful: без клієнта/таблиці повертає false/null і ніколи не падає
  */
@@ -15,6 +15,11 @@
  * @property {number} [level] — рівень кампанії
  * @property {number} [combo] — максимальне комбо
  * @property {number} [duration] — тривалість забігу в секундах
+ * @property {number} [seed] — сид забігу (int)
+ * @property {number} [stars] — зірки (0..3)
+ * @property {number} [obstaclesPassed] — перешкод пройдено
+ * @property {number} [nearMisses] — майже-зіткнень
+ * @property {number[]} [inputs] — таймінги вводу (мс від старту), макс. ~5000 елементів
  */
 (function () {
     'use strict';
@@ -28,18 +33,13 @@
     }
 
     /**
-     * Перевіряє готовність хмарного сховища.
-     * @returns {boolean} true якщо клієнт Supabase готовий до запитів
+     * Ім'я гравця для лідерборда: береться з налаштувань, чиститься від
+     * HTML-символів (нік бачать інші гравці) і обрізається до 24 символів.
+     * @returns {string} безпечний нік або 'Пілот'
      */
-    function ready() {
-        try { return !!(window.CloudStorage && window.CloudStorage.isReady() && window.CloudStorage.getClient()); } catch (e) { return false; }
-    }
-
     function _playerName() {
         try {
             const n = window.State && window.State.getSetting('nickname');
-            // Нік потрапляє у світовий лідерборд і рендериться в інших гравців —
-            // прибираємо HTML-символи вже на етапі відправки (захист від stored-XSS)
             if (typeof n === 'string' && n.trim()) {
                 return n.trim().replace(/[<>&"']/g, '').slice(0, 24) || 'Пілот';
             }
@@ -47,9 +47,20 @@
         return 'Пілот';
     }
 
+    /**
+     * Перевіряє готовність хмарного сховища.
+     * @returns {boolean} true якщо клієнт Supabase готовий до запитів
+     */
+    function ready() {
+        try { return !!(window.CloudStorage && window.CloudStorage.isReady() && window.CloudStorage.getClient()); } catch (e) { return false; }
+    }
+
     /** Надіслати результат. Promise<boolean>
-     *  entry: { score, mode, level?, combo?, duration? } — duration це тривалість
-     *  забігу в секундах; сервер використовує її для перевірки правдоподібності.
+     *  Викликає Edge Function verify-run (серверна валідація A5-lite).
+     *  entry: { score, mode, level?, combo?, duration?, seed?, stars?,
+     *   obstaclesPassed?, nearMisses?, inputs? } — duration це тривалість
+     *  забігу в секундах; inputs — масив таймінгів вводу (мс від старту).
+     *  Успіх: { ok: true, id } → resolve(true). Помилка/не-2xx/мережа → resolve(false).
      * @param {ScoreEntry} entry — дані результату забігу
      * @returns {Promise<boolean>} true якщо сервер прийняв результат, false при помилці
      */
@@ -61,24 +72,41 @@
                     resolve(false);
                     return;
                 }
-                const params = {
-                    p_player: _playerName(),
-                    p_score: Math.min(MAX_SCORE, Math.max(1, Math.floor(entry.score))),
-                    p_mode: String(entry.mode || 'endless').slice(0, 16),
-                    p_level: typeof entry.level === 'number' ? Math.floor(entry.level) : null,
-                    p_combo: Math.max(0, Math.floor(Number(entry.combo) || 0)),
-                    p_device_id: window.CloudStorage.getDeviceId(),
-                    p_duration: Math.max(0, Math.floor(Number(entry.duration) || 0))
+                // Загальний затискач: невід'ємне ціле число або 0
+                const num = function (x) { return Math.max(0, Math.floor(Number(x) || 0)); };
+                // device_id потрібен для переходного режиму (поки немає user-JWT)
+                let deviceId = null;
+                try { deviceId = window.CloudStorage.getDeviceId(); } catch (e) {}
+                const payload = {
+                    seed: num(entry.seed),
+                    mode: String(entry.mode || 'endless').slice(0, 16),
+                    level: typeof entry.level === 'number' ? Math.floor(entry.level) : null,
+                    duration: num(entry.duration),
+                    score: Math.min(MAX_SCORE, Math.max(1, Math.floor(entry.score))),
+                    combo: num(entry.combo),
+                    stars: num(entry.stars),
+                    obstaclesPassed: num(entry.obstaclesPassed),
+                    nearMisses: num(entry.nearMisses),
+                    inputs: Array.isArray(entry.inputs) ? entry.inputs : [],
+                    player: _playerName(),
+                    deviceId: deviceId,
+                    clientVersion: '1.2.0'
                 };
-                // Не insert у таблицю, а RPC: сервер сам вирішує, чи приймати результат
-                client.rpc('submit_score', params).then(function (res) {
+                // Edge Function verify-run: сервер сам вирішує, чи приймати результат
+                client.functions.invoke('verify-run', { body: payload }).then(function (res) {
                     if (res && res.error) {
-                        if (!_warned) { _log('warn', 'submit: ' + res.error.message + ' (потрібна SQL-міграція submit_score)'); _warned = true; }
+                        if (!_warned) { _log('warn', 'submit: ' + (res.error.message || res.error)); _warned = true; }
                         resolve(false);
                         return;
                     }
-                    _log('info', 'score submitted');
-                    resolve(true);
+                    const data = res && res.data;
+                    if (data && data.ok) {
+                        _log('info', 'score submitted');
+                        resolve(true);
+                        return;
+                    }
+                    if (!_warned) { _log('warn', 'submit: сервер відхилив результат'); _warned = true; }
+                    resolve(false);
                 }, function (err) {
                     if (!_warned) { _log('warn', 'submit: ' + (err && err.message ? err.message : err)); _warned = true; }
                     resolve(false);
@@ -121,7 +149,7 @@
 
     /**
      * @typedef {Object} GlobalScoresAPI
-     * @property {Function} submit — надіслати результат (RPC submit_score)
+     * @property {Function} submit — надіслати результат (Edge Function verify-run)
      * @property {Function} top — отримати ТОП результатів
      * @property {Function} ready — перевірити готовність клієнта
      */

@@ -427,15 +427,17 @@ check('checkUnlocks вдруге — без дублів', W.Skins.checkUnlocks(
 // Редактор: верхня межа теми = 5 (6 тем, індекси 0..5)
 check('sanitize: theme 6 → 5', W.Editor.sanitize({ name: 'x', theme: 6, types: ['wall'] }).theme === 5);
 
-// ---- 7b. Світовий лідерборд: серверна валідація через RPC ----
-console.log('\n[7b] Лідерборд: запис лише через RPC submit_score:');
-let rpcCalled = null;
+// ---- 7b. Світовий лідерборд: серверна валідація через Edge Function ----
+console.log('\n[7b] Лідерборд: запис лише через Edge Function verify-run:');
+let invoked = null;
 const fakeClient = {
-    rpc: function (name, params) {
-        rpcCalled = { name: name, params: params };
-        return Promise.resolve({ data: { ok: true }, error: null });
+    functions: {
+        invoke: function (name, opts) {
+            invoked = { name: name, opts: opts };
+            return Promise.resolve({ data: { ok: true, id: 1 }, error: null });
+        }
     },
-    from: function () { throw new Error('прямий insert заборонено — має бути RPC'); }
+    from: function () { throw new Error('прямий insert заборонено — має бути Edge Function'); }
 };
 const realIsReady = W.CloudStorage.isReady;
 const realGetClient = W.CloudStorage.getClient;
@@ -447,22 +449,36 @@ W.CloudStorage.getDeviceId = function () { return 'dev_test'; };
 let rpcSubmitOk = null;
 W.GlobalScores.submit({ score: 1234, mode: 'endless', level: null, combo: 7, duration: 42 })
     .then(function (r) { rpcSubmitOk = r; });
-check('submit викликає RPC submit_score (а не insert у таблицю)',
-    !!rpcCalled && rpcCalled.name === 'submit_score');
-check('RPC: тривалість і очки передані',
-    !!rpcCalled && rpcCalled.params.p_duration === 42 && rpcCalled.params.p_score === 1234 &&
-    rpcCalled.params.p_device_id === 'dev_test');
+check('submit викликає Edge Function verify-run (а не insert у таблицю)',
+    !!invoked && invoked.name === 'verify-run');
+check('Edge Function: тривалість і очки передані',
+    !!invoked && invoked.opts.body.duration === 42 && invoked.opts.body.score === 1234 &&
+    invoked.opts.body.deviceId === 'dev_test');
+check('Edge Function: всі поля payload на місці',
+    !!invoked && invoked.opts.body &&
+    typeof invoked.opts.body.seed === 'number' &&
+    typeof invoked.opts.body.mode === 'string' &&
+    typeof invoked.opts.body.duration === 'number' &&
+    typeof invoked.opts.body.score === 'number' &&
+    typeof invoked.opts.body.combo === 'number' &&
+    typeof invoked.opts.body.stars === 'number' &&
+    typeof invoked.opts.body.obstaclesPassed === 'number' &&
+    typeof invoked.opts.body.nearMisses === 'number' &&
+    Array.isArray(invoked.opts.body.inputs) &&
+    typeof invoked.opts.body.player === 'string' &&
+    invoked.opts.body.deviceId === 'dev_test' &&
+    invoked.opts.body.clientVersion === '1.2.0');
 
 // Затиск значень на боці клієнта
-rpcCalled = null;
+invoked = null;
 W.GlobalScores.submit({ score: 5e12, mode: 'x', combo: -3, duration: 10 }).then(function () {});
-check('RPC: score затиснуто до MAX, combo >= 0',
-    !!rpcCalled && rpcCalled.params.p_score === 99999999 && rpcCalled.params.p_combo === 0);
+check('Edge Function: score затиснуто до MAX, combo >= 0',
+    !!invoked && invoked.opts.body.score === 99999999 && invoked.opts.body.combo === 0);
 
-// Некоректний результат навіть не викликає RPC
-rpcCalled = null;
+// Некоректний результат навіть не викликає Edge Function
+invoked = null;
 W.GlobalScores.submit({ score: 0 }).then(function () {});
-check('submit(score = 0) не звертається до RPC', rpcCalled === null);
+check('submit(score = 0) не звертається до Edge Function', invoked === null);
 
 W.CloudStorage.isReady = realIsReady;
 W.CloudStorage.getClient = realGetClient;
@@ -480,7 +496,7 @@ setTimeout(function () {
     check('push без конфігурації повертає false', cloudPushResult === false);
     check('pull без конфігурації повертає null', cloudPullResult === null);
     check('analytics flush без клієнта = 0 подій', analyticsFlushNoClient === 0);
-    check('submit через RPC завершується true', rpcSubmitOk === true);
+    check('submit через Edge Function завершується true', rpcSubmitOk === true);
     check('submit без клієнта = false', rpcSubmitNoClient === false);
 
     console.log('\n' + (failures === 0 ? '✅ УСІ ТЕСТИ ПРОЙДЕНО' : '❌ ПРОВАЛІВ: ' + failures));
