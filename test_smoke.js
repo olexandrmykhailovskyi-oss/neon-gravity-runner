@@ -68,6 +68,7 @@ load('core/i18n.js');
 load('core/cloud_storage.js');
 load('core/global_scores.js');
 load('core/analytics.js');
+load('fx/particles.js');
 load('gameplay/obstacle.js');
 load('gameplay/obstacles.js');
 load('gameplay/bonus.js');
@@ -487,6 +488,104 @@ W.CloudStorage.getDeviceId = realGetDeviceId;
 // Без налаштованого клієнта — тихо false, без помилок
 let rpcSubmitNoClient = null;
 W.GlobalScores.submit({ score: 100, duration: 5 }).then(function (r) { rpcSubmitNoClient = r; });
+
+// ---- 8. Настройки перф-бюджета (дефолты) ----
+console.log('\n[8] Настройки перф-бюджета (дефолты):');
+check('showFps за замовчуванням = false', W.State.getSetting('showFps') === false);
+check('autoQuality за замовчуванням = true', W.State.getSetting('autoQuality') === true);
+check('Particles.setQuality — функція', typeof W.Particles.setQuality === 'function');
+
+// ---- 9. Нові i18n-ключі присутні в усіх трьох мовах ----
+console.log('\n[9] Нові i18n-ключі (uk/ru/en):');
+const NEW_I18N_KEYS = [
+    'menu.about', 'about.title', 'about.version', 'about.links',
+    'about.github', 'about.license', 'about.play', 'about.reset',
+    'about.resetConfirm', 'about.resetDone', 'settings.showFps',
+    'settings.autoQuality', 'toast.lowQuality'
+];
+for (const lang of ['uk', 'ru', 'en']) {
+    const dict = W.I18n.getTranslations()[lang];
+    for (const k of NEW_I18N_KEYS) {
+        check('ключ ' + lang + '.' + k + ' присутній і непорожній',
+            typeof dict[k] === 'string' && dict[k].length > 0);
+    }
+}
+
+// ---- 10. Покриття data-i18n та регресійний бюджет кириличних рядків ----
+console.log('\n[10] i18n-покриття та кириличні рядки:');
+const DICT = W.I18n.getTranslations();
+
+// 10a. Кожен літеральний data-i18n / data-i18n-html ключ із розмітки
+// має існувати в усіх трьох мовах (це реальна гарантія, а не евристика).
+const UI_I18N_KEYS = (function () {
+    const files = ['index.html'];
+    for (const f of fs.readdirSync('ui')) {
+        if (/\.js$/.test(f)) files.push('ui/' + f);
+    }
+    const keys = {};
+    for (const f of files) {
+        const src = fs.readFileSync(f, 'utf8');
+        const re = /data-i18n(?:-html)?="([^"]+)"/g;
+        let m;
+        while ((m = re.exec(src)) !== null) {
+            // Лише літеральні ключі: динамічні ('data-i18n="' + key + '"')
+            // сюди не потрапляють — вони склеюються під час виконання.
+            if (/^[A-Za-z0-9_.-]+$/.test(m[1])) keys[m[1]] = true;
+        }
+    }
+    return Object.keys(keys).sort();
+})();
+const missingKeys = [];
+for (const k of UI_I18N_KEYS) {
+    for (const lang of ['uk', 'ru', 'en']) {
+        const v = DICT[lang] ? DICT[lang][k] : undefined;
+        if (typeof v !== 'string' || !v.length) missingKeys.push(lang + '.' + k);
+    }
+}
+check('усі data-i18n ключі з розмітки є в uk/ru/en (' + UI_I18N_KEYS.length + ' ключів)',
+    missingKeys.length === 0);
+if (missingKeys.length) console.log('    відсутні: ' + missingKeys.join(', '));
+
+// 10b. Регресійний бюджет. Кириличні літерали в ui/ та gameplay/ — це
+// переважно fallback-тексти для data-i18n (розмітка містить текст, який
+// підмінюється i18n під час роботи). Забороняти їх не можна, але кількість
+// не повинна зростати: нові рядки треба додавати в i18n, а не хардкодити.
+const CYRILLIC_BASELINE = 195;
+const CYRILLIC_RE = /[\u0400-\u04FF]/;
+
+function _stripComments(src) {
+    return src
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
+}
+
+let cyrCount = 0;
+const cyrSamples = [];
+(function () {
+    const files = [];
+    for (const dir of ['ui', 'gameplay']) {
+        for (const f of fs.readdirSync(dir)) {
+            if (/\.js$/.test(f)) files.push(dir + '/' + f);
+        }
+    }
+    for (const f of files) {
+        const src = _stripComments(fs.readFileSync(f, 'utf8'));
+        const re = /'([^'\\]|\\.)*'|"([^"\\]|\\.)*"/g;
+        let m;
+        while ((m = re.exec(src)) !== null) {
+            if (CYRILLIC_RE.test(m[0])) {
+                cyrCount++;
+                if (cyrSamples.length < 5) cyrSamples.push(f + ': ' + m[0].slice(0, 40));
+            }
+        }
+    }
+})();
+check('кириличні літерали в ui/ та gameplay/ не зросли (зараз ' + cyrCount + ', бюджет ' + CYRILLIC_BASELINE + ')',
+    cyrCount <= CYRILLIC_BASELINE);
+if (cyrCount > CYRILLIC_BASELINE) {
+    console.log('    нові рядки (перші 5):');
+    for (const s of cyrSamples) console.log('      ' + s);
+}
 
 // ---- Підсумок ----
 // Через короткий таймер: проміси CloudStorage резолвляться мікротасками,

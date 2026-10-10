@@ -12,6 +12,10 @@
 - Забіги тепер сидируються (не лише Daily), клієнт надсилає `seed` і лог фліпів — основа для серверної перевірки.
 
 ### Added
+- **Доступність:** керування фокусом на екранах (focus-trap + відновлення фокуса), `role="dialog"`/`aria-modal`, видимий focus-ring, навігація клавіатурою.
+- **Перф-бюджет:** монітор FPS, автоматичне зниження якості при просадці, опційний FPS-лічильник (`showFps`), `Particles.setQuality(level)`.
+- Екран **«Про гру»**: версія, посилання на GitHub/ліцензію/живу гру, скидання прогресу з підтвердженням.
+- Звітні вью для телеметрії у схемі `reporting` (не публікується через API) + [docs/ANALYTICS.md](docs/ANALYTICS.md).
 - E2E-тести на Playwright (`e2e/`, `playwright.config.js`) та окрема джоба в CI; власний статичний сервер для тестів без залежностей.
 - `docs/ARCHITECTURE.md` — карта модулів, порядок завантаження скриптів, ігровий цикл, точки розширення.
 - `docs/SUPABASE.md` — таблиці, RLS, розбір `submit_score`, приклади перевірки через REST.
@@ -19,6 +23,9 @@
 - GIF-демо геймплею в README (`docs/media/demo.gif`) і скрипт запису `scripts/record-demo.mjs` (`npm run demo:record`).
 
 ### Changed
+- **Безпека (CSP):** додано `Content-Security-Policy` і `Permissions-Policy`; inline-конфіг винесено у `core/app_config.js` (скрипти більше не потребують `unsafe-inline`).
+- **Мобільний UX:** safe-area insets, прокрутка екранів у ландшафті, тап-таргети 44px, повага до `prefers-reduced-motion`.
+- `run_end` тепер містить `level` — працює звіт про провали на рівнях.
 - ESLint-конфіг покриває `e2e/`, `playwright.config.js` і `scripts/` (Node + browser globals).
 - README: посилання на docs, оновлене дерево проєкту.
 
