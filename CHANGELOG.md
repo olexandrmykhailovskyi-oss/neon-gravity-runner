@@ -5,6 +5,12 @@
 
 ## [Unreleased]
 
+### Security
+- Серверна валідація результатів через Edge Function `verify-run` (A5-lite): правдоподібність темпу, узгодженість `combo`/`inputs`/`stars`, rate-limit 10/хв; запис у `scores` від `service_role`.
+- Ідентичність: anonymous auth (Supabase) і прив'язка прогресу до `user_id` (RLS `auth.uid() = user_id`); одноразовий `claim_device_progress` переносить прогрес пристрою без втрат.
+- Телеметрія: колонка `user_id` + тригер `analytics_rate_limit` (≤120 подій/хв).
+- Забіги тепер сидируються (не лише Daily), клієнт надсилає `seed` і лог фліпів — основа для серверної перевірки.
+
 ### Added
 - E2E-тести на Playwright (`e2e/`, `playwright.config.js`) та окрема джоба в CI; власний статичний сервер для тестів без залежностей.
 - `docs/ARCHITECTURE.md` — карта модулів, порядок завантаження скриптів, ігровий цикл, точки розширення.
