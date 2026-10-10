@@ -186,8 +186,11 @@
         if (!window.State || !window.State.data) return Promise.resolve(false);
 
         _busy = true;
+        // Для авторизованого користувача PK не може збігатися зі старою
+        // «пристроєвою» строкою (user_id = null): RLS UPDATE її не бачить.
+        // Тому в акаунта — власний ключ, а легасі-строку забирає claim.
         const row = {
-            device_id: _deviceId,
+            device_id: _userId ? ('u_' + _userId) : _deviceId,
             data: window.State.data,
             updated_at: new Date().toISOString()
         };
