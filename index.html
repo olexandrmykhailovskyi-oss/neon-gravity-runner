@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="Neon Gravity Runner — неон-аркада з перемиканням гравітації: 35 рівнів кампанії, редактор рівнів та світовий лідерборд.">
     <meta name="theme-color" content="#05010f">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -72,6 +72,7 @@
         <div id="screen-gameover" class="screen hidden"></div>
         <div id="screen-tutorial" class="screen hidden"></div>
         <div id="screen-editor" class="screen hidden"></div>
+        <div id="screen-about" class="screen hidden"></div>
 
         <!-- Завантажувальний екран -->
         <div id="screen-boot" class="screen">
@@ -121,12 +122,7 @@
     <!--    синхронізація» з'явиться в налаштуваннях гри.      -->
     <!-- Якщо поля порожні, гра працює суто локально.          -->
     <!-- ===================================================== -->
-    <script>
-        window.NGR_CLOUD_CONFIG = {
-            supabaseUrl: 'https://obndgiyemhbdxbaqipbw.supabase.co',
-            supabaseKey: 'sb_publishable_9iCCuk5Cq02sY_ZoLdAGCQ_qieoz9Fo'
-        };
-    </script>
+    <script src="core/app_config.js"></script>
     <script src="core/cloud_storage.js"></script>
     <script src="core/global_scores.js"></script>
     <script src="core/analytics.js"></script>

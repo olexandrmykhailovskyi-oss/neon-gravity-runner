@@ -5,13 +5,14 @@
  *   кеш підхоплює коли офлайн (гру можна грати без інтернету).
  * - Старі кеші чистяться при активації (версія в імені кешу).
  */
-const CACHE = 'ngr-v2';
+const CACHE = 'ngr-v3';
 const ASSETS = [
     './',
     'index.html',
     'style.css',
     'manifest.json',
     'icon.svg',
+    'core/app_config.js',
     'core/logger.js',
     'core/safe_storage.js',
     'core/state.js',

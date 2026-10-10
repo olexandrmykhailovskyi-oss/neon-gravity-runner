@@ -26,6 +26,9 @@ const MIME_TYPES = {
     '.webmanifest': 'application/manifest+json; charset=utf-8'
 };
 
+// Той самий CSP, що у vercel.json — щоб e2e ловив регресії політики
+const CSP = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'self'";
+
 function sendPlain(res, status, body) {
     res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end(body);
@@ -60,7 +63,7 @@ const server = http.createServer(function (req, res) {
             }
             const ext = path.extname(target).toLowerCase();
             const type = MIME_TYPES[ext] || 'application/octet-stream';
-            res.writeHead(200, { 'Content-Type': type });
+            res.writeHead(200, { 'Content-Type': type, 'Content-Security-Policy': CSP });
             res.end(data);
         });
     });
