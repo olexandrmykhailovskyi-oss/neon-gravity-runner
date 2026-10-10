@@ -33,3 +33,6 @@ playwright-report/
 docs/media/_video/
 
 .vercel
+
+# Benchmark output
+bench-result.json

@@ -1,9 +1,0 @@
-{
-  "frames": 240,
-  "avgMs": 18.1,
-  "p50Ms": 17.9,
-  "p95Ms": 20.2,
-  "fps": 55.2,
-  "obstacles": 5,
-  "scene": "campaign L35, quality ULTRA (CPU-час кадру)"
-}
