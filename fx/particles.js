@@ -12,7 +12,6 @@
     let ctx = null;
     const pool = [];
     let qualityScale = 1;
-    let glowEnabled = true;
 
     function _log(level, msg, data) {
         try { if (window.Logger) window.Logger[level]('[Particles] ' + msg, data); } catch (e) {}
@@ -67,7 +66,6 @@
             if (window.Config && window.Config.QUALITY) {
                 const cfg = window.Config.QUALITY[level] || window.Config.QUALITY[1];
                 qualityScale = cfg.particles;
-                glowEnabled = cfg.glow;
             }
         } catch (e) { /* тиха деградація: залишаємо поточні значення */ }
     }
@@ -82,7 +80,6 @@
         } catch (e) { /* тиха деградація */ }
         if (!applied) {
             qualityScale = 1;
-            glowEnabled = true;
         }
     }
 
@@ -201,17 +198,17 @@
 
     function draw() {
         if (!ctx) return;
+
+        // Свідомо БЕЗ shadowBlur: раніше він виставлявся на КОЖНУ з 650 частинок
+        // щокадру — найдорожча операція Canvas 2D. Аддитивні спрайти з блендингом
+        // теж виявились дорожчими за просту заливку (перевірено бенчмарком),
+        // тож малюємо найдешевшим способом.
         for (let i = 0; i < pool.length; i++) {
             const p = pool[i];
             if (!p.active) continue;
+
             ctx.save();
             ctx.globalAlpha = p.alpha;
-            if (glowEnabled && p.glow) {
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = p.color;
-            } else {
-                ctx.shadowBlur = 0;
-            }
             ctx.fillStyle = p.color;
 
             if (p.shape === 'square') {

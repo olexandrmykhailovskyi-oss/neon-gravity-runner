@@ -20,6 +20,11 @@
     let speedLines = [];
     let offset = 0;
 
+    // Кэш градиентов/спрайтов — создаются один раз, переиспользуются каждый кадр
+    let _bgGrad = null;
+    let _bgGradKey = '';
+    let _nebulaSprites = new Map();
+
     function _log(level, msg, data) {
         try { if (window.Logger) window.Logger[level]('[BG] ' + msg, data); } catch (e) {}
     }
@@ -126,11 +131,15 @@
         try {
             const reduced = !!(window.State && window.State.getSetting('reducedMotion'));
 
-            // 1. Градієнт неба
-            const grad = ctx.createLinearGradient(0, 0, 0, H);
-            grad.addColorStop(0, theme.bg1);
-            grad.addColorStop(1, theme.bg2);
-            ctx.fillStyle = grad;
+            // 1. Градієнт неба (кэш: пересоздаётся тільки при зміні теми або H)
+            const bgKey = theme.bg1 + '|' + theme.bg2 + '|' + H;
+            if (!_bgGrad || _bgGradKey !== bgKey) {
+                _bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+                _bgGrad.addColorStop(0, theme.bg1);
+                _bgGrad.addColorStop(1, theme.bg2);
+                _bgGradKey = bgKey;
+            }
+            ctx.fillStyle = _bgGrad;
             ctx.fillRect(0, 0, W, H);
 
             // 2. Туманності
@@ -149,13 +158,20 @@
                     // Коректне обгортання: JS-модем зберігає знак, тому ((x % m) + m) % m
                     const wrap = W + n.r * 2;
                     const nx = ((((n.x - offset * 0.1) % wrap) + wrap) % wrap) - n.r;
-                    const rGrad = ctx.createRadialGradient(nx, n.y, 0, nx, n.y, n.r);
-                    const rgba = _hexRgba(n.color, n.alpha);
-                    rGrad.addColorStop(0, rgba);
-                    rGrad.addColorStop(1, _hexRgba(n.color, 0));
-                    ctx.fillStyle = rGrad;
-                    ctx.fillRect(nx - n.r, n.y - n.r, n.r * 2, n.r * 2);
+                    const sprite = _makeNebulaSprite(n.color);
+                    if (sprite) {
+                        ctx.globalAlpha = n.alpha;
+                        ctx.drawImage(sprite, nx - n.r, n.y - n.r, n.r * 2, n.r * 2);
+                    } else {
+                        // Fallback: радиальный градиент (напр. в Node без document)
+                        const rGrad = ctx.createRadialGradient(nx, n.y, 0, nx, n.y, n.r);
+                        rGrad.addColorStop(0, _hexRgba(n.color, n.alpha));
+                        rGrad.addColorStop(1, _hexRgba(n.color, 0));
+                        ctx.fillStyle = rGrad;
+                        ctx.fillRect(nx - n.r, n.y - n.r, n.r * 2, n.r * 2);
+                    }
                 }
+                ctx.globalAlpha = 1;
             }
 
             // 3. Зірки з мерехтінням
@@ -185,22 +201,19 @@
 
             // 4. Спідлайни (вимкнено при reducedMotion)
             // QOL: довгі тонкі напівпрозорі смуги руху замість коротких «глюків» із тінями
+            // Perf: без градиента — однакова товщина та колір, а не плавне затухання
             if (!reduced) {
                 ctx.save();
                 ctx.strokeStyle = _hexRgba(theme.grid, 0.16);
                 ctx.lineWidth = 1.5;
                 ctx.lineCap = 'round';
+                ctx.beginPath();
                 for (let i = 0; i < speedLines.length; i++) {
                     const l = speedLines[i];
-                    const grad = ctx.createLinearGradient(l.x + l.len, l.y, l.x, l.y);
-                    grad.addColorStop(0, _hexRgba(theme.grid, 0.02));
-                    grad.addColorStop(1, _hexRgba(theme.grid, 0.30));
-                    ctx.strokeStyle = grad;
-                    ctx.beginPath();
                     ctx.moveTo(l.x, l.y);
                     ctx.lineTo(l.x + l.len, l.y);
-                    ctx.stroke();
                 }
+                ctx.stroke();
                 ctx.restore();
             }
 
@@ -279,6 +292,26 @@
         ctx.lineTo(W, H - m);
         ctx.stroke();
         ctx.restore();
+    }
+
+    function _makeNebulaSprite(color) {
+        if (_nebulaSprites.has(color)) return _nebulaSprites.get(color);
+        let sprite = null;
+        try {
+            if (typeof document !== 'undefined' && document.createElement) {
+                sprite = document.createElement('canvas');
+                sprite.width = 128;
+                sprite.height = 128;
+                const sctx = sprite.getContext('2d');
+                const g = sctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+                g.addColorStop(0, _hexRgba(color, 1));
+                g.addColorStop(1, _hexRgba(color, 0));
+                sctx.fillStyle = g;
+                sctx.fillRect(0, 0, 128, 128);
+                _nebulaSprites.set(color, sprite);
+            }
+        } catch (e) { sprite = null; }
+        return sprite;
     }
 
     function _hexRgba(hex, a) {

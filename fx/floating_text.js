@@ -45,27 +45,27 @@
 
     function draw(ctx) {
         if (!ctx) return;
-        ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = 'bold 22px "Segoe UI", system-ui, sans-serif';
+        ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur = 12;
+
+        // Масштаб тексту задаємо через font (без translate/scale) — це дешевше
         for (let i = 0; i < list.length; i++) {
             const t = list[i];
             const alpha = Math.max(0, t.life / t.maxLife);
-            ctx.save();
             ctx.globalAlpha = alpha;
-            ctx.translate(t.x, t.y);
-            ctx.scale(t.scale, t.scale);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-            ctx.strokeText(t.text, 0, 0);
+            ctx.font = 'bold ' + (22 * t.scale) + 'px "Segoe UI", system-ui, sans-serif';
+            ctx.lineWidth = 3 * t.scale;
             ctx.fillStyle = t.color;
-            ctx.shadowBlur = 12;
             ctx.shadowColor = t.color;
-            ctx.fillText(t.text, 0, 0);
-            ctx.restore();
+            ctx.strokeText(t.text, t.x, t.y);
+            ctx.fillText(t.text, t.x, t.y);
         }
-        ctx.restore();
+
+        // Відновлюємо початкові значення після циклу
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
     }
 
     function clear() { list.length = 0; }

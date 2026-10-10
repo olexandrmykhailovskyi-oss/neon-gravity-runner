@@ -29,6 +29,12 @@
         vignetteIntensity: 0.6
     };
 
+    // Кэш градієнта віньєтки: перестворюємо тільки при зміні розміру або інтенсивності
+    let _vignetteGrad = null;
+    let _vignetteW = 0;
+    let _vignetteH = 0;
+    let _vignetteIntensity = -1;
+
     function _log(level, msg) {
         try { if (window.Logger) window.Logger[level]('[FX] ' + msg); } catch (e) {}
     }
@@ -123,13 +129,19 @@
     function drawVignette(ctx, W, H) {
         if (!ctx) return;
         try {
-            const cx = W / 2;
-            const cy = H / 2;
-            const r = Math.max(W, H) * 0.75;
-            const grad = ctx.createRadialGradient(cx, cy, r * 0.3, cx, cy, r);
-            grad.addColorStop(0, 'rgba(0,0,0,0)');
-            grad.addColorStop(1, 'rgba(0,0,0,' + state.vignetteIntensity + ')');
-            ctx.fillStyle = grad;
+            if (!_vignetteGrad || _vignetteW !== W || _vignetteH !== H || _vignetteIntensity !== state.vignetteIntensity) {
+                const cx = W / 2;
+                const cy = H / 2;
+                const r = Math.max(W, H) * 0.75;
+                const grad = ctx.createRadialGradient(cx, cy, r * 0.3, cx, cy, r);
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, 'rgba(0,0,0,' + state.vignetteIntensity + ')');
+                _vignetteGrad = grad;
+                _vignetteW = W;
+                _vignetteH = H;
+                _vignetteIntensity = state.vignetteIntensity;
+            }
+            ctx.fillStyle = _vignetteGrad;
             ctx.fillRect(0, 0, W, H);
         } catch (e) {
             _log('error', 'drawVignette помилка', e.message);

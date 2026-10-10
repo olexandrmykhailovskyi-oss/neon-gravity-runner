@@ -17,6 +17,16 @@
     let _densityMult = 1.0;
     let _rng = Math.random;
 
+    // ---- Авто-набір типів перешкод за складністю (статичні масиви, без алокацій при спавні) ----
+    const AUTO_TYPES_BASE = ['wall', 'spikes', 'gate', 'moving'];
+    const AUTO_TYPES_GRAVITY = AUTO_TYPES_BASE.concat(['gravity_zone']);
+    const AUTO_TYPES_LASER = AUTO_TYPES_GRAVITY.concat(['laser']);
+    const AUTO_TYPES_PULSAR = AUTO_TYPES_LASER.concat(['pulsar']);
+    const AUTO_TYPES_FULL = AUTO_TYPES_PULSAR.concat(['moving_laser']);
+
+    // Переиспользуемый буфер для getBlockers: виклик синхронний, результат не зберігається між викликами
+    const _blockersBuf = { rects: [], circles: [] };
+
     function _log(level, msg, data) {
         try { if (window.Logger) window.Logger[level]('[Obstacles] ' + msg, data); } catch (e) {}
     }
@@ -71,15 +81,19 @@
 
     function _spawn(area, speed) {
         try {
-            let types = [];
+            let types;
             if (_allowedTypes) {
-                types = _allowedTypes.slice();
+                types = _allowedTypes;
+            } else if (difficulty <= 0.25) {
+                types = AUTO_TYPES_BASE;
+            } else if (difficulty <= 0.35) {
+                types = AUTO_TYPES_GRAVITY;
+            } else if (difficulty <= 0.50) {
+                types = AUTO_TYPES_LASER;
+            } else if (difficulty <= 0.65) {
+                types = AUTO_TYPES_PULSAR;
             } else {
-                types = ['wall', 'spikes', 'gate', 'moving'];
-                if (difficulty > 0.25) types.push('gravity_zone');
-                if (difficulty > 0.35) types.push('laser');
-                if (difficulty > 0.50) types.push('pulsar');
-                if (difficulty > 0.65) types.push('moving_laser');
+                types = AUTO_TYPES_FULL;
             }
 
             // Не спавнимо перешкоду впритул до щойно створеного бонуса:
@@ -586,7 +600,9 @@
      * для пульсарів — максимальний радіус, лазери завжди рахуються повною колонкою.
      */
     function getBlockers(xMin, xMax) {
-        const result = { rects: [], circles: [] };
+        const result = _blockersBuf;
+        result.rects.length = 0;
+        result.circles.length = 0;
         try {
             for (let i = 0; i < list.length; i++) {
                 const obs = list[i];
