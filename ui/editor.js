@@ -210,17 +210,22 @@
 
             '<div class="setting-row"><span class="setting-label" data-i18n="editor.duration">Тривалість</span>' +
             '<span style="display:flex;align-items:center;gap:8px;"><input type="range" id="ed-dur" min="30" max="120" step="5"><b id="ed-dur-val">60с</b></span></div>' +
+            '<div class="ed-hint" data-i18n="editor.durationHint">' + _t('editor.durationHint', 'Тривалість рівня в секундах') + '</div>' +
 
             '<div class="setting-row"><span class="setting-label" data-i18n="editor.speed">Швидкість</span>' +
             '<span style="display:flex;align-items:center;gap:8px;"><input type="range" id="ed-spd" min="0.8" max="2.0" step="0.05"><b id="ed-spd-val">×1.2</b></span></div>' +
+            '<div class="ed-hint" data-i18n="editor.speedHint">' + _t('editor.speedHint', 'Швидкість руху тунелю') + '</div>' +
 
             '<div class="setting-row"><span class="setting-label" data-i18n="editor.density">Щільність</span>' +
             '<span style="display:flex;align-items:center;gap:8px;"><input type="range" id="ed-den" min="0.5" max="2.5" step="0.05"><b id="ed-den-val">×1.2</b></span></div>' +
+            '<div class="ed-hint" data-i18n="editor.densityHint">' + _t('editor.densityHint', 'Частота появи перешкод: більше = щільніше') + '</div>' +
 
             '<div class="setting-row"><span class="setting-label" data-i18n="editor.starScore">Ціль ★★</span>' +
             '<span style="display:flex;align-items:center;gap:8px;"><input type="range" id="ed-star" min="500" max="6000" step="100"><b id="ed-star-val">2000</b></span></div>' +
+            '<div class="ed-hint" data-i18n="editor.starHint">' + _t('editor.starHint', 'Скільки очок потрібно для 2 зірок') + '</div>' +
 
             '<div class="setting-row"><span class="setting-label" data-i18n="editor.storm">Neon Storm</span><div class="switch" id="ed-storm"></div></div>' +
+            '<div class="ed-hint" data-i18n="editor.stormHint">' + _t('editor.stormHint', 'Періодичний Neon Storm під час рівня') + '</div>' +
 
             '<div class="setting-row" style="flex-direction:column;align-items:stretch;"><span class="setting-label" data-i18n="editor.theme">Тема</span>' +
             '<div class="ed-chips" id="ed-themes">' + themeBtns + '</div></div>' +
@@ -240,7 +245,10 @@
             '<button id="ed-import" class="btn" data-i18n="editor.btnImport">📥 Імпорт</button>' +
             '</div>' +
 
-            '<h3 data-i18n="editor.myLevels" style="margin-top:16px;">Мої рівні</h3>' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:16px;">' +
+            '<h3 data-i18n="editor.myLevels" style="margin:0;">Мої рівні</h3>' +
+            '<span id="ed-count" style="font-size:12px;color:#8a92b2;">0/12</span>' +
+            '</div>' +
             '<div id="ed-list" class="grid"></div>' +
 
             '<div class="btn-grid">' +
@@ -469,6 +477,11 @@
                 return;
             }
             const list = getList().filter(function (d) { return d.name !== def.name; });
+            // Ліміт MAX_SAVED: якщо список вже повний — питаємо про видалення найстарішого
+            if (list.length >= MAX_SAVED) {
+                if (!window.confirm(_t('editor.limitReached', 'Досягнуто ліміту 12 рівнів. Видалити найстаріший, щоб зберегти новий?'))) return;
+                list.pop();
+            }
             list.unshift(def);
             saveList(list);
             renderList();
@@ -553,6 +566,9 @@
         const box = $('#ed-list');
         if (!box) return;
         const list = getList();
+        // Лічильник N/12 у заголовку списку
+        const countEl = $('#ed-count');
+        if (countEl) countEl.textContent = list.length + '/' + MAX_SAVED;
         if (!list.length) {
             box.innerHTML = '<div style="text-align:center;color:#8a92b2;padding:12px;">' +
                 _t('editor.empty', 'Поки немає збережених рівнів') + '</div>';
@@ -565,9 +581,11 @@
                 '<div class="tile-label">' + _esc(d.name) + '</div>' +
                 '<div class="tile-label" style="font-size:10px;color:#8a92b2;">⏱' + d.dur + 'с · ×' + d.spd.toFixed(2) + ' · ' + d.types.length + '🔒</div>' +
                 '<div class="tile-actions">' +
-                '<button class="btn ed-play-saved" data-i="' + i + '">▶</button>' +
-                '<button class="btn ed-share-saved" data-i="' + i + '">📤</button>' +
-                '<button class="btn ed-del-saved" data-i="' + i + '">🗑</button>' +
+                '<button class="btn ed-play-saved" data-i="' + i + '" aria-label="' + _esc(_t('editor.test', 'Тестувати')) + '">▶</button>' +
+                '<button class="btn ed-share-saved" data-i="' + i + '" aria-label="' + _esc(_t('editor.export', 'Експортувати код')) + '">📤</button>' +
+                '<button class="btn ed-rename-saved" data-i="' + i + '" aria-label="' + _esc(_t('editor.rename', 'Перейменувати')) + '">✏️</button>' +
+                '<button class="btn ed-dup-saved" data-i="' + i + '" aria-label="' + _esc(_t('editor.duplicate', 'Дублювати')) + '">⧉</button>' +
+                '<button class="btn ed-del-saved" data-i="' + i + '" aria-label="' + _esc(_t('editor.delete', 'Видалити')) + '">🗑</button>' +
                 '</div></div>';
         }
         box.innerHTML = html;
@@ -597,10 +615,43 @@
                 }
             });
         });
+        box.querySelectorAll('.ed-rename-saved').forEach(function (b) {
+            window.UI.safeBind(b, 'click', function () {
+                const idx = parseInt(this.getAttribute('data-i'), 10);
+                const list = getList();
+                const d = list[idx];
+                if (!d) return;
+                const newName = window.prompt(_t('editor.rename', 'Перейменувати рівень'), d.name);
+                if (!newName || !newName.trim()) return;
+                const trimmed = newName.trim().slice(0, 20);
+                list[idx] = sanitize(Object.assign({}, d, { name: trimmed }));
+                saveList(list);
+                renderList();
+            });
+        });
+        box.querySelectorAll('.ed-dup-saved').forEach(function (b) {
+            window.UI.safeBind(b, 'click', function () {
+                const idx = parseInt(this.getAttribute('data-i'), 10);
+                const list = getList();
+                const d = list[idx];
+                if (!d) return;
+                if (list.length >= MAX_SAVED) {
+                    if (!window.confirm(_t('editor.limitReached', 'Досягнуто ліміту 12 рівнів. Видалити найстаріший, щоб зберегти новий?'))) return;
+                    list.pop();
+                }
+                const copy = sanitize(Object.assign({}, d, { name: d.name + ' (копія)' }));
+                if (!copy) return;
+                list.unshift(copy);
+                saveList(list);
+                renderList();
+                window.UI.showToast(_t('editor.duplicated', 'Рівень дубльовано'), 'success');
+            });
+        });
         box.querySelectorAll('.ed-del-saved').forEach(function (b) {
             window.UI.safeBind(b, 'click', function () {
                 const idx = parseInt(this.getAttribute('data-i'), 10);
                 const list = getList();
+                if (!window.confirm(_t('editor.deleteConfirm', 'Видалити цей рівень? Це незворотно!'))) return;
                 list.splice(idx, 1);
                 saveList(list);
                 renderList();
