@@ -1,10 +1,12 @@
 /**
  * CloudStorage.js — хмарна синхронізація прогресу через Supabase.
- * - Увімкнюється, лише якщо в index.html задано window.NGR_CLOUD_CONFIG
+ * - Увімкнюється, лише якщо задано window.NGR_CLOUD_CONFIG (core/app_config.js)
  * - Supabase SDK завантажується динамічно з CDN (гру не ламає, якщо мережі нема)
+ * - Ідентичність: anonymous auth → прогрес прив'язаний до user_id (RLS auth.uid()).
+ *   Якщо anonymous sign-in недоступний — тихий фоллбэк на схему за device_id.
+ * - Одноразовий claim_device_progress переносить прогрес пристрою в акаунт
  * - Push після кожного забігу, pull + merge «тільки вгору» на старті
- * - Таблиця: user_progress(device_id text pk, data jsonb, updated_at timestamptz)
- *   SQL для створення — у README.md, розділ «Хмарна синхронізація (Supabase)»
+ * - Таблиця: user_progress(device_id text pk, user_id uuid, data jsonb, updated_at)
  */
 (function () {
     'use strict';
@@ -14,6 +16,8 @@
 
     let _client = null;
     let _deviceId = null;
+    let _userId = null;        // id анонімного акаунта (null — працюємо за device_id)
+    let _claimTried = false;   // claim виконується один раз за сесію
     let _ready = false;
     let _busy = false;
     let _lastSyncTime = 0;
@@ -61,6 +65,66 @@
     }
 
     /**
+     * Забезпечує анонімну сесію: якщо сесії немає — signInAnonymously.
+     * Будь-яка помилка не критична: працюємо далі за device_id.
+     * @returns {Promise<boolean>} true, якщо є user_id
+     */
+    function _ensureAuth() {
+        if (!_client || !_client.auth || typeof _client.auth.getSession !== 'function') {
+            return Promise.resolve(false);
+        }
+        return _client.auth.getSession().then(function (res) {
+            const session = res && res.data ? res.data.session : null;
+            if (session && session.user) {
+                _userId = session.user.id;
+                return true;
+            }
+            if (typeof _client.auth.signInAnonymously !== 'function') return false;
+            return _client.auth.signInAnonymously().then(function (r) {
+                if (r && r.error) {
+                    _log('warn', 'auth: ' + (r.error.message || r.error) + ' (anonymous sign-in недоступний — працюємо за device_id)');
+                    return false;
+                }
+                const s = r && r.data ? r.data.session : null;
+                if (s && s.user) {
+                    _userId = s.user.id;
+                    _log('info', 'anonymous auth ok');
+                    return true;
+                }
+                return false;
+            }, function (err) {
+                _log('warn', 'auth: ' + (err && err.message ? err.message : err));
+                return false;
+            });
+        }, function () { return false; });
+    }
+
+    /**
+     * Одноразовий перенос прогресу пристрою в акаунт (RPC claim_device_progress).
+     * Виконується лише за наявності user_id і лише раз за сесію.
+     * @returns {Promise<boolean>}
+     */
+    function claimDeviceProgress() {
+        if (_claimTried) return Promise.resolve(false);
+        _claimTried = true;
+        if (!_ready || !_client || !_userId || typeof _client.rpc !== 'function') return Promise.resolve(false);
+        return _client.rpc('claim_device_progress', { p_device_id: _deviceId }).then(function (res) {
+            if (res && res.error) {
+                _log('warn', 'claim: ' + res.error.message);
+                return false;
+            }
+            const remote = res ? res.data : null;
+            if (remote && window.State && typeof window.State.mergeRemote === 'function') {
+                if (window.State.mergeRemote(remote)) {
+                    _log('info', 'claim: прогрес пристрою перенесено');
+                    return pushProgress();
+                }
+            }
+            return false;
+        }, function () { return false; });
+    }
+
+    /**
      * Ініціалізація. Повертає Promise<boolean> — true, якщо хмара готова.
      * Викликається один раз; повторні виклики повертають той самий Promise.
      */
@@ -86,11 +150,14 @@
                         _ready = true;
                         _bindOnlineListeners();
                         _log('info', 'Supabase initialized');
-                        // Автопідхват прогресу з хмари при старті
-                        pullFromCloud().then(
-                            function () { resolve(_ready); },
-                            function () { resolve(_ready); }
-                        );
+                        // Ідентичність → перенос прогресу пристрою → автопідхват із хмари
+                        _ensureAuth()
+                            .then(function () { return claimDeviceProgress(); })
+                            .then(function () { return pullFromCloud(); })
+                            .then(
+                                function () { resolve(_ready); },
+                                function () { resolve(_ready); }
+                            );
                     } catch (e) {
                         _log('error', 'createClient: ' + e.message);
                         resolve(false);
@@ -119,12 +186,15 @@
         if (!window.State || !window.State.data) return Promise.resolve(false);
 
         _busy = true;
+        const row = {
+            device_id: _deviceId,
+            data: window.State.data,
+            updated_at: new Date().toISOString()
+        };
+        if (_userId) row.user_id = _userId;
+
         return _client.from(TABLE)
-            .upsert({
-                device_id: _deviceId,
-                data: window.State.data,
-                updated_at: new Date().toISOString()
-            })
+            .upsert(row)
             .then(function (res) {
                 _busy = false;
                 if (res && res.error) {
@@ -145,9 +215,12 @@
     function pullFromCloud() {
         if (!_ready || !_client) return Promise.resolve(null);
 
-        return _client.from(TABLE)
-            .select('data')
-            .eq('device_id', _deviceId)
+        // За наявності акаунта читаємо свій рядок за user_id (RLS auth.uid()),
+        // інакше — за device_id (перехідний режим для старих клієнтів).
+        let query = _client.from(TABLE).select('data');
+        query = _userId ? query.eq('user_id', _userId) : query.eq('device_id', _deviceId);
+
+        return query
             .maybeSingle()
             .then(function (res) {
                 if (res && res.error) {
@@ -202,6 +275,11 @@
         return _deviceId;
     }
 
+    /** @returns {string|null} id анонімного акаунта або null у перехідному режимі */
+    function getUserId() {
+        return _userId;
+    }
+
     // Доступ до спільного supabase-клієнта для інших модулів (GlobalScores, Analytics)
     function getClient() {
         return _ready ? _client : null;
@@ -218,6 +296,8 @@
         getProvider: getProvider,
         getLastSyncTime: getLastSyncTime,
         getDeviceId: getDeviceId,
+        getUserId: getUserId,
+        claimDeviceProgress: claimDeviceProgress,
         getClient: getClient
     };
 })();
