@@ -102,6 +102,7 @@
             _buildSettingsScreen();
             _buildStatsScreen();
             _buildHelpScreen();
+            _buildAboutScreen();
             _buildPauseScreen();
             _buildGameOverScreen();
             _buildTutorialScreen();
@@ -148,6 +149,7 @@
             '<button id="btn-settings" class="btn" data-i18n="menu.settings">⚙ Налаштування</button>' +
             '<button id="btn-stats" class="btn" data-i18n="menu.stats">📊 Статистика</button>' +
             '<button id="btn-help" class="btn" data-i18n="btn.help">❔ Довідка</button>' +
+            '<button id="btn-about" class="btn" data-i18n="menu.about">ℹ Про гру</button>' +
             '</div>' +
             '</div>';
     }
@@ -281,6 +283,14 @@
             '<div class="switch" id="set-gravity-guide"></div>' +
             '</div>' +
             '<div class="setting-row">' +
+            '<span class="setting-label" data-i18n="settings.showFps">Показувати FPS</span>' +
+            '<div class="switch" id="set-show-fps"></div>' +
+            '</div>' +
+            '<div class="setting-row">' +
+            '<span class="setting-label" data-i18n="settings.autoQuality">Автоматична якість</span>' +
+            '<div class="switch" id="set-auto-quality"></div>' +
+            '</div>' +
+            '<div class="setting-row">' +
             '<span class="setting-label" data-i18n="settings.mute">Вимкнути звук повністю</span>' +
             '<div class="switch" id="set-mute"></div>' +
             '</div>' +
@@ -378,6 +388,28 @@
             '<div class="help-list">' + rows + '</div>' +
             '<div class="btn-grid">' +
             '<button id="btn-help-back" class="btn" data-i18n="btn.back">← Назад у меню</button>' +
+            '</div>' +
+            '</div>';
+    }
+
+    // Екран «Про гру»: версія, посилання, скидання прогресу
+    function _buildAboutScreen() {
+        const el = window.UI.$('#screen-about');
+        if (!el) return;
+        const ver = (typeof window.NGR_VERSION !== 'undefined' && window.NGR_VERSION) ||
+            ((window.Config && window.Config.VERSION) || '1.2.0');
+        el.innerHTML =
+            '<div class="panel about-box">' +
+            '<h2 data-i18n="about.title">Про гру</h2>' +
+            '<div class="about-row"><span class="label"><span data-i18n="about.version">Версія</span>:</span> <b>' + _esc(ver) + '</b></div>' +
+            '<div class="about-links">' +
+            '<div class="about-row"><a href="https://github.com/olexandrmykhailovskyi-oss/neon-gravity-runner" target="_blank" rel="noopener" data-i18n="about.github">GitHub</a></div>' +
+            '<div class="about-row"><a href="https://github.com/olexandrmykhailovskyi-oss/neon-gravity-runner/blob/main/LICENSE" target="_blank" rel="noopener" data-i18n="about.license">Ліцензія MIT</a></div>' +
+            '<div class="about-row"><a href="https://neon-gravity-runner.vercel.app" target="_blank" rel="noopener" data-i18n="about.play">Жива гра</a></div>' +
+            '</div>' +
+            '<div class="btn-grid">' +
+            '<button id="btn-about-reset" class="btn" data-i18n="about.reset">Скинути прогрес</button>' +
+            '<button id="btn-about-back" class="btn primary" data-i18n="btn.back">← Назад</button>' +
             '</div>' +
             '</div>';
     }
@@ -513,6 +545,23 @@
         UI.safeBind(UI.$('#btn-help'), 'click', function () {
             _clickSound();
             UI.showScreen('help');
+        });
+        UI.safeBind(UI.$('#btn-about'), 'click', function () {
+            _clickSound();
+            UI.showScreen('about');
+        });
+        UI.safeBind(UI.$('#btn-about-back'), 'click', function () { _clickSound(); UI.showScreen('main'); });
+        UI.safeBind(UI.$('#btn-about-reset'), 'click', function () {
+            _clickSound();
+            try {
+                const confirmed = window.confirm(_t('about.resetConfirm', 'Скинути весь прогрес? Це незворотно!'));
+                if (!confirmed) return;
+                window.State.resetProgress();
+                updateMenuStats();
+                window.UI.showToast(_t('about.resetDone', 'Прогрес скинуто'), 'success');
+            } catch (e) {
+                _log('error', 'about reset', e.message);
+            }
         });
 
         // Назад
@@ -660,6 +709,26 @@
                     const cur = window.State.getSetting('gravityGuide') !== false;
                     window.State.setSetting('gravityGuide', !cur);
                     gg.classList.toggle('on', !cur);
+                } catch (e) {}
+            });
+        }
+        const fps = UI.$('#set-show-fps');
+        if (fps) {
+            UI.safeBind(fps, 'click', function () {
+                try {
+                    const cur = window.State.getSetting('showFps') === true;
+                    window.State.setSetting('showFps', !cur);
+                    fps.classList.toggle('on', !cur);
+                } catch (e) {}
+            });
+        }
+        const aq = UI.$('#set-auto-quality');
+        if (aq) {
+            UI.safeBind(aq, 'click', function () {
+                try {
+                    const cur = window.State.getSetting('autoQuality') !== false;
+                    window.State.setSetting('autoQuality', !cur);
+                    aq.classList.toggle('on', !cur);
                 } catch (e) {}
             });
         }
@@ -1019,6 +1088,10 @@
             if (vib) vib.classList.toggle('on', window.State.getSetting('vibration') !== false);
             const gg = window.UI.$('#set-gravity-guide');
             if (gg) gg.classList.toggle('on', window.State.getSetting('gravityGuide') !== false);
+            const fpsSw = window.UI.$('#set-show-fps');
+            if (fpsSw) fpsSw.classList.toggle('on', window.State.getSetting('showFps') === true);
+            const aqSw = window.UI.$('#set-auto-quality');
+            if (aqSw) aqSw.classList.toggle('on', window.State.getSetting('autoQuality') !== false);
             const nick = window.UI.$('#set-nickname');
             if (nick) nick.value = window.State.getSetting('nickname') || '';
             const anSw = window.UI.$('#set-analytics');

@@ -25,6 +25,7 @@
             'menu.leaderboard': '👑 Рекорди ТОП-5',
             'menu.settings': '⚙ Налаштування',
             'menu.stats': '📊 Статистика',
+            'menu.about': 'ℹ Про гру',
             'menu.best': 'Рекорд',
             'menu.stars': 'Зірки',
             'menu.games': 'Ігор',
@@ -47,6 +48,7 @@
             'gameover.cause': 'Причина',
             'gameover.hint': 'Підказка: R — миттєвий рестарт',
             'toast.globalSent': '🌍 Результат надіслано у світовий рейтинг!',
+            'toast.lowQuality': '⚙ Якість знижено для стабільності',
             'cause.wall': 'Стіна',
             'cause.gate': 'Ворота',
             'cause.moving': 'Рухомий блок',
@@ -149,6 +151,17 @@
             'btn.levels': '☰ Усі рівні',
             'btn.start': 'Почати політ!',
 
+            // Про гру
+            'about.title': 'Про гру',
+            'about.version': 'Версія',
+            'about.links': 'Посилання',
+            'about.github': 'GitHub',
+            'about.license': 'Ліцензія MIT',
+            'about.play': 'Жива гра',
+            'about.reset': 'Скинути прогрес',
+            'about.resetConfirm': 'Скинути весь прогрес? Це незворотно!',
+            'about.resetDone': 'Прогрес скинуто',
+
             // Налаштування
             'settings.difficulty': 'Складність',
             'settings.easy': 'Легко',
@@ -165,6 +178,8 @@
             'settings.language': 'Мова',
             'settings.nickname': 'Ім’я пілота',
             'settings.analytics': 'Анонімна статистика',
+            'settings.showFps': 'Показувати FPS',
+            'settings.autoQuality': 'Автоматична якість',
 
             // Дані прогресу
             'settings.data': 'Дані прогресу',
@@ -383,6 +398,7 @@
             'menu.leaderboard': '👑 Рекорды ТОП-5',
             'menu.settings': '⚙ Настройки',
             'menu.stats': '📊 Статистика',
+            'menu.about': 'ℹ Об игре',
             'menu.best': 'Рекорд',
             'menu.stars': 'Звезды',
             'menu.games': 'Игр',
@@ -405,6 +421,7 @@
             'gameover.cause': 'Причина',
             'gameover.hint': 'Подсказка: R — мгновенный рестарт',
             'toast.globalSent': '🌍 Результат отправлен в мировой рейтинг!',
+            'toast.lowQuality': '⚙ Качество снижено для стабильности',
             'cause.wall': 'Стена',
             'cause.gate': 'Ворота',
             'cause.moving': 'Движущийся блок',
@@ -507,6 +524,17 @@
             'btn.levels': '☰ Все уровни',
             'btn.start': 'Начать полет!',
 
+            // Об игре
+            'about.title': 'Об игре',
+            'about.version': 'Версия',
+            'about.links': 'Ссылки',
+            'about.github': 'GitHub',
+            'about.license': 'Лицензия MIT',
+            'about.play': 'Живая игра',
+            'about.reset': 'Сбросить прогресс',
+            'about.resetConfirm': 'Сбросить весь прогресс? Это необратимо!',
+            'about.resetDone': 'Прогресс сброшен',
+
             // Настройки
             'settings.difficulty': 'Сложность',
             'settings.easy': 'Легко',
@@ -523,6 +551,8 @@
             'settings.language': 'Язык',
             'settings.nickname': 'Имя пилота',
             'settings.analytics': 'Анонимная статистика',
+            'settings.showFps': 'Показывать FPS',
+            'settings.autoQuality': 'Автоматическое качество',
 
             // Данные прогресса
             'settings.data': 'Данные прогресса',
@@ -741,6 +771,7 @@
             'menu.leaderboard': '👑 TOP-5 Records',
             'menu.settings': '⚙ Settings',
             'menu.stats': '📊 Statistics',
+            'menu.about': 'ℹ About',
             'menu.best': 'Record',
             'menu.stars': 'Stars',
             'menu.games': 'Games',
@@ -763,6 +794,7 @@
             'gameover.cause': 'Cause',
             'gameover.hint': 'Tip: press R for instant restart',
             'toast.globalSent': '🌍 Score submitted to the world ranking!',
+            'toast.lowQuality': '⚙ Quality reduced for stability',
             'cause.wall': 'Wall',
             'cause.gate': 'Gate',
             'cause.moving': 'Moving block',
@@ -865,6 +897,17 @@
             'btn.levels': '☰ All levels',
             'btn.start': 'Start Flight!',
 
+            // About
+            'about.title': 'About',
+            'about.version': 'Version',
+            'about.links': 'Links',
+            'about.github': 'GitHub',
+            'about.license': 'MIT License',
+            'about.play': 'Live game',
+            'about.reset': 'Reset progress',
+            'about.resetConfirm': 'Reset all progress? This cannot be undone!',
+            'about.resetDone': 'Progress has been reset',
+
             // Settings
             'settings.difficulty': 'Difficulty',
             'settings.easy': 'Easy',
@@ -881,6 +924,8 @@
             'settings.language': 'Language',
             'settings.nickname': 'Pilot name',
             'settings.analytics': 'Anonymous statistics',
+            'settings.showFps': 'Show FPS',
+            'settings.autoQuality': 'Auto quality',
 
             // Progress data
             'settings.data': 'Progress data',

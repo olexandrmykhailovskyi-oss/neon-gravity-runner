@@ -964,3 +964,94 @@ input[type="range"] {
     font-size: 12px;
     min-width: 0;
 }
+
+/* ---- QOL-6: доступність, safe-area, мобільний ландшафт ---- */
+
+/* 1. Видимий фокус для клавіатури */
+.screen :focus-visible,
+.btn:focus-visible,
+.icon-btn:focus-visible,
+a:focus-visible {
+    outline: 2px solid #00e5ff;
+    outline-offset: 2px;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.65);
+}
+
+/* 2. Стилі екрана «Про гру» */
+.about-box {
+    max-width: 560px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 26px;
+    box-shadow: 0 0 40px rgba(0, 229, 255, 0.1);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.about-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(138, 146, 178, 0.15);
+    font-size: 14px;
+}
+.about-row:last-child { border-bottom: none; }
+.about-row .label { color: var(--text-dim); }
+.about-row .value { color: var(--text); font-weight: 600; }
+
+.about-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.about-links a {
+    color: var(--neon-cyan);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color var(--t-fast);
+}
+.about-links a:hover {
+    color: var(--neon-pink);
+    text-decoration: underline;
+}
+
+/* 3. Safe-area для мобільних (#hud уже має calc(... + env(...)) вище — не дублюємо) */
+.screen {
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+/* 3b. Лічильник FPS (показується за налаштуванням showFps) */
+.hud-fps {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin-right: 8px;
+    white-space: nowrap;
+}
+
+/* 4. Мобільний ландшафт і тап-таргети */
+.screen {
+    overflow-y: auto;
+}
+
+.icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* 5. Повага до reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}
