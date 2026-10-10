@@ -297,8 +297,18 @@
         return [];
     }
 
+    // Дедуплікація: однакові score/mode/level/combo вважаємо дублікатом
+    // (дату не порівнюємо — вона у кожного своя)
+    function _isDuplicateEntry(a, b) {
+        return a.score === b.score &&
+            a.mode === b.mode &&
+            a.level === b.level &&
+            a.combo === b.combo;
+    }
+
     /**
      * Додає запис у локальний лідерборд (ТОП-5).
+     * Якщо ідентичний запис уже є — дублікат відкидається.
      * @param {LeaderboardEntry} entry — запис результату
      * @returns {LeaderboardEntry[]} оновлений ТОП-5
      */
@@ -307,6 +317,9 @@
             const clean = _sanitizeEntry(entry);
             if (!clean) return getLeaderboard();
             const list = getLeaderboard();
+            for (let i = 0; i < list.length; i++) {
+                if (_isDuplicateEntry(list[i], clean)) return list;
+            }
             list.push(clean);
             list.sort(function (a, b) { return b.score - a.score; });
             const top5 = list.slice(0, 5);
@@ -514,12 +527,17 @@
                 }
             }
 
-            // Рекорди — мержимо та залишаємо ТОП-5 (записи санітизуються)
+            // Рекорди — мержимо та залишаємо ТОП-5 (записи санітизуються, дублікати відкидаються)
             if (Array.isArray(payloadRaw.leaderboard) && payloadRaw.leaderboard.length > 0) {
                 const merged = getLeaderboard();
                 for (let i = 0; i < payloadRaw.leaderboard.length; i++) {
                     const clean = _sanitizeEntry(payloadRaw.leaderboard[i]);
-                    if (clean) merged.push(clean);
+                    if (!clean) continue;
+                    let dup = false;
+                    for (let j = 0; j < merged.length; j++) {
+                        if (_isDuplicateEntry(merged[j], clean)) { dup = true; break; }
+                    }
+                    if (!dup) merged.push(clean);
                 }
                 merged.sort(function (a, b) { return b.score - a.score; });
                 window.SafeStorage.set(LEADERBOARD_KEY, merged.slice(0, 5));

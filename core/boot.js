@@ -25,7 +25,7 @@
             'Logger', 'SafeStorage', 'State', 'Config', 'Utils', 'Collision', 'I18n',
             'AudioSys', 'Particles', 'FloatingTexts', 'Background', 'Effects',
             'Skins', 'Achievements', 'Player', 'Obstacle', 'Obstacles',
-            'Bonus', 'Bonuses', 'Storm', 'Scoring', 'Levels', 'Modes', 'UI', 'Screens',
+            'Bonus', 'Bonuses', 'Storm', 'Scoring', 'Levels', 'UI', 'Screens',
             'HUD', 'Game', 'Input', 'Editor', 'Analytics', 'GlobalScores'
         ];
         const missing = [];

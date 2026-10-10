@@ -5,7 +5,7 @@
  *   кеш підхоплює коли офлайн (гру можна грати без інтернету).
  * - Старі кеші чистяться при активації (версія в імені кешу).
  */
-const CACHE = 'ngr-v3';
+const CACHE = 'ngr-v4';
 const ASSETS = [
     './',
     'index.html',
@@ -45,7 +45,6 @@ const ASSETS = [
     'gameplay/storm.js',
     'gameplay/scoring.js',
     'gameplay/levels.js',
-    'gameplay/modes.js',
     'gameplay/game.js'
 ];
 

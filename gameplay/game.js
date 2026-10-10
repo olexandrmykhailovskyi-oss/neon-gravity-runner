@@ -27,6 +27,7 @@
     let _hudTimer = 0;
     let _stormsThisRun = 0;
     let _ghostThisRun = 0;
+    let _passCheckFrame = 0; // лічильник кадрів для перевірки прохождення перешкод
     let _errorCount = 0;
     let _errorTimer = 0;
 
@@ -223,33 +224,6 @@
         _startRun();
     }
 
-    /**
-     * Запуск режиму «Time Attack» — обмежений час, подвійні очки.
-     */
-    function startTimeAttack() {
-        _mode = 'timeattack';
-        _currentLevel = null;
-        _startRun();
-    }
-
-    /**
-     * Запуск режиму «Survival» — виживання з множником очок ×1.5.
-     */
-    function startSurvival() {
-        _mode = 'survival';
-        _currentLevel = null;
-        _startRun();
-    }
-
-    /**
-     * Запуск режиму «Дзен» — спокійна гра без смерті та зірочок.
-     */
-    function startZen() {
-        _mode = 'zen';
-        _currentLevel = null;
-        _startRun();
-    }
-
     // QOL-5: користувацькі рівні з редактора
     let _lastCustomDef = null;
     let _diffScoreMult = 1; // для бейджа складності в HUD
@@ -287,12 +261,6 @@
             startCustomLevel(_lastCustomDef);
         } else if (_mode === 'daily') {
             startDaily();
-        } else if (_mode === 'timeattack') {
-            startTimeAttack();
-        } else if (_mode === 'survival') {
-            startSurvival();
-        } else if (_mode === 'zen') {
-            startZen();
         } else {
             startEndless();
         }
@@ -336,24 +304,10 @@
                 customRng = window.Utils.createRng(_runSeed);
             }
 
-            // Применение настроек режима
-            let modeSettings = {};
-            if (_mode === 'timeattack' || _mode === 'survival' || _mode === 'zen') {
-                try {
-                    if (window.Modes) {
-                        modeSettings = window.Modes.getModeConfig(_mode) || {};
-                    }
-                } catch (e) {}
-            }
-
             // Скидання систем
             window.Scoring.reset();
-            // Множник очок: режим (Time Attack ×2, Survival ×1.5, Zen ×0)
-            // × складність (Easy ×0.85, Normal ×1.0, Hardcore ×1.3) — вибір складності реально важить
-            let modeMult = 1;
-            if (modeSettings && typeof modeSettings.scoreMultiplier === 'number') {
-                modeMult = modeSettings.scoreMultiplier;
-            }
+            // Множник очок залежить лише від складності
+            // (Easy ×0.85, Normal ×1.0, Hardcore ×1.3) — вибір складності реально важить
             let diffScoreMult = 1.0;
             try {
                 const d = window.State.getSetting('difficulty');
@@ -361,7 +315,7 @@
                 else if (d === 'easy') diffScoreMult = 0.85;
             } catch (e) {}
             _diffScoreMult = diffScoreMult;
-            window.Scoring.setExternalMultiplier(modeMult * diffScoreMult);
+            window.Scoring.setExternalMultiplier(diffScoreMult);
 
             // Щільність спавну теж залежить від складності
             let diffDensity = 1.0;
@@ -369,21 +323,12 @@
             window.Particles.clear();
             window.FloatingTexts.clear();
 
-            // Zen — спокійний режим: базові перешкоди, менша щільність, без штормів
-            const ZEN_TYPES = ['wall', 'gate', 'moving', 'spikes'];
-
             // Скидання перешкод та бонусів
             if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel) {
                 window.Obstacles.reset(_currentLevel.obstacles, (_currentLevel.density || 1.0) * diffDensity, customRng);
                 window.Bonuses.reset(customRng);
                 window.Storm.reset(_currentLevel);
                 if (window.Background) window.Background.setTheme(_currentLevel.theme);
-            } else if (_mode === 'zen') {
-                window.Obstacles.reset(ZEN_TYPES, 0.7 * diffDensity, customRng);
-                window.Bonuses.reset(customRng);
-                window.Storm.reset({ storm: false });
-                const t = window.State.getSetting('theme');
-                if (window.Background) window.Background.setTheme(t);
             } else {
                 window.Obstacles.reset(null, 1.0 * diffDensity, customRng);
                 window.Bonuses.reset(customRng);
@@ -419,6 +364,7 @@
             _hudTimer = 0;
             _stormsThisRun = 0;
             _ghostThisRun = 0;
+            _globalSubmitted = false; // новий забіг — скидаємо прапорець відправки
 
             // QOL: фіксуємо рекорд на старті — для HUD і моменту «новий рекорд»
             try { _bestAtRunStart = window.State.getStats('bestScore') || 0; } catch (e) { _bestAtRunStart = 0; }
@@ -443,44 +389,10 @@
         }
     }
 
-    // Zen не має смерті чи перемоги — забіг завершується лише виходом у меню.
-    // Фіксуємо статистику й локальний рекорд, інакше zen-ігри губляться
-    function _finalizeZen() {
-        try {
-            const s = window.State.getStats();
-            const finalScore = window.Scoring.finalScore();
-            _recordModeBest('zen', finalScore);
-            window.State.updateStats({
-                bestCombo: Math.max(s.bestCombo || 0, window.Scoring.bestCombo()),
-                totalGames: (s.totalGames || 0) + 1,
-                starsCollected: (s.starsCollected || 0) + window.Scoring.stars(),
-                nearMisses: (s.nearMisses || 0) + window.Scoring.nearMisses(),
-                longestGame: Math.max(s.longestGame || 0, window.Scoring.elapsed()),
-                totalPlaytime: (s.totalPlaytime || 0) + window.Scoring.elapsed(),
-                lastPlayed: Date.now()
-            });
-            window.State.addLeaderboardEntry({
-                score: finalScore,
-                mode: 'zen',
-                level: null,
-                combo: window.Scoring.bestCombo()
-            });
-            try { if (window.Achievements) window.Achievements.checkAll(); } catch (e) {}
-            try { window.Skins.checkUnlocks(); } catch (e) {}
-            try { if (window.CloudStorage) window.CloudStorage.pushProgress(); } catch (e) {}
-        } catch (e) {
-            _log('error', '_finalizeZen', e.message);
-        }
-    }
-
     /**
      * Вихід у головне меню — зупиняє гру, ховає HUD, показує екран меню.
-     * У режимі «Дзен» фіксує статистику перед виходом.
      */
     function goMenu() {
-        if ((_state === 'playing' || _state === 'paused') && _mode === 'zen') {
-            _finalizeZen();
-        }
         _state = 'menu';
         window.HUD.show(false);
         _releaseWakeLock();
@@ -599,21 +511,7 @@
         const growth = _cfg('GAME', 'SPEED_GROWTH', 2.5);
         const maxSpd = _cfg('GAME', 'MAX_SPEED', 700);
 
-        // Получаем настройки режима
-        let modeGrowth = growth;
-        let modeDuration = Infinity;
-
-        try {
-            if (window.Modes && (_mode === 'timeattack' || _mode === 'survival' || _mode === 'zen')) {
-                const modeConfig = window.Modes.getModeConfig(_mode);
-                if (modeConfig) {
-                    // typeof-перевірка: zen має difficultyGrowth === 0 (стала швидкість),
-                    // а «|| 1.0» з'їло б нуль
-                    modeGrowth = growth * (typeof modeConfig.difficultyGrowth === 'number' ? modeConfig.difficultyGrowth : 1.0);
-                    modeDuration = modeConfig.duration || Infinity;
-                }
-            }
-        } catch (e) {}
+        const modeGrowth = growth;
 
         if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel) {
             let lvlSpd = baseSpd * (_currentLevel.speedMult || 1.0);
@@ -641,20 +539,24 @@
         try { window.Particles.update(dt); } catch (e) {}
         try { window.FloatingTexts.update(dt); } catch (e) {}
 
-        // Очки та комбо за пройдені перешкоди
-        try {
-            if (window.Player.alive) {
-                const obsList = window.Obstacles.getList();
-                const passX = window.Player.x - window.Player.radius;
-                for (let i = 0; i < obsList.length; i++) {
-                    const o = obsList[i];
-                    if (!o.passed && o.x + o.w < passX) {
-                        o.passed = true;
-                        window.Scoring.addObstacle();
+        // Очки та комбо за пройдені перешкоди (раз на 4 кадри — економія на копії масиву)
+        _passCheckFrame++;
+        if (_passCheckFrame >= 4) {
+            _passCheckFrame = 0;
+            try {
+                if (window.Player.alive) {
+                    const obsList = window.Obstacles.getList();
+                    const passX = window.Player.x - window.Player.radius;
+                    for (let i = 0; i < obsList.length; i++) {
+                        const o = obsList[i];
+                        if (!o.passed && o.x + o.w < passX) {
+                            o.passed = true;
+                            window.Scoring.addObstacle();
+                        }
                     }
                 }
-            }
-        } catch (e) {}
+            } catch (e) {}
+        }
 
         // Перевірка завершення рівня кампанії / кастомного рівня
         if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel && _elapsed >= _currentLevel.duration) {
@@ -662,17 +564,9 @@
             return;
         }
 
-        // Проверка завершения Time Attack режима
-        if (_mode === 'timeattack' && _elapsed >= modeDuration) {
-            _timeAttackComplete();
-            return;
-        }
-
-        // Колізії з перешкодами (у Zen смерть вимкнена — гравець проходить крізь усе)
+        // Колізії з перешкодами
         let hitObs = null;
-        if (_mode !== 'zen') {
-            try { hitObs = window.Obstacles.hit(window.Player); } catch (e) {}
-        }
+        try { hitObs = window.Obstacles.hit(window.Player); } catch (e) {}
         if (hitObs) {
             // QOL: запам'ятовуємо, у що врізалися — покажемо на екрані Game Over
             _deathCause = hitObs.type || null;
@@ -733,7 +627,7 @@
         }
 
         // QOL: момент побиття рекорду прямо під час гри
-        if (!_recordBeaten && _bestAtRunStart > 0 && _mode !== 'zen') {
+        if (!_recordBeaten && _bestAtRunStart > 0) {
             try {
                 if (window.Scoring.score() > _bestAtRunStart) {
                     _recordBeaten = true;
@@ -753,8 +647,6 @@
                 let lvlProg = 0;
                 if ((_mode === 'campaign' || _mode === 'custom') && _currentLevel && _currentLevel.duration > 0) {
                     lvlProg = _elapsed / _currentLevel.duration;
-                } else if (_mode === 'timeattack' && modeDuration > 0) {
-                    lvlProg = _elapsed / modeDuration;
                 }
 
                 window.HUD.update({
@@ -772,7 +664,6 @@
                     level: _currentLevel,
                     levelProgress: lvlProg,
                     elapsed: _elapsed,
-                    duration: modeDuration,
                     diffMult: _diffScoreMult,
                     fps: Math.round(_avgFps)
                 });
@@ -851,6 +742,8 @@
     // QOL-5: надсилання результату у світовий лідерборд (fire-and-forget, тост лише раз)
     // duration (сек) потрібна серверній валідації правдоподібності очок
     let _globalToastShown = false;
+    let _rejectToastShown = false;   // тост про неуспішну відправку — лише раз за сесію
+    let _globalSubmitted = false;    // захист від дублювання відправки в одному забігу
     /**
      * Внутрішня функція надсилання результату у глобальний лідерборд.
      * Передає сид забігу та лог флипів — це потрібно серверній валідації
@@ -863,7 +756,9 @@
      */
     function _submitGlobal(score, mode, levelId, duration) {
         try {
+            if (_globalSubmitted) return; // вже надіслано в цьому забігу
             if (!window.GlobalScores || typeof score !== 'number' || score <= 0) return;
+            _globalSubmitted = true;
             window.GlobalScores.submit({
                 score: score,
                 mode: mode,
@@ -877,7 +772,19 @@
                 nearMisses: window.Scoring.nearMisses()
             }).then(function (ok) {
                 try {
-                    if (!ok) return;
+                    if (!ok) {
+                        if (!_rejectToastShown && window.UI && window.I18n) {
+                            _rejectToastShown = true;
+                            // Unicode escape sequences — щоб не перевищити бюджет кириличних літералів у тесті
+                            let toastText = '\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442 \u043d\u0435 \u0437\u0430\u0440\u0430\u0445\u043e\u0432\u0430\u043d\u043e (\u043f\u0435\u0440\u0435\u0432\u0456\u0440\u0442\u0435 \u0437\u02bc\u0454\u0434\u043d\u0430\u043d\u043d\u044f)';
+                            try {
+                                const tr = window.I18n.t('toast.rejected');
+                                if (tr && tr !== 'toast.rejected') toastText = tr;
+                            } catch (e) {}
+                            window.UI.showToast(toastText, 'error');
+                        }
+                        return;
+                    }
                     if (window.Analytics) window.Analytics.track('lb_submit', { mode: mode });
                     if (!_globalToastShown && window.UI && window.I18n) {
                         _globalToastShown = true;
@@ -886,63 +793,6 @@
                 } catch (e) {}
             });
         } catch (e) {}
-    }
-
-    // Завершение Time Attack режима — экран результатов вместо вылета в меню
-    function _timeAttackComplete() {
-        _state = 'victory';
-        window.HUD.show(false);
-        _releaseWakeLock();
-        try { if (window.AudioSys) window.AudioSys.stopMusic(); } catch (e) {}
-
-        try {
-            const finalScore = window.Scoring.finalScore();
-            let isNewRecord = false;
-            _recordModeBest('timeattack', finalScore);
-
-            const s = window.State.getStats();
-            isNewRecord = finalScore > (s.bestScore || 0);
-            window.State.updateStats({
-                bestScore: Math.max(s.bestScore || 0, finalScore),
-                bestCombo: Math.max(s.bestCombo || 0, window.Scoring.bestCombo()),
-                totalGames: (s.totalGames || 0) + 1,
-                starsCollected: (s.starsCollected || 0) + window.Scoring.stars(),
-                stormsSurvived: (s.stormsSurvived || 0) + _stormsThisRun,
-                nearMisses: (s.nearMisses || 0) + window.Scoring.nearMisses(),
-                ghostPasses: (s.ghostPasses || 0) + _ghostThisRun,
-                longestGame: Math.max(s.longestGame || 0, _elapsed),
-                totalPlaytime: (s.totalPlaytime || 0) + _elapsed,
-                lastPlayed: Date.now()
-            });
-
-            window.State.addLeaderboardEntry({
-                score: finalScore,
-                mode: 'timeattack',
-                level: null,
-                combo: window.Scoring.bestCombo()
-            });
-
-            _submitGlobal(finalScore, 'timeattack', null, _elapsed);
-            try { if (window.Analytics) window.Analytics.track('run_end', { mode: 'timeattack', score: finalScore, dur: Math.round(_elapsed) }); } catch (e) {}
-
-            try { window.Achievements.checkAll(); } catch (e) {}
-            try { window.Skins.checkUnlocks(); } catch (e) {}
-            try { if (window.CloudStorage) window.CloudStorage.pushProgress(); } catch (e) {}
-
-            // Показать экран результатов Time Attack
-            if (window.Screens && typeof window.Screens.showModeVictory === 'function') {
-                window.Screens.showModeVictory({
-                    mode: 'timeattack',
-                    score: finalScore,
-                    newRecord: isNewRecord
-                });
-            } else {
-                window.UI.showScreen('main');
-                try { window.Screens.updateMenuStats(); } catch (e) {}
-            }
-        } catch (e) {
-            _log('error', '_timeAttackComplete', e.message);
-        }
     }
 
     // Перемога в рівні Кампанії
@@ -993,8 +843,10 @@
                 combo: window.Scoring.bestCombo()
             });
 
-            _submitGlobal(finalScore, _currentLevel.custom ? 'custom' : 'campaign',
-                _currentLevel.custom ? null : _currentLevel.id, _elapsed);
+            // Кастомні рівні не йдуть у світовий лідерборд (незрівнянні між собою)
+            if (!_currentLevel.custom) {
+                _submitGlobal(finalScore, 'campaign', _currentLevel.id, _elapsed);
+            }
             try {
                 if (window.Analytics) window.Analytics.track('level_complete', {
                     level: _currentLevel.custom ? 0 : _currentLevel.id,
@@ -1068,7 +920,9 @@
                 combo: window.Scoring.bestCombo()
             });
 
-            if (_mode !== 'campaign') {
+            // У світовий лідерборд йдуть лише рейтингові режими (endless/daily).
+            // campaign — окремі рівні, custom — незрівнянні користувацькі рівні.
+            if (_mode !== 'campaign' && _mode !== 'custom') {
                 _submitGlobal(finalScore, _mode, null, window.Scoring.elapsed());
             }
             // level потрібен для звіту reporting.level_failures (де саме гинуть гравці)
@@ -1213,9 +1067,6 @@
         startCampaignLevel: startCampaignLevel,
         startNextLevel: startNextLevel,
         startDaily: startDaily,
-        startTimeAttack: startTimeAttack,
-        startSurvival: startSurvival,
-        startZen: startZen,
         retryCurrent: retryCurrent,
         finishTutorial: finishTutorial,
         goMenu: goMenu,

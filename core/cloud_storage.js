@@ -20,6 +20,7 @@
     let _claimTried = false;   // claim виконується один раз за сесію
     let _ready = false;
     let _busy = false;
+    let _pulling = false;      // захист від паралельних pullFromCloud
     let _lastSyncTime = 0;
     let _initPromise = null;
 
@@ -217,6 +218,9 @@
     /** Завантажити прогрес із хмари та злити його з локальним («тільки вгору»). Promise<object|null> */
     function pullFromCloud() {
         if (!_ready || !_client) return Promise.resolve(null);
+        if (_pulling) return Promise.resolve(null);  // pull уже виконується — пропускаємо
+
+        _pulling = true;
 
         // За наявності акаунта читаємо свій рядок за user_id (RLS auth.uid()),
         // інакше — за device_id (перехідний режим для старих клієнтів).
@@ -226,6 +230,7 @@
         return query
             .maybeSingle()
             .then(function (res) {
+                _pulling = false;
                 if (res && res.error) {
                     _log('error', 'pull: ' + res.error.message);
                     return null;
@@ -239,6 +244,7 @@
                 }
                 return remote || null;
             }, function (err) {
+                _pulling = false;
                 _log('error', 'pull: ' + (err && err.message ? err.message : err));
                 return null;
             });

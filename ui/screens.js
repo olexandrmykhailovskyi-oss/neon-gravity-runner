@@ -139,10 +139,7 @@
             '<button id="btn-campaign" class="btn primary highlight-btn">⭐ Кампанія</button>' +
             '<button id="btn-endless" class="btn primary" data-i18n="menu.endless">♾ Нескінченність</button>' +
             '<button id="btn-daily" class="btn accent-btn" data-i18n="menu.daily">📅 Виклик дня</button>' +
-            '<button id="btn-timeattack" class="btn" data-i18n="menu.timeattack">⏱ Time Attack</button>' +
             '<button id="btn-editor" class="btn" data-i18n="menu.editor">🛠 Редактор</button>' +
-            '<button id="btn-survival" class="btn" data-i18n="menu.survival">💀 Survival</button>' +
-            '<button id="btn-zen" class="btn" data-i18n="menu.zen">🧘 Zen</button>' +
             '<button id="btn-skins" class="btn" data-i18n="menu.skins">🎨 Скіни</button>' +
             '<button id="btn-achievements" class="btn" data-i18n="menu.achievements">🏆 Досягнення</button>' +
             '<button id="btn-leaderboard" class="btn" data-i18n="menu.leaderboard">👑 Рекорди ТОП-5</button>' +
@@ -357,14 +354,11 @@
                 '</div>' +
                 '</div>';
         }
-        // Заметки режимов: что такое Zen/Daily и остальные — с описанием
+        // Заметки режимов — с описанием
         const modesInfo = [
             ['⭐', 'mode.campaign.desc'],
             ['♾', 'mode.endless.desc'],
             ['📅', 'mode.daily.desc'],
-            ['⏱', 'mode.timeattack.desc'],
-            ['💀', 'mode.survival.desc'],
-            ['🧘', 'mode.zen.desc'],
             ['🛠', 'mode.custom.desc']
         ];
         let modeRows = '';
@@ -500,22 +494,10 @@
             _clickSound();
             try { if (window.Game) window.Game.startDaily(); } catch (e) {}
         });
-        UI.safeBind(UI.$('#btn-timeattack'), 'click', function () {
-            _clickSound();
-            try { if (window.Game) window.Game.startTimeAttack(); } catch (e) {}
-        });
         UI.safeBind(UI.$('#btn-editor'), 'click', function () {
             _clickSound();
             UI.showScreen('editor');
             try { if (window.Editor) window.Editor.build(); } catch (e) {}
-        });
-        UI.safeBind(UI.$('#btn-survival'), 'click', function () {
-            _clickSound();
-            try { if (window.Game) window.Game.startSurvival(); } catch (e) {}
-        });
-        UI.safeBind(UI.$('#btn-zen'), 'click', function () {
-            _clickSound();
-            try { if (window.Game) window.Game.startZen(); } catch (e) {}
         });
         UI.safeBind(UI.$('#btn-skins'), 'click', function () {
             _clickSound();
@@ -787,11 +769,14 @@
             try {
                 if (window.CloudStorage && window.CloudStorage.isReady()) {
                     window.UI.showToast(_t('cloud.syncing', 'Синхронізація…'), 'warn');
-                    Promise.all([
-                        window.CloudStorage.pushProgress(),
-                        window.CloudStorage.pullFromCloud()
-                    ]).then(function (results) {
-                        if (results[0] === true || results[1] !== null) {
+                    // Строго послідовно: спершу pull (злиття «тільки вгору»), потім push.
+                    // Інакше паралельний pull може повернути застарілі дані та відкотити локальні налаштування.
+                    window.CloudStorage.pullFromCloud().then(function (pulled) {
+                        return window.CloudStorage.pushProgress().then(function (pushed) {
+                            return { pulled: pulled, pushed: pushed };
+                        });
+                    }).then(function (results) {
+                        if (results.pushed === true || results.pulled !== null) {
                             window.UI.showToast(_t('cloud.syncOk', 'Синхронізація успішна'), 'success');
                         } else {
                             window.UI.showToast(_t('cloud.syncFail', 'Помилка синхронізації'), 'error');
@@ -1133,11 +1118,9 @@
             }
             // Бейдж рекорду; якщо рекорду нема — короткий опис режиму (що це взагалі таке)
             _setSub('#btn-endless', bm.endless > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.endless)) : _t('mode.endless.desc', ''));
-            _setSub('#btn-timeattack', bm.timeattack > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.timeattack)) : _t('mode.timeattack.desc', ''));
-            _setSub('#btn-survival', bm.survival > 0 ? _t('menu.subBest', 'рекорд: {n}').replace('{n}', U.formatNumber(bm.survival)) : _t('mode.survival.desc', ''));
+
             const streakN = (s && s.dailyStreak) || 0;
             _setSub('#btn-daily', streakN > 0 ? _t('menu.subStreak', 'серія: {n}').replace('{n}', streakN) : _t('mode.daily.desc', ''));
-            _setSub('#btn-zen', _t('mode.zen.desc', ''));
 
             // Напис кнопки «Кампанія» — кількість рівнів беремо з конфіга, без хардкоду
             const campBtn = window.UI.$('#btn-campaign');

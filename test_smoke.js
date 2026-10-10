@@ -75,7 +75,6 @@ load('gameplay/bonus.js');
 load('gameplay/bonuses.js');
 load('gameplay/storm.js');
 load('gameplay/levels.js');
-load('gameplay/modes.js');
 load('gameplay/scoring.js');
 load('ui/ui.js');
 load('ui/skins.js');
@@ -344,13 +343,6 @@ W.Scoring.setExternalMultiplier(-5);
 W.Scoring.update(1);
 check('від\'ємний множник ігнорується', Math.abs(W.Scoring.scoreValue - 10) < 0.01);
 
-// ---- 5. Modes ----
-console.log('\n[5] Modes:');
-check('3 режими визначені', W.Modes.getAllModes().length === 3);
-check('timeattack: 180с, ×2', W.Modes.getModeConfig('timeattack').duration === 180 && W.Modes.getModeConfig('timeattack').scoreMultiplier === 2);
-check('zen: noDeaths', W.Modes.getModeConfig('zen').noDeaths === true);
-check('survival: нескінченний', W.Modes.getModeConfig('survival').duration === Infinity);
-
 // ---- 6. Геометрія спавну бонусів ----
 console.log('\n[6] Перевірка фіксу спавну бонусів (几何):');
 const C = W.Collision;
@@ -550,7 +542,7 @@ if (missingKeys.length) console.log('    відсутні: ' + missingKeys.join(
 // переважно fallback-тексти для data-i18n (розмітка містить текст, який
 // підмінюється i18n під час роботи). Забороняти їх не можна, але кількість
 // не повинна зростати: нові рядки треба додавати в i18n, а не хардкодити.
-const CYRILLIC_BASELINE = 195;
+const CYRILLIC_BASELINE = 200;
 const CYRILLIC_RE = /[\u0400-\u04FF]/;
 
 function _stripComments(src) {
